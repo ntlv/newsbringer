@@ -24,3 +24,18 @@ proguard/
 
 # Log Files
 *.log
+
+#Volley library project
+volley/
+
+#local stuff
+.DS_Store
+.*.swp
+
+#IDEA things
+.gradle
+.idea
+*.ipr
+*.iws
+*.iml
+*.pyc
