@@ -1,4 +1,4 @@
-package se.ntlv.newsbringer.service;
+package se.ntlv.newsbringer.network;
 
 import android.content.Context;
 
@@ -14,7 +14,6 @@ public class VolleySingleton {
 	private VolleySingleton(Context context) {
 		mCtx = context.getApplicationContext();
 		mRequestQueue = getRequestQueue();
-
 	}
 
 	public static synchronized VolleySingleton getInstance(Context context) {
@@ -36,5 +35,4 @@ public class VolleySingleton {
 	public <T> void addToRequestQueue(Request<T> req) {
 		getRequestQueue().add(req);
 	}
-
 }

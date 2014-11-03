@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+			  xmlns:tools="http://schemas.android.com/tools"
+			  android:orientation="vertical"
+			  android:layout_width="match_parent"
+			  android:layout_height="match_parent">
+
+	<TextView
+		android:id="@+id/title"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		tools:text="title"
+		android:layout_alignParentLeft="true"
+		android:layout_alignParentTop="true"
+		android:layout_toStartOf="@+id/linearLayout"
+		android:layout_toLeftOf="@+id/linearLayout"
+		android:textSize="18sp"/>
+
+	<TextView
+		android:id="@+id/by"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		tools:text="author"
+		android:layout_below="@id/title"
+		android:layout_alignParentLeft="true"
+		android:layout_alignParentStart="true"
+		android:layout_toLeftOf="@+id/linearLayout"
+		android:layout_toStartOf="@+id/linearLayout"/>
+
+	<TextView
+		android:id="@+id/text"
+		android:autoLink="all"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		tools:text="text"
+		android:layout_below="@+id/by"
+		android:layout_alignParentLeft="true"
+		android:layout_alignParentStart="true"
+		android:layout_toLeftOf="@+id/linearLayout"
+		android:layout_toStartOf="@+id/linearLayout"/>
+
+
+	<LinearLayout
+		android:orientation="vertical"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_alignParentTop="true"
+		android:layout_alignParentRight="true"
+		android:id="@+id/linearLayout">
+
+
+		<TextView
+			android:id="@+id/ordinal"
+			android:textSize="18sp"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			tools:text="rank"/>
+
+		<se.ntlv.newsbringer.DateView
+			android:id="@+id/time"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:singleLine="true"
+			tools:text="time"/>
+
+		<TextView
+			android:id="@+id/score"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			tools:text="score"/>
+	</LinearLayout>
+
+</RelativeLayout>

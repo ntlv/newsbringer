@@ -20,7 +20,7 @@
         </activity>
 
         <service
-            android:name=".service.DataPullPushService"
+            android:name=".network.DataPullPushService"
             android:exported="false" >
         </service>
 		<provider
