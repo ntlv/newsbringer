@@ -35,8 +35,8 @@ public class DataPullPushService extends IntentService {
 	public static String ACTION_FETCH_THREADS = TAG + "action_fetch_threads";
 	public String URI_SUFFIX = ".json";
 	public String BASE_URI = "https://hacker-news.firebaseio.com/v0";
-	public String ITEM_URI = "$BASE_URI/item";
-	public String TOP_HUNDRED_URI = "$BASE_URI/topstories$URI_SUFFIX";
+	public String ITEM_URI = BASE_URI + "/item";
+	public String TOP_HUNDRED_URI = BASE_URI + "/topstories" + URI_SUFFIX;
 	RequestQueue mQueue;
 	private Response.Listener<NewsThread> mNewsThreadResponseHandler = new Response.Listener<NewsThread>() {
 		@Override
@@ -71,9 +71,6 @@ public class DataPullPushService extends IntentService {
 
 	public void onDestroy() {
 		Log.i(TAG, "Destroying service");
-		if (mQueue != null) {
-			mQueue.stop();
-		}
 		super.onDestroy();
 	}
 
@@ -112,7 +109,7 @@ public class DataPullPushService extends IntentService {
 		for (int i = 0; i < length - 1; i++) {
 			try {
 				url = ITEM_URI + "/" + array.get(i) + URI_SUFFIX;
-				boolean isLastRequest = i == length - 1;
+				boolean isLastRequest = i == (length - 1);
 				mQueue.add(makeNewsThreadRequest(url, messenger, isLastRequest));
 			} catch (JSONException e) {
 				Log.e(TAG, e.getCause().toString());
@@ -144,7 +141,7 @@ public class DataPullPushService extends IntentService {
 		} else {
 			listener = mNewsThreadResponseHandler;
 		}
-		return new GsonRequest<NewsThread>(url, NewsThread.class, null, listener, mErrorListener);
+		return new GsonRequest<>(url, NewsThread.class, null, listener, mErrorListener);
 	}
 }
 

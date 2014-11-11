@@ -24,10 +24,10 @@ class NewsThread {
         cv.put(PostTable.COLUMN_TIMESTAMP, time);
         cv.put(PostTable.COLUMN_BY, by);
         cv.put(PostTable.COLUMN_TITLE, title);
-        cv.put(PostTable.COLUMN_CHILDREN, Arrays.toString(kids));
-        cv.put(PostTable.COLUMN_TEXT, text);
-        cv.put(PostTable.COLUMN_TYPE, type);
-        cv.put(PostTable.COLUMN_URL, url);
+        cv.put(PostTable.COLUMN_CHILDREN, kids == null ? "[]" : Arrays.toString(kids));
+        cv.put(PostTable.COLUMN_TEXT, text == null ? "No text" : text);
+        cv.put(PostTable.COLUMN_TYPE, type == null ? "No type" : type);
+        cv.put(PostTable.COLUMN_URL, url == null ? "about:blank" : url);
 
         long unixTime = System.currentTimeMillis() / 1000;
         long hoursSinceSubmission = unixTime - time /3600;
