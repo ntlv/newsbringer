@@ -3,37 +3,33 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:0.9.206'
         classpath 'com.android.tools.build:gradle:0.13.2'
     }
 }
 
 apply plugin: 'com.android.application'
 
-apply plugin: 'kotlin-android'
-
-                repositories {
-                    mavenCentral()
-                }
-
 dependencies {
-    compile 'org.jetbrains.kotlin:kotlin-stdlib:0.9.206'
     compile files('libs/volley.jar')
     compile 'com.google.code.gson:gson:2.3'
+    compile 'com.android.support:support-annotations:21.0.0'
 }
 
 android {
-    compileSdkVersion 17
+    compileSdkVersion 21
     buildToolsVersion "20.0.0"
-
     defaultConfig {
         minSdkVersion 11
-        targetSdkVersion 17
+        targetSdkVersion 21
     }
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-        }
+
     dexOptions {
-        incremental false
+        incremental true
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_7
+        targetCompatibility JavaVersion.VERSION_1_7
+    }
+    productFlavors {
     }
 }

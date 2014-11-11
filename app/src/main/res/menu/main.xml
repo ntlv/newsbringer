@@ -5,9 +5,13 @@
         android:title="@string/action_settings"
         android:orderInCategory="100"
         android:showAsAction="never" />
+
 	<item android:id="@+id/refresh"
 		  android:title="Refresh"
 		  android:orderInCategory="0"
+		  android:actionLayout="@layout/view_refresh"
+		  style="@android:style/Widget.ActionButton"
+		  android:icon="@drawable/ic_action_refresh"
 		  android:showAsAction="ifRoom"/>
 
 </menu>
