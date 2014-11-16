@@ -45,8 +45,8 @@ public class PostTable {
         }
 
         public fun onUpgrade(database: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-            Log.w(LOG_TAG, "Upgrading database from version " + oldVersion + " to " + newVersion + ", which will destroy all old data")
-            database.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME)
+            Log.w(LOG_TAG, "Upgrading database from version $oldVersion to $newVersion, which will destroy all old data")
+            database.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
             onCreate(database)
         }
     }

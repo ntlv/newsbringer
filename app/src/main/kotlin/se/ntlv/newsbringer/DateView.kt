@@ -18,11 +18,7 @@ fun CharSequence.reformat(): CharSequence {
     try {
         val asLong = this.toString().toLong()
         val diff = System.currentTimeMillis().div(1000).minus(asLong)
-        if (diff in 0 .. 3599) {
-            return "${diff.div(60)} min"
-        } else {
-            return "${diff.div(3600)} hours"
-        }
+        return if (diff < 3600) "${diff.div(60)} min" else "${diff.div(3600)} hours"
     } catch (formatException: NumberFormatException) {
         return this;
     }

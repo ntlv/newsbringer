@@ -11,12 +11,12 @@ import com.android.volley.VolleyError
 import com.android.volley.toolbox.JsonArrayRequest
 
 import org.json.JSONArray
-import org.json.JSONException
-
-import java.util.Arrays
 
 import se.ntlv.newsbringer.database.NewsContentProvider
-import se.ntlv.newsbringer.database.PostTable
+import com.android.volley.RequestQueue
+import kotlin.properties.Delegates
+import com.android.volley.toolbox.Volley
+import java.util.ArrayList
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -25,102 +25,64 @@ import se.ntlv.newsbringer.database.PostTable
  * helper methods.
  */
 public class DataPullPushService : IntentService(DataPullPushService.TAG) {
+
+    val mQueue: RequestQueue by Delegates.lazy {
+        Volley.newRequestQueue(this)
+    }
+
+    val mTemporaryResponseStorage: ArrayList<ContentValues> by Delegates.lazy {
+        ArrayList<ContentValues>(100)
+    }
+
     private val mErrorListener = object : Response.ErrorListener {
         override fun onErrorResponse(error: VolleyError) {
             Log.e(TAG, error.toString())
         }
+
     }
     private val mJSONArrayListener = object : Response.Listener<JSONArray> {
         override fun onResponse(jsonArray: JSONArray) {
-            getContentResolver().delete(NewsContentProvider.CONTENT_URI, null, null) //empty the table
-            val length = jsonArray.length()
-            val url: String
-            for (i in 0..length - 1) {
-                try {
-                    url = ITEM_URI + '/' + jsonArray.get(i) + URI_SUFFIX
-                    getVolley().addToRequestQueue<NewsThread>(getNewsThreadRequest(url))
-                } catch (ignored: JSONException) {
-                }
-
-            }
+            jsonArray.forEach { mQueue.add(getNewsThreadRequest("${ITEM_URI}/${it}${URI_SUFFIX}")) }
         }
     }
-    private val mListener = object : Response.Listener<NewsThread> {
+
+    fun JSONArray.forEach(f: (t: Any) -> Unit) {
+        val length = this.length()
+        (0..length - 1).forEach { i -> f(get(i)) }
+    }
+
+
+    private val mNewsThreadResponseListener = object : Response.Listener<NewsThread> {
         override fun onResponse(response: NewsThread) {
-            getContentResolver().insert(NewsContentProvider.CONTENT_URI, response.getAsContentValues())
-        }
-    }
-
-    override fun onHandleIntent(intent: Intent?) {
-        if (intent != null) {
-            try {
-                when (Actions.valueOf(intent.getAction())) {
-                    DataPullPushService.Actions.ACTION_FETCH_THREADS -> handleActionFetchThreads()
-                }
-
-            } catch (ignored: IllegalArgumentException) {
-                //attempted to start invalid action, ignore for now
+            mTemporaryResponseStorage.add(response.getAsContentValues())
+            if (mTemporaryResponseStorage.size == 100) {
+                getContentResolver().delete(NewsContentProvider.CONTENT_URI, null, null) //empty the table
+                getContentResolver().bulkInsert(NewsContentProvider.CONTENT_URI, mTemporaryResponseStorage.copyToArray())
             }
         }
     }
 
-    private fun handleActionFetchThreads() {
-        getVolley().addToRequestQueue<JSONArray>(getTopHundredRequest())
+    fun Intent?.doAction() {
+        when (this?.getAction()) {
+            ACTION_FETCH_THREADS -> mQueue.add(getTopHundredRequest())
+            else -> Log.d(TAG, "Attempted to start $TAG with illegal argument")
+        }
     }
+
+    override fun onHandleIntent(intent: Intent?) = intent?.doAction()
 
     private fun getTopHundredRequest(): JsonArrayRequest {
         return JsonArrayRequest(TOP_HUNDRED_URI, mJSONArrayListener, mErrorListener)
     }
 
     private fun getNewsThreadRequest(url: String): GsonRequest<NewsThread> {
-        return getNewsThreadRequest(null, mListener, mErrorListener, url)
+        return getNewsThreadRequest(mNewsThreadResponseListener, mErrorListener, url)
     }
 
-    private fun getNewsThreadRequest(headers: Map<String, String>?, listener: Response.Listener<NewsThread>, errorListener: Response.ErrorListener, url: String): GsonRequest<NewsThread> {
-
-        return GsonRequest(url, javaClass<NewsThread>(), headers, listener, errorListener)
-    }
-
-    private fun getVolley(): VolleySingleton {
-        return VolleySingleton.getInstance(getApplicationContext())
-    }
-
-    private enum class Actions {
-        ACTION_FETCH_THREADS
-    }
-
-    private inner class NewsThread {
-        public var score: Int = 0
-        public var time: Long = 0
-        public var id: Long = 0
-        public var by: String? = null
-        public var title: String? = null
-        public var kids: LongArray? = null
-        public var text: String? = null
-        public var type: String? = null
-        public var url: String? = null
-
-        public fun getAsContentValues(): ContentValues {
-            val cv = ContentValues(9)
-            cv.put(PostTable.COLUMN_ID, id)
-            cv.put(PostTable.COLUMN_SCORE, score)
-            cv.put(PostTable.COLUMN_TIMESTAMP, time)
-            cv.put(PostTable.COLUMN_BY, by ?: "Unknown author")
-            cv.put(PostTable.COLUMN_TITLE, title ?: "No title")
-            cv.put(PostTable.COLUMN_CHILDREN, kids?.joinToString() ?: "no children")
-            cv.put(PostTable.COLUMN_TEXT,  text ?: "No text")
-            cv.put(PostTable.COLUMN_TYPE, type ?: "Unknown type")
-            cv.put(PostTable.COLUMN_URL, url ?: "Unkown URL")
-
-            val unixTime = System.currentTimeMillis().div(1000)
-            val hoursSinceSubmission = unixTime.minus(time).div(3600)
-            val adjustedScore = (score.minus(1)).toDouble()
-            val ordinal = adjustedScore.div(Math.pow((hoursSinceSubmission.plus(2)).toDouble(), 1.8))
-
-            cv.put(PostTable.COLUMN_ORDINAL, ordinal)
-
-            return cv
-        }
+    private fun getNewsThreadRequest(listener: Response.Listener<NewsThread>,
+                                     errorListener: Response.ErrorListener,
+                                     url: String): GsonRequest<NewsThread> {
+        return GsonRequest(url, javaClass<NewsThread>(), null, listener, errorListener)
     }
 
     class object {
@@ -130,6 +92,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         public var BASE_URI: String = "https://hacker-news.firebaseio.com/v0"
         public var ITEM_URI: String = "$BASE_URI/item"
         public var TOP_HUNDRED_URI: String = "$BASE_URI/topstories$URI_SUFFIX"
+        public val ACTION_FETCH_THREADS: String = "${TAG}_action_fetch_threads"
 
         /**
          * Starts this service to fetch threads from Hacker News.
@@ -138,8 +101,9 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
          */
         public fun startActionFetchThreads(context: Context) {
             val intent = Intent(context, javaClass<DataPullPushService>())
-            intent.setAction(Actions.ACTION_FETCH_THREADS.name())
+            intent.setAction(ACTION_FETCH_THREADS)
             context.startService(intent)
         }
     }
 }
+

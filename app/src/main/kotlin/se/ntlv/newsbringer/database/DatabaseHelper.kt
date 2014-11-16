@@ -20,7 +20,6 @@ public class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, Databa
     }
 
     class object {
-
         private val DATABASE_NAME = "newsbringer.db"
         private val DATABASE_VERSION = 6
         private val LOG_TAG = "DatabaseHelper"
