@@ -19,6 +19,11 @@
             </intent-filter>
         </activity>
 
+		<activity
+			android:name=".NewsThreadActivity"
+			android:label="@string/hello_world"
+			android:parentActivityName=".MainActivity"/>
+
         <service
             android:name=".network.DataPullPushService"
             android:exported="false" >

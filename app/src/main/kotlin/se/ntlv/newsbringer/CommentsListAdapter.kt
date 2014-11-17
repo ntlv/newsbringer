@@ -8,19 +8,16 @@ import android.widget.TextView
 import se.ntlv.newsbringer.database.PostTable
 import se.ntlv.newsbringer.NewsThreadListAdapter.ViewHolder
 import se.ntlv.newsbringer.network.Metadata
+import se.ntlv.newsbringer.database.CommentsTable
 
-open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags: Int) :
+open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags: Int) :
         ResourceCursorAdapter(ctx, layout, cursor, flags) {
 
     override fun bindView(view: View, context: Context?, cursor: Cursor) {
         val tag = view.tag
-        tag.title.setText(cursor.getString(PostTable.COLUMN_TITLE))
-        tag.by.setText(cursor.getString(PostTable.COLUMN_BY))
-        tag.ordinal.setText(cursor.getString(PostTable.COLUMN_ORDINAL))
-        tag.time.setText(cursor.getString(PostTable.COLUMN_TIMESTAMP))
-        tag.score.setText(cursor.getString(PostTable.COLUMN_SCORE))
-        tag.link = cursor.getString(PostTable.COLUMN_URL)
-        tag.id = cursor.getLong(PostTable.COLUMN_ID)
+        tag.by.setText(cursor.getString(CommentsTable.COLUMN_BY))
+        tag.time.setText(cursor.getString(CommentsTable.COLUMN_TIME))
+        tag.text.setText(cursor.getString(CommentsTable.COLUMN_TEXT))
     }
 
     fun Cursor.getString(columnName: String): String = getString(getColumnIndexOrThrow(columnName))
@@ -29,18 +26,8 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
 
     class ViewHolder(root: View) {
         val text = root.findViewById(R.id.text) as TextView
-        val title = root.findViewById(R.id.title) as TextView
         val by = root.findViewById(R.id.by) as TextView
-        val ordinal = root.findViewById(R.id.ordinal) as TextView
-        val time = root.findViewById(R.id.time) as DateView
-        val score = root.findViewById(R.id.score) as TextView
-        var link: String? = null
-        var id: Long? = null
-
-        fun TextView.getContent(): String = this.getText().toString()
-
-        val metadata: Metadata
-            get() = Metadata(id, text.getContent(), title.getContent(), by.getContent(), time.getContent(), score.getContent(), link)
+        val time = root.findViewById(R.id.time) as TextView
     }
 
     val View.tag: ViewHolder

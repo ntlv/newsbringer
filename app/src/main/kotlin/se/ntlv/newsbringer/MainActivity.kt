@@ -21,6 +21,7 @@ import android.net.Uri
 import android.view.View
 import kotlin.properties.Delegates
 import android.support.v4.widget.SwipeRefreshLayout
+import se.ntlv.newsbringer.NewsThreadListAdapter.ViewHolder
 
 
 public class MainActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor> {
@@ -48,17 +49,17 @@ public class MainActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor> {
 
         val listView = findViewById(R.id.list_view) as ListView
         listView.setAdapter(mAdapter)
-        listView.setOnItemClickListener { (adapterView, view, i, l) -> openLink(view) }
+        listView.setOnItemClickListener { (adapterView, view, i, l) -> openComments(view) }
+        listView.setOnItemLongClickListener { (adapterView, view, i, l) -> openLink(view); true }
         getLoaderManager().initLoader<Cursor>(0, null, this)
     }
 
-    private fun openLink(view: View) {
-        (view.getTag() as? NewsThreadListAdapter.ViewHolder)?.link?.openAsLink()
-    }
+    private fun openLink(view: View) = (view.getTag() as? NewsThreadListAdapter.ViewHolder)?.link?.openAsLink()
 
-    fun String?.openAsLink() {
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(this)))
-    }
+    private fun openComments(view : View) = (view.getTag() as? NewsThreadListAdapter.ViewHolder)?.openAsLink()
+
+    fun String?.openAsLink() = startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(this)))
+    fun ViewHolder.openAsLink() = startActivity(NewsThreadActivity.getIntent(this@MainActivity, this.metadata))
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -86,7 +87,7 @@ public class MainActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor> {
 
     override fun onCreateLoader(i: Int, bundle: Bundle?): Loader<Cursor> {
         mSwipeView.setRefreshing(true)
-        return CursorLoader(this, NewsContentProvider.CONTENT_URI, PROJECTION, null, null, PostTable.COLUMN_ORDINAL + " DESC")
+        return CursorLoader(this, NewsContentProvider.CONTENT_URI_POSTS, PROJECTION, null, null, PostTable.COLUMN_ORDINAL + " DESC")
     }
 
     override fun onLoadFinished(cursorLoader: Loader<Cursor>, cursor: Cursor) {

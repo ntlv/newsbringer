@@ -9,16 +9,18 @@ import android.database.sqlite.SQLiteQueryBuilder
 import android.net.Uri
 import android.text.TextUtils
 import android.util.Log
+import kotlin.properties.Delegates
 
 public class NewsContentProvider : ContentProvider() {
     override fun onCreate(): Boolean {
-        database = DatabaseHelper(getContext())
         Log.i(LOG_TAG, "Content provider created")
         return true
     }
 
-    // database
-    private var database: DatabaseHelper? = null
+    val database : DatabaseHelper by Delegates.lazy {
+        DatabaseHelper(getContext())
+    }
+
 
     override fun query(uri: Uri, projection: Array<String>, selection: String?, selectionArguments: Array<String>?, sortOrder: String?): Cursor {
 
@@ -28,11 +30,15 @@ public class NewsContentProvider : ContentProvider() {
                 queryBuilder.appendWhere(PostTable.COLUMN_ID + "=" + uri.getLastPathSegment())
                 queryBuilder.setTables(PostTable.TABLE_NAME)
             }
+            COMMENTS_ID -> {
+                queryBuilder.appendWhere(CommentsTable.COLUMN_ID + "=" + uri.getLastPathSegment())
+                queryBuilder.setTables(CommentsTable.TABLE_NAME)
+            }
             POSTS -> queryBuilder.setTables(PostTable.TABLE_NAME)
-        }//case SOME_OTHER_CONTENT
-        //no dice, don't do anything
+            COMMENTS -> queryBuilder.setTables(CommentsTable.TABLE_NAME)
+        }
 
-        val db = database!!.getReadableDatabase()
+        val db = database.getReadableDatabase()
         val cursor = queryBuilder.query(db, projection, selection, selectionArguments, null, null, sortOrder)
 
         cursor.setNotificationUri(getContext().getContentResolver(), uri)
@@ -46,13 +52,19 @@ public class NewsContentProvider : ContentProvider() {
 
     override fun insert(uri: Uri, contentValues: ContentValues): Uri {
         val uriType = sUriMatcher.match(uri)
-        val sqlDB = database!!.getWritableDatabase()
+        val sqlDB = database.getWritableDatabase()
 
-        when {
-            uriType == POSTS -> {
+        when (uriType) {
+            POSTS -> {
                 val id = sqlDB.insert(PostTable.TABLE_NAME, null, contentValues)
                 getContext().getContentResolver().notifyChange(uri, null)
-                return Uri.parse(CONTENT_1 + "/" + id)
+                return Uri.parse(CONTENT_POSTS + "/" + id)
+            }
+            COMMENTS -> {
+                Log.d(LOG_TAG, "insert $contentValues into $sqlDB")
+                val id = sqlDB.insert(CommentsTable.TABLE_NAME, null, contentValues)
+                getContext().getContentResolver().notifyChange(uri, null)
+                return Uri.parse(CONTENT_COMMENTS + "/" + id)
             }
             else -> throw IllegalArgumentException("Unknown URI: " + uri)
         }
@@ -60,7 +72,7 @@ public class NewsContentProvider : ContentProvider() {
 
     override fun delete(uri: Uri, selection: String?, selectionArguments: Array<String>?): Int {
         val uriType = sUriMatcher.match(uri)
-        val sqlDB = database!!.getWritableDatabase()
+        val sqlDB = database.getWritableDatabase()
         var rowsDeleted : Int
 
         when (uriType) {
@@ -73,6 +85,15 @@ public class NewsContentProvider : ContentProvider() {
                     rowsDeleted = sqlDB.delete(PostTable.TABLE_NAME, PostTable.COLUMN_ID + "=" + id + " and " + selection, selectionArguments)
                 }
             }
+            COMMENTS -> rowsDeleted = sqlDB.delete(CommentsTable.TABLE_NAME, selection, selectionArguments)
+            POST_ID -> {
+                val id = uri.getLastPathSegment()
+                if (TextUtils.isEmpty(selection)) {
+                    rowsDeleted = sqlDB.delete(CommentsTable.TABLE_NAME, CommentsTable.COLUMN_ID + "=" + id, null)
+                } else {
+                    rowsDeleted = sqlDB.delete(CommentsTable.TABLE_NAME, CommentsTable.COLUMN_ID + "=" + id + " and " + selection, selectionArguments)
+                }
+            }
             else -> throw IllegalArgumentException("Unknown URI: " + uri)
         }
         getContext().getContentResolver().notifyChange(uri, null)
@@ -81,7 +102,7 @@ public class NewsContentProvider : ContentProvider() {
 
     override fun update(uri: Uri, values: ContentValues, selection: String, selectionArgs: Array<String>?): Int {
         val uriType = sUriMatcher.match(uri)
-        val sqlDB = database!!.getWritableDatabase()
+        val sqlDB = database.getWritableDatabase()
         var rowsUpdated : Int
         when (uriType) {
             POSTS -> rowsUpdated = sqlDB.update(PostTable.TABLE_NAME, values, selection, selectionArgs)
@@ -91,6 +112,15 @@ public class NewsContentProvider : ContentProvider() {
                     rowsUpdated = sqlDB.update(PostTable.TABLE_NAME, values, PostTable.COLUMN_ID + "=" + id, null)
                 } else {
                     rowsUpdated = sqlDB.update(PostTable.TABLE_NAME, values, PostTable.COLUMN_ID + "=" + id + " and " + selection, selectionArgs)
+                }
+            }
+            COMMENTS -> rowsUpdated = sqlDB.update(CommentsTable.TABLE_NAME, values, selection, selectionArgs)
+            COMMENTS_ID -> {
+                val id = uri.getLastPathSegment()
+                if (TextUtils.isEmpty(selection)) {
+                    rowsUpdated = sqlDB.update(CommentsTable.TABLE_NAME, values, CommentsTable.COLUMN_ID + "=" + id, null)
+                } else {
+                    rowsUpdated = sqlDB.update(CommentsTable.TABLE_NAME, values, CommentsTable.COLUMN_ID + "=" + id + " and " + selection, selectionArgs)
                 }
             }
             else -> throw IllegalArgumentException("Unknown URI: " + uri)
@@ -104,10 +134,17 @@ public class NewsContentProvider : ContentProvider() {
         private val POSTS = 10
         private val POST_ID = 20
 
+        private val COMMENTS = 30
+        private val COMMENTS_ID = 40
+
         private val AUTHORITY = "se.ntlv.newsbringer.database.NewsContentProvider"
 
-        private val CONTENT_1 = "posts"
-        public val CONTENT_URI: Uri = Uri.parse("content://" + AUTHORITY + "/" + CONTENT_1)
+        private val CONTENT_POSTS = "posts"
+        public val CONTENT_URI_POSTS: Uri = Uri.parse("content://" + AUTHORITY + "/" + CONTENT_POSTS)
+
+        private val CONTENT_COMMENTS = "comments"
+
+        public val CONTENT_URI_COMMENTS : Uri = Uri.parse("content://" + AUTHORITY + "/" + CONTENT_COMMENTS)
 
 
         public val CONTENT_TYPE: String = ContentResolver.CURSOR_DIR_BASE_TYPE + "/posts"
@@ -115,12 +152,14 @@ public class NewsContentProvider : ContentProvider() {
 
         public var sUriMatcher: UriMatcher
 
-        private val LOG_TAG = "ScheduleContentProvider"
+        private val LOG_TAG = "NewsContentProvider"
 
         {
             sUriMatcher = UriMatcher(UriMatcher.NO_MATCH)
-            sUriMatcher.addURI(AUTHORITY, CONTENT_1, POSTS)
-            sUriMatcher.addURI(AUTHORITY, CONTENT_1 + "/#", POST_ID)
+            sUriMatcher.addURI(AUTHORITY, CONTENT_POSTS, POSTS)
+            sUriMatcher.addURI(AUTHORITY, "$CONTENT_POSTS/#", POST_ID)
+            sUriMatcher.addURI(AUTHORITY, CONTENT_COMMENTS, COMMENTS)
+            sUriMatcher.addURI(AUTHORITY, "$CONTENT_COMMENTS/#", COMMENTS_ID)
         }
     }
 }
