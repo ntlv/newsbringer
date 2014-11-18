@@ -10,6 +10,7 @@ import android.net.Uri
 import android.text.TextUtils
 import android.util.Log
 import kotlin.properties.Delegates
+import android.database.sqlite.SQLiteDatabase
 
 public class NewsContentProvider : ContentProvider() {
     override fun onCreate(): Boolean {
@@ -17,7 +18,7 @@ public class NewsContentProvider : ContentProvider() {
         return true
     }
 
-    val database : DatabaseHelper by Delegates.lazy {
+    val database: DatabaseHelper by Delegates.lazy {
         DatabaseHelper(getContext())
     }
 
@@ -73,25 +74,25 @@ public class NewsContentProvider : ContentProvider() {
     override fun delete(uri: Uri, selection: String?, selectionArguments: Array<String>?): Int {
         val uriType = sUriMatcher.match(uri)
         val sqlDB = database.getWritableDatabase()
-        var rowsDeleted : Int
 
-        when (uriType) {
-            POSTS -> rowsDeleted = sqlDB.delete(PostTable.TABLE_NAME, selection, selectionArguments)
+
+        val rowsDeleted = when (uriType) {
+            POSTS -> sqlDB.delete(PostTable.TABLE_NAME, selection, selectionArguments)
             POST_ID -> {
                 val id = uri.getLastPathSegment()
                 if (TextUtils.isEmpty(selection)) {
-                    rowsDeleted = sqlDB.delete(PostTable.TABLE_NAME, PostTable.COLUMN_ID + "=" + id, null)
+                    sqlDB.delete(PostTable.TABLE_NAME, PostTable.COLUMN_ID + "=" + id, null)
                 } else {
-                    rowsDeleted = sqlDB.delete(PostTable.TABLE_NAME, PostTable.COLUMN_ID + "=" + id + " and " + selection, selectionArguments)
+                    sqlDB.delete(PostTable.TABLE_NAME, PostTable.COLUMN_ID + "=" + id + " and " + selection, selectionArguments)
                 }
             }
-            COMMENTS -> rowsDeleted = sqlDB.delete(CommentsTable.TABLE_NAME, selection, selectionArguments)
+            COMMENTS -> sqlDB.delete(CommentsTable.TABLE_NAME, selection, selectionArguments)
             POST_ID -> {
                 val id = uri.getLastPathSegment()
                 if (TextUtils.isEmpty(selection)) {
-                    rowsDeleted = sqlDB.delete(CommentsTable.TABLE_NAME, CommentsTable.COLUMN_ID + "=" + id, null)
+                    sqlDB.delete(CommentsTable.TABLE_NAME, CommentsTable.COLUMN_ID + "=" + id, null)
                 } else {
-                    rowsDeleted = sqlDB.delete(CommentsTable.TABLE_NAME, CommentsTable.COLUMN_ID + "=" + id + " and " + selection, selectionArguments)
+                    sqlDB.delete(CommentsTable.TABLE_NAME, CommentsTable.COLUMN_ID + "=" + id + " and " + selection, selectionArguments)
                 }
             }
             else -> throw IllegalArgumentException("Unknown URI: " + uri)
@@ -103,30 +104,28 @@ public class NewsContentProvider : ContentProvider() {
     override fun update(uri: Uri, values: ContentValues, selection: String, selectionArgs: Array<String>?): Int {
         val uriType = sUriMatcher.match(uri)
         val sqlDB = database.getWritableDatabase()
-        var rowsUpdated : Int
-        when (uriType) {
-            POSTS -> rowsUpdated = sqlDB.update(PostTable.TABLE_NAME, values, selection, selectionArgs)
-            POST_ID -> {
-                val id = uri.getLastPathSegment()
-                if (TextUtils.isEmpty(selection)) {
-                    rowsUpdated = sqlDB.update(PostTable.TABLE_NAME, values, PostTable.COLUMN_ID + "=" + id, null)
-                } else {
-                    rowsUpdated = sqlDB.update(PostTable.TABLE_NAME, values, PostTable.COLUMN_ID + "=" + id + " and " + selection, selectionArgs)
-                }
-            }
-            COMMENTS -> rowsUpdated = sqlDB.update(CommentsTable.TABLE_NAME, values, selection, selectionArgs)
-            COMMENTS_ID -> {
-                val id = uri.getLastPathSegment()
-                if (TextUtils.isEmpty(selection)) {
-                    rowsUpdated = sqlDB.update(CommentsTable.TABLE_NAME, values, CommentsTable.COLUMN_ID + "=" + id, null)
-                } else {
-                    rowsUpdated = sqlDB.update(CommentsTable.TABLE_NAME, values, CommentsTable.COLUMN_ID + "=" + id + " and " + selection, selectionArgs)
-                }
-            }
+        val rowsUpdated = when (uriType) {
+            POSTS -> sqlDB.update(PostTable.TABLE_NAME, values, selection, selectionArgs)
+            COMMENTS -> sqlDB.update(CommentsTable.TABLE_NAME, values, selection, selectionArgs)
+            POST_ID -> handleItemUpdate(selection, selectionArgs, sqlDB, values, PostTable.TABLE_NAME, PostTable.COLUMN_ID, uri.getLastPathSegment())
+            COMMENTS_ID -> handleItemUpdate(selection, selectionArgs, sqlDB, values, CommentsTable.TABLE_NAME, CommentsTable.COLUMN_ID, uri.getLastPathSegment())
             else -> throw IllegalArgumentException("Unknown URI: " + uri)
         }
         getContext().getContentResolver().notifyChange(uri, null)
-        return rowsUpdated
+        return rowsUpdated ?: 0
+    }
+
+    private fun handleItemUpdate(selection: String,
+                                 selectionArgs: Array<String>?,
+                                 sqlDB: SQLiteDatabase?,
+                                 values: ContentValues,
+                                 tableName: String,
+                                 idColumn: String,
+                                 itemId: String): Int? {
+        return when {
+            TextUtils.isEmpty(selection) -> sqlDB?.update(tableName, values, idColumn + "=" + itemId, null)
+            else -> sqlDB?.update(tableName, values, idColumn + "=" + itemId + " and " + selection, selectionArgs)
+        }
     }
 
     class object {
@@ -144,7 +143,7 @@ public class NewsContentProvider : ContentProvider() {
 
         private val CONTENT_COMMENTS = "comments"
 
-        public val CONTENT_URI_COMMENTS : Uri = Uri.parse("content://" + AUTHORITY + "/" + CONTENT_COMMENTS)
+        public val CONTENT_URI_COMMENTS: Uri = Uri.parse("content://" + AUTHORITY + "/" + CONTENT_COMMENTS)
 
 
         public val CONTENT_TYPE: String = ContentResolver.CURSOR_DIR_BASE_TYPE + "/posts"

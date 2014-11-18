@@ -21,9 +21,14 @@ public class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, Databa
         CommentsTable.onUpgrade(database, oldVersion, newVersion)
     }
 
+    override fun onConfigure(database : SQLiteDatabase) {
+        database.setForeignKeyConstraintsEnabled(true) //needed for cascading deletes
+
+    }
+
     class object {
         private val DATABASE_NAME = "newsbringer.db"
-        private val DATABASE_VERSION = 10
+        private val DATABASE_VERSION = 11
         private val LOG_TAG = "DatabaseHelper"
     }
 }

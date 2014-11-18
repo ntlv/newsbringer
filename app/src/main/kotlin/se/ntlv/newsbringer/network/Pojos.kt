@@ -4,7 +4,6 @@ import android.content.ContentValues
 import se.ntlv.newsbringer.database.PostTable
 import java.util.ArrayList
 import se.ntlv.newsbringer.database.CommentsTable
-import android.database.Cursor
 
 class NewsThread {
     public var score: Int = 0
@@ -33,7 +32,6 @@ class NewsThread {
 
         return cv
     }
-
 }
 
 fun calculateOrdinal(time: Long, score: Int): Double {
@@ -43,7 +41,7 @@ fun calculateOrdinal(time: Long, score: Int): Double {
     return adjustedScore.div(Math.pow((hoursSinceSubmission.plus(2)).toDouble(), 1.8))
 }
 
-data class Metadata(id : Long?, text : String, title : String, by : String, time : String, score : String, link: String?) {
+data class Metadata(id: Long?, text: String, title: String, by: String, time: String, score: String, link: String?) {
     val id = id
     val text = text
     val title = title
@@ -51,7 +49,6 @@ data class Metadata(id : Long?, text : String, title : String, by : String, time
     val time = time
     val score = score
     val link = link
-
 }
 
 public class Comment {
@@ -70,11 +67,10 @@ public class Comment {
         cv.put(CommentsTable.COLUMN_TIME, time)
         cv.put(CommentsTable.COLUMN_ID, id)
         cv.put(CommentsTable.COLUMN_BY, by ?: "Unknown author")
-        cv.put(CommentsTable.COLUMN_KIDS, kids?.joinToString() ?: "no children")
+        cv.put(CommentsTable.COLUMN_KIDS, kids.joinToString())
         cv.put(CommentsTable.COLUMN_TEXT, text ?: "No text")
         cv.put(CommentsTable.COLUMN_TYPE, type ?: "Unknown type")
         cv.put(CommentsTable.COLUMN_ORDINAL, ordinal)
         return cv
     }
-
 }

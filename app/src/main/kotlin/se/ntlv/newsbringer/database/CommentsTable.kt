@@ -23,13 +23,12 @@ public class CommentsTable {
                 COLUMN_ID + " integer primary key, " +
                 COLUMN_TIME + " integer not null, " +
                 COLUMN_BY + " text not null, " +
-                COLUMN_PARENT + " text not null, " +
+                COLUMN_PARENT + " integer " + " REFERENCES " + PostTable.TABLE_NAME + "(" + PostTable.COLUMN_ID + ")" + " ON DELETE CASCADE, " +
+                //COLUMN_PARENT_COMMENT + " integer " + " REFERENCES " + CommentsTable.TABLE_NAME + "(" + CommentsTable.COLUMN_ID + ")" + " ON DELETE CASCADE, " +
                 COLUMN_KIDS + " text not null, " +
                 COLUMN_TEXT + " text not null, " +
                 COLUMN_TYPE + " text not null, " +
                 COLUMN_ORDINAL + " real not null " +
-                //+ " FOREIGN KEY (" + COLUMN_ID + ") REFERENCES "
-                //+ ITAuthorTable.TABLE_NAME + " (" + ITAuthorTable.COLUMN_ID + ")"
                 ");";
 
         private val LOG_TAG = javaClass<CommentsTable>().getSimpleName()

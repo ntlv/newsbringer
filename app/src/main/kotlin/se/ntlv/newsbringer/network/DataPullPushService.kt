@@ -65,9 +65,13 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
     }
 
     fun Intent?.doAction() {
-        when (this?.getAction()) {
+        if (this == null) {
+            return
+        }
+
+        when (this.getAction()) {
             ACTION_FETCH_THREADS -> mQueue.add(getTopHundredRequest())
-            ACTION_FETCH_COMMENTS -> fetchComments(this?.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L))
+            ACTION_FETCH_COMMENTS -> fetchComments(this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L), this.getBooleanExtra(EXTRA_DISALLOW_FETCH, false))
             else -> Log.d(TAG, "Attempted to start $TAG with illegal argument")
         }
     }
@@ -103,6 +107,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         public val TAG: String = javaClass<DataPullPushService>().getSimpleName()
 
         val EXTRA_NEWSTHREAD_ID: String = "${TAG}extra_newsthread_id"
+        val EXTRA_DISALLOW_FETCH: String = "${TAG}extra_disallow_fetch_skip"
 
         public var URI_SUFFIX: String = ".json"
         public var BASE_URI: String = "https://hacker-news.firebaseio.com/v0"
@@ -122,38 +127,37 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
             context.startService(intent)
         }
 
-        public fun startActionFetchComments(context: Context, id: Long?) {
-            if (id == null) {
-                return
-            }
+        public fun startActionFetchComments(context: Context, id: Long, disallowFetchSkip : Boolean) {
+
             Log.d(TAG, "Starting action fetch comments for $id")
             val intent = Intent(context, javaClass<DataPullPushService>())
             intent.setAction(ACTION_FETCH_COMMENTS)
             intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
+            intent.putExtra(EXTRA_DISALLOW_FETCH, disallowFetchSkip)
             context.startService(intent)
         }
     }
 
-    fun isAlreadyFetched(id : Long) : Boolean {
-        val uri = NewsContentProvider.CONTENT_URI_COMMENTS
-        val projection = array(CommentsTable.COLUMN_ID, CommentsTable.COLUMN_PARENT)
-        val selection = "${CommentsTable.COLUMN_PARENT}=$id"
-        val exists = (getContentResolver().query(uri, projection, selection, null, null).getCount() < 1).not()
-        Log.d(TAG, "id: $id, exists: $exists")
-        return exists
-    }
-
-    fun fetchComments(newsthreadId: Long?) {
-        if (newsthreadId == null || newsthreadId == -1L || isAlreadyFetched(newsthreadId)) {
-            return
+    fun fetchComments(newsthreadId: Long, disallowFetchSkip: kotlin.Boolean) {
+        if (newsthreadId == -1L) {
+            throw IllegalArgumentException("Thread id can't be -1")
         }
+
+        val uri = NewsContentProvider.CONTENT_URI_COMMENTS
+        var selection = "${CommentsTable.COLUMN_PARENT}=?"
+        val selectionArgs = array(newsthreadId.toString())
+
+        val commentsExists = getContentResolver().query(uri, array(CommentsTable.COLUMN_PARENT), selection, selectionArgs, null).getCount() > 0
+
+        if(commentsExists && disallowFetchSkip){
+            getContentResolver().delete(uri, selection, selectionArgs)
+        }
+
         val projection = array(PostTable.COLUMN_ID, PostTable.COLUMN_CHILDREN)
-        val selection = "${PostTable.COLUMN_ID}=${newsthreadId}"
-        val result = getContentResolver().query(NewsContentProvider.CONTENT_URI_POSTS, projection, selection, null, null)
-        Log.d(TAG, "Query done, result size is ${result.getCount()}" )
+        val commentsSelection = "${PostTable.COLUMN_ID}=$newsthreadId"
+        val result = getContentResolver().query(NewsContentProvider.CONTENT_URI_POSTS, projection, commentsSelection, null, null)
+
         if (result.moveToFirst()) {
-            //we have some results, it is safe to do things with the cursor
-            Log.d(TAG, "Got results, mapping on cursor $result")
             result.getString(result.getColumnIndexOrThrow(PostTable.COLUMN_CHILDREN))
                     .split(',')
                     .map { it.toLong() }

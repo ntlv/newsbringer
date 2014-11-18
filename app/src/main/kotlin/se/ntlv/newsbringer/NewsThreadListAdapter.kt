@@ -21,6 +21,7 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
         tag.score.setText(cursor.getString(PostTable.COLUMN_SCORE))
         tag.link = cursor.getString(PostTable.COLUMN_URL)
         tag.id = cursor.getLong(PostTable.COLUMN_ID)
+        tag.text = cursor.getString(PostTable.COLUMN_TEXT)
     }
 
     fun Cursor.getString(columnName: String): String = getString(getColumnIndexOrThrow(columnName))
@@ -28,7 +29,6 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
 
 
     class ViewHolder(root: View) {
-        val text = root.findViewById(R.id.text) as TextView
         val title = root.findViewById(R.id.title) as TextView
         val by = root.findViewById(R.id.by) as TextView
         val ordinal = root.findViewById(R.id.ordinal) as TextView
@@ -36,11 +36,12 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
         val score = root.findViewById(R.id.score) as TextView
         var link: String? = null
         var id: Long? = null
+        var text: String? = null
 
         fun TextView.getContent(): String = this.getText().toString()
 
         val metadata: Metadata
-            get() = Metadata(id, text.getContent(), title.getContent(), by.getContent(), time.getContent(), score.getContent(), link)
+            get() = Metadata(id, text ?: "", title.getContent(), by.getContent(), time.getContent(), score.getContent(), link)
     }
 
     val View.tag: ViewHolder
