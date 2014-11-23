@@ -61,16 +61,25 @@ public class Comment {
     public var text: String? = null
     public var type: String? = null
 
-    public fun getAsContentValues(ordinal: Int): ContentValues {
+    public fun getAsContentValues(ordinal: Int,
+                                  ancestorCount: kotlin.Int,
+                                  ancestorOrdinal: Int,
+                                  threadParent: Long): ContentValues {
         val cv = ContentValues(8)
-        cv.put(CommentsTable.COLUMN_PARENT, parent)
+        if (ancestorCount > 0) {
+            cv.put(CommentsTable.COLUMN_PARENT_COMMENT, parent)
+            cv.put(CommentsTable.COLUMN_PARENT, threadParent)
+        } else {
+            cv.put(CommentsTable.COLUMN_PARENT, parent)
+        }
         cv.put(CommentsTable.COLUMN_TIME, time)
         cv.put(CommentsTable.COLUMN_ID, id)
         cv.put(CommentsTable.COLUMN_BY, by ?: "Unknown author")
         cv.put(CommentsTable.COLUMN_KIDS, kids.joinToString())
         cv.put(CommentsTable.COLUMN_TEXT, text ?: "No text")
         cv.put(CommentsTable.COLUMN_TYPE, type ?: "Unknown type")
-        cv.put(CommentsTable.COLUMN_ORDINAL, ordinal)
+        cv.put(CommentsTable.COLUMN_ORDINAL, ancestorOrdinal + ordinal)
+        cv.put(CommentsTable.COLUMN_ANCESTOR_COUNT, ancestorCount)
         return cv
     }
 }

@@ -19,6 +19,8 @@ import com.android.volley.toolbox.Volley
 import java.util.ArrayList
 import se.ntlv.newsbringer.database.PostTable
 import se.ntlv.newsbringer.database.CommentsTable
+import android.net.Uri
+import se.ntlv.newsbringer.database.DatabaseHelper
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -72,6 +74,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         when (this.getAction()) {
             ACTION_FETCH_THREADS -> mQueue.add(getTopHundredRequest())
             ACTION_FETCH_COMMENTS -> fetchComments(this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L), this.getBooleanExtra(EXTRA_DISALLOW_FETCH, false))
+            ACTION_FETCH_CHILD_COMMENTS -> fetchChildComments(this.getLongExtra(EXTRA_PARENT_COMMENT_ID, -1L), this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L))
             else -> Log.d(TAG, "Attempted to start $TAG with illegal argument")
         }
     }
@@ -92,11 +95,12 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         return GsonRequest(url, javaClass<NewsThread>(), null, listener, errorListener)
     }
 
-    fun makeCommentRequest(ordinal: Int, id: Long): GsonRequest<Comment> {
+    fun makeCommentRequest(ordinal: Int, id: Long, ancestorCount: Int = 0, ancestorOrdinal: Int = 0, threadParent: Long = -1): GsonRequest<Comment> {
         val url = "${ITEM_URI}/${id}${URI_SUFFIX}"
         val listener = object : Response.Listener<Comment> {
             override fun onResponse(response: Comment) {
-                getContentResolver().insert(NewsContentProvider.CONTENT_URI_COMMENTS, response.getAsContentValues(ordinal))
+                val reified = response.getAsContentValues(ordinal, ancestorCount, ancestorOrdinal, threadParent)
+                getContentResolver().insert(NewsContentProvider.CONTENT_URI_COMMENTS, reified)
             }
         }
         return GsonRequest(url, javaClass<Comment>(), null, listener, mErrorListener)
@@ -108,6 +112,10 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
         val EXTRA_NEWSTHREAD_ID: String = "${TAG}extra_newsthread_id"
         val EXTRA_DISALLOW_FETCH: String = "${TAG}extra_disallow_fetch_skip"
+
+        val EXTRA_PARENT_COMMENT_ID: String = "${TAG}extra_parent_comment_id"
+        val ACTION_FETCH_CHILD_COMMENTS: String = "${TAG}action_fetch_child_comments"
+
 
         public var URI_SUFFIX: String = ".json"
         public var BASE_URI: String = "https://hacker-news.firebaseio.com/v0"
@@ -127,7 +135,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
             context.startService(intent)
         }
 
-        public fun startActionFetchComments(context: Context, id: Long, disallowFetchSkip : Boolean) {
+        public fun startActionFetchComments(context: Context, id: Long, disallowFetchSkip: Boolean) {
 
             Log.d(TAG, "Starting action fetch comments for $id")
             val intent = Intent(context, javaClass<DataPullPushService>())
@@ -136,21 +144,30 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
             intent.putExtra(EXTRA_DISALLOW_FETCH, disallowFetchSkip)
             context.startService(intent)
         }
+
+        fun startActionFetchChildComments(context: Context,
+                                          id: Long,
+                                          newsThread: Long) {
+            Log.d(TAG, "Starting action fetch comments for $id")
+            val intent = Intent(context, javaClass<DataPullPushService>())
+            intent.setAction(ACTION_FETCH_CHILD_COMMENTS)
+            intent.putExtra(EXTRA_PARENT_COMMENT_ID, id)
+            intent.putExtra(EXTRA_NEWSTHREAD_ID, newsThread)
+            context.startService(intent)
+        }
     }
 
-    fun fetchComments(newsthreadId: Long, disallowFetchSkip: kotlin.Boolean) {
+    fun fetchComments(newsthreadId: Long, disallowFetchSkip: Boolean) {
         if (newsthreadId == -1L) {
             throw IllegalArgumentException("Thread id can't be -1")
         }
-
         val uri = NewsContentProvider.CONTENT_URI_COMMENTS
-        var selection = "${CommentsTable.COLUMN_PARENT}=?"
+        val selection = "${CommentsTable.COLUMN_PARENT}=?"
         val selectionArgs = array(newsthreadId.toString())
-
-        val commentsExists = getContentResolver().query(uri, array(CommentsTable.COLUMN_PARENT), selection, selectionArgs, null).getCount() > 0
-
-        if(commentsExists && disallowFetchSkip){
-            getContentResolver().delete(uri, selection, selectionArgs)
+        val commentsExists = hasComments(uri, selection, selectionArgs)
+        when {
+            commentsExists && !disallowFetchSkip -> return //we have previously fetched comments no need to refetch
+            commentsExists && disallowFetchSkip -> getContentResolver().delete(uri, selection, selectionArgs) //user wants fresh comments, refetch
         }
 
         val projection = array(PostTable.COLUMN_ID, PostTable.COLUMN_CHILDREN)
@@ -166,6 +183,69 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
         }
         result.close()
+    }
+
+    fun fetchChildComments(parentComment: Long, parentThread: Long) {
+        if (parentComment == -1L || parentThread == -1L) {
+            throw IllegalArgumentException("Thread id can't be -1")
+        }
+
+        val uri = NewsContentProvider.CONTENT_URI_COMMENTS
+        val selection = "${CommentsTable.COLUMN_ID}=?"
+        val selectionArgs = array(parentComment.toString())
+        val projection = array(
+                CommentsTable.COLUMN_ID,
+                CommentsTable.COLUMN_ANCESTOR_COUNT,
+                CommentsTable.COLUMN_ORDINAL,
+                CommentsTable.COLUMN_KIDS
+        )
+
+        val parentRow = getContentResolver().query(uri, projection, selection, selectionArgs, null)
+        if (parentRow.moveToFirst()) {
+
+            val kids = parentRow.getString(parentRow.getColumnIndexOrThrow(CommentsTable.COLUMN_KIDS))
+            when {
+                kids.isEmpty().not() -> {
+                    val kidIds = kids.split(',')
+                    bumpIndices(parentThread, kidIds.size)
+                    val freshCursor = getContentResolver().query(uri, projection, selection, selectionArgs, null)
+                    freshCursor.moveToFirst()
+                    val ancestorCount = freshCursor.getInt(freshCursor.getColumnIndexOrThrow(CommentsTable.COLUMN_ANCESTOR_COUNT))
+                    val ancestorOrdinal = freshCursor.getString(freshCursor.getColumnIndexOrThrow(CommentsTable.COLUMN_ORDINAL)).toInt()
+                    freshCursor.close()
+                    kidIds.map { it.trim().toLong() }
+                            .withIndices()
+                            .forEach { mQueue.add(makeCommentRequest(it.first, it.second, ancestorCount + 1, ancestorOrdinal, parentThread)) }
+                }
+            }
+
+        }
+        parentRow.close()
+
+    }
+
+    private fun hasComments(uri: Uri,
+                            selection: String,
+                            selArgs: Array<String>): Boolean {
+
+        val existingCommentsQuery = getContentResolver().query(uri, array(CommentsTable.COLUMN_PARENT), selection, selArgs, null)
+        val commentsExists = existingCommentsQuery.getCount() > 0
+        existingCommentsQuery.close()
+        return commentsExists
+    }
+
+    fun bumpIndices(parentThread: Long, spaceNeeded: Int) {
+        val db = DatabaseHelper(this).getWritableDatabase()
+        val mult = when {
+            spaceNeeded < 10 -> 10
+            spaceNeeded < 100 -> 100
+            spaceNeeded < 1000 -> 1000
+            else -> 4
+        }
+        val column = CommentsTable.COLUMN_ORDINAL
+        db.execSQL("UPDATE ${CommentsTable.TABLE_NAME} SET $column = ($column * $mult) WHERE ${CommentsTable.COLUMN_PARENT} = $parentThread")
+
+        db.close()
     }
 }
 

@@ -18,6 +18,10 @@ import android.view.LayoutInflater
 import android.widget.LinearLayout
 import android.view.ViewGroup
 import android.support.v4.widget.SwipeRefreshLayout
+import android.text.Html
+import android.widget.RelativeLayout
+import android.net.Uri
+import android.view.View
 
 
 public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
@@ -26,7 +30,16 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
         if (args == null || args.getLong(LOADER_ARGS_ID, -1L) == -1L) {
             throw IllegalArgumentException("Cannot instantiate loader will null arguments or missing arguments")
         }
-        val projection = array(CommentsTable.COLUMN_BY, CommentsTable.COLUMN_TEXT, CommentsTable.COLUMN_TIME, CommentsTable.COLUMN_ORDINAL, CommentsTable.COLUMN_ID)
+        val projection = array(
+                CommentsTable.COLUMN_BY,
+                CommentsTable.COLUMN_TEXT,
+                CommentsTable.COLUMN_TIME,
+                CommentsTable.COLUMN_ORDINAL,
+                CommentsTable.COLUMN_ID,
+                CommentsTable.COLUMN_ANCESTOR_COUNT,
+                CommentsTable.COLUMN_KIDS
+
+        )
         val selection = "${CommentsTable.COLUMN_PARENT}=?"
         val selectionArgs = array(args.getLong(LOADER_ARGS_ID).toString())
         val sorting = CommentsTable.COLUMN_ORDINAL + " ASC"
@@ -55,7 +68,10 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
         if (newsthreadId == 0L) {
             throw IllegalArgumentException("Cannot show newsthread without id")
         }
+
         setContentView(R.layout.activity_swipe_refresh_list_view_layout)
+        setTitle(args.getString(EXTRA_NEWSTHREAD_TITLE))
+
         val loaderArgs = Bundle()
         loaderArgs.putLong(LOADER_ARGS_ID, newsthreadId)
         getLoaderManager().initLoader(0, loaderArgs, this)
@@ -73,28 +89,35 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
         val link = args.getString(EXTRA_NEWSTHREAD_LINK)
 
         val array = array(
-                Pair(R.id.title, title),
-                Pair(R.id.text, text),
-                Pair(R.id.by, by),
-                Pair(R.id.time, time),
-                Pair(R.id.score, score),
-                Pair(R.id.link, link)
+                Triple(R.id.title, title, true),
+                Triple(R.id.text, text, false),
+                Triple(R.id.by, by, false),
+                Triple(R.id.time, time, false),
+                Triple(R.id.score, score,false)
         )
 
         val listView = mSwipeView.findViewById(R.id.list_view) as ListView
-        val headerView: LinearLayout = LayoutInflater.from(this).inflate(R.layout.list_header_newsthread, listView, false) as LinearLayout
+        val headerView = LayoutInflater.from(this).inflate(R.layout.list_header_newsthread, listView, false) as LinearLayout
+        headerView.setOnClickListener { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link))) }
 
-        array.forEach { findViewAndSetText(headerView, it.first, it.second) }
+        array.forEach { findViewAndSetText(headerView, it.first, it.second, it.third) }
 
         listView.addHeaderView(headerView) //important to call before setAdapter if SDK_LEVEL < KITKAT
         listView.setAdapter(mAdapter)
+        listView.setOnItemClickListener {(adapterView, view, i, l) -> fetchChildComments(view, newsthreadId) }
 
         refresh(newsthreadId)
     }
 
-    fun findViewAndSetText(root: ViewGroup, id: Int, text: String) {
+    fun findViewAndSetText(root: ViewGroup, id: Int, text: String, isHtml : Boolean) {
         val view = root.findViewById(id)
-        if (view is TextView) view.setText(text)
+        if (view is TextView) {
+            if (isHtml) {
+                view.setText(Html.fromHtml(text))
+            } else {
+                view.setText(text)
+            }
+        }
     }
 
     class object {
@@ -128,6 +151,14 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
             mSwipeView.setRefreshing(true)
         }
         DataPullPushService.startActionFetchComments(this, id, disallowFetchSkip)
+    }
+
+    fun fetchChildComments(view: View,
+                            threadId: Long) {
+        val tag = view.getTag()
+        if (tag is CommentsListAdapter.ViewHolder && tag.id != null) {
+            DataPullPushService.startActionFetchChildComments(this, tag.id ?: -1L, threadId)
+        }
     }
 
 
