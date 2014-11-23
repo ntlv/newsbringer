@@ -99,12 +99,19 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         return GsonRequest(url, javaClass<NewsThread>(), null, listener, errorListener)
     }
 
-    fun makeCommentRequest(ordinal: Int, id: Long, ancestorCount: Int = 0, ancestorOrdinal: Double = 0.0, threadParent: Long = -1): GsonRequest<Comment> {
+    fun makeCommentRequest(ordinal: Int,
+                           id: Long,
+                           ancestorCount: Int = 0,
+                           ancestorOrdinal: Double = 0.0,
+                           threadParent: Long): GsonRequest<Comment> {
         val url = "${ITEM_URI}${id}${URI_SUFFIX}"
         val listener = object : Response.Listener<Comment> {
             override fun onResponse(response: Comment) {
                 val reified = response.getAsContentValues(ordinal, ancestorCount, ancestorOrdinal, threadParent)
                 resolver.insert(NewsContentProvider.CONTENT_URI_COMMENTS, reified)
+                if (ancestorCount in 0 .. 4 ) {
+                    fetchChildComments(response.id, threadParent)
+                }
             }
         }
         return GsonRequest(url, javaClass<Comment>(), null, listener, mErrorListener)
@@ -186,7 +193,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
                     .split(',')
                     .map { it.toLong() }
                     .withIndices()
-                    .forEach { mQueue.add(makeCommentRequest(it.first, it.second)) }
+                    .forEach { mQueue.add(makeCommentRequest(it.first, it.second, threadParent = newsthreadId)) }
 
         }
         result.close()

@@ -63,7 +63,7 @@ public class NewsContentProvider : ContentProvider() {
             }
             COMMENTS -> {
                 Log.d(LOG_TAG, "insert $contentValues into $sqlDB")
-                val id = sqlDB.insert(CommentsTable.TABLE_NAME, null, contentValues)
+                val id = sqlDB.replace(CommentsTable.TABLE_NAME, null, contentValues) //TODO figure out something better
                 getContext().getContentResolver().notifyChange(uri, null)
                 return Uri.parse(CONTENT_COMMENTS + "/" + id)
             }
