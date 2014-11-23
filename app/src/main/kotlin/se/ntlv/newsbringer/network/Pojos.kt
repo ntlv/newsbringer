@@ -62,8 +62,8 @@ public class Comment {
     public var type: String? = null
 
     public fun getAsContentValues(ordinal: Int,
-                                  ancestorCount: kotlin.Int,
-                                  ancestorOrdinal: Int,
+                                  ancestorCount: Int,
+                                  ancestorOrdinal: Double,
                                   threadParent: Long): ContentValues {
         val cv = ContentValues(8)
         if (ancestorCount > 0) {
@@ -78,7 +78,7 @@ public class Comment {
         cv.put(CommentsTable.COLUMN_KIDS, kids.joinToString())
         cv.put(CommentsTable.COLUMN_TEXT, text ?: "No text")
         cv.put(CommentsTable.COLUMN_TYPE, type ?: "Unknown type")
-        cv.put(CommentsTable.COLUMN_ORDINAL, ancestorOrdinal + ordinal)
+        cv.put(CommentsTable.COLUMN_ORDINAL, ancestorOrdinal + ordinal/Math.pow(10.0, ancestorCount.toDouble()))
         cv.put(CommentsTable.COLUMN_ANCESTOR_COUNT, ancestorCount)
         return cv
     }

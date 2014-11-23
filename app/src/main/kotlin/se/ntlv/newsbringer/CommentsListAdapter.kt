@@ -12,6 +12,8 @@ import se.ntlv.newsbringer.database.CommentsTable
 import android.text.Html
 import android.graphics.Color
 import android.util.TypedValue
+import android.graphics.drawable.StateListDrawable
+import android.graphics.drawable.ColorDrawable
 
 open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags: Int) :
         ResourceCursorAdapter(ctx, layout, cursor, flags) {
@@ -27,9 +29,20 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
         tag.kids.setText(cursor.getString(CommentsTable.COLUMN_KIDS))
         val padding = cursor.getInt(CommentsTable.COLUMN_ANCESTOR_COUNT).toFloat()
 
-        view.setPadding((pxPadding + padding * 10f).toInt(), view.getPaddingTop(), view.getPaddingRight(), view.getPaddingBottom())
-        val minus = (246 - padding * 10).mod(256).toInt()
-        view.setBackgroundColor(Color.rgb(246, minus, minus))
+        view.setPadding((pxPadding + padding * 15f).toInt(), view.getPaddingTop(), view.getPaddingRight(), view.getPaddingBottom())
+        val minus = (246 - padding * 20).mod(256).toInt()
+        val states = StateListDrawable();
+
+        val pressed = IntArray(1)
+        pressed.set(0, android.R.attr.state_pressed)
+
+        val focused = IntArray(1)
+        focused.set(0, android.R.attr.state_focused)
+
+        states.addState(pressed, ColorDrawable(android.R.color.darker_gray));
+        states.addState(focused, ColorDrawable(android.R.color.darker_gray));
+        states.addState(IntArray(0), ColorDrawable(Color.rgb(246, minus, minus)));
+        view.setBackground(states)
     }
 
     fun Cursor.getString(columnName: String): String = getString(getColumnIndexOrThrow(columnName))

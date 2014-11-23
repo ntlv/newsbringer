@@ -19,9 +19,10 @@ import android.widget.LinearLayout
 import android.view.ViewGroup
 import android.support.v4.widget.SwipeRefreshLayout
 import android.text.Html
-import android.widget.RelativeLayout
 import android.net.Uri
 import android.view.View
+import java.util.HashSet
+import android.util.Log
 
 
 public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
@@ -60,6 +61,10 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
     override fun onCreate(savedInstanceState: Bundle?) {
         super<Activity>.onCreate(savedInstanceState)
 
+        if(savedInstanceState != null) {
+            val positions = savedInstanceState.getLongArray(STATE_HANDLED_POSITIONS)
+            positions.forEach { handledPositions.add(it) }
+        }
 
         val args = getIntent().getExtras()
 
@@ -76,10 +81,12 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
         loaderArgs.putLong(LOADER_ARGS_ID, newsthreadId)
         getLoaderManager().initLoader(0, loaderArgs, this)
         mSwipeView.setOnRefreshListener { refresh(newsthreadId, true, true) }
-        mSwipeView.setColorScheme(android.R.color.holo_blue_light,
+        mSwipeView.setColorSchemeResources(
+                android.R.color.holo_blue_light,
                 android.R.color.holo_green_light,
                 android.R.color.holo_orange_light,
-                android.R.color.holo_red_light)
+                android.R.color.holo_red_light
+        )
 
         val title = args.getString(EXTRA_NEWSTHREAD_TITLE)
         val text = args.getString(EXTRA_NEWSTHREAD_TEXT)
@@ -93,7 +100,7 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
                 Triple(R.id.text, text, false),
                 Triple(R.id.by, by, false),
                 Triple(R.id.time, time, false),
-                Triple(R.id.score, score,false)
+                Triple(R.id.score, score, false)
         )
 
         val listView = mSwipeView.findViewById(R.id.list_view) as ListView
@@ -104,12 +111,12 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
 
         listView.addHeaderView(headerView) //important to call before setAdapter if SDK_LEVEL < KITKAT
         listView.setAdapter(mAdapter)
-        listView.setOnItemClickListener {(adapterView, view, i, l) -> fetchChildComments(view, newsthreadId) }
+        listView.setOnItemClickListener {(adapterView, view, i, l) -> fetchChildComments(l, view, newsthreadId) }
 
         refresh(newsthreadId)
     }
 
-    fun findViewAndSetText(root: ViewGroup, id: Int, text: String, isHtml : Boolean) {
+    fun findViewAndSetText(root: ViewGroup, id: Int, text: String, isHtml: Boolean) {
         val view = root.findViewById(id)
         if (view is TextView) {
             if (isHtml) {
@@ -130,6 +137,8 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
         val EXTRA_NEWSTHREAD_TIME: String = "${TAG}extra_news_thread_time"
         val EXTRA_NEWSTHREAD_SCORE: String = "${TAG}extra_news_thread_score"
         val EXTRA_NEWSTHREAD_LINK: String = "${TAG}extra_news_thread_link"
+
+        val STATE_HANDLED_POSITIONS: String = "${TAG}_handled_positions"
 
         val LOADER_ARGS_ID: String = "${TAG}loader_args_id"
 
@@ -153,13 +162,28 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
         DataPullPushService.startActionFetchComments(this, id, disallowFetchSkip)
     }
 
-    fun fetchChildComments(view: View,
-                            threadId: Long) {
-        val tag = view.getTag()
-        if (tag is CommentsListAdapter.ViewHolder && tag.id != null) {
-            DataPullPushService.startActionFetchChildComments(this, tag.id ?: -1L, threadId)
-        }
+    val handledPositions by Delegates.lazy {
+        HashSet<Long>()
     }
 
+    override fun onSaveInstanceState(bundle: Bundle) {
+        super<Activity>.onSaveInstanceState(bundle)
 
+        val out = LongArray(handledPositions.size)
+        handledPositions.withIndices().forEach { out.set(it.first, it.second) }
+
+        bundle.putLongArray(STATE_HANDLED_POSITIONS, out)
+    }
+
+    fun fetchChildComments(commentId: Long, view: View, threadId: Long) {
+        if ((commentId in handledPositions).not()) {
+            handledPositions.add(commentId)
+            val tag = view.getTag()
+            if (tag is CommentsListAdapter.ViewHolder && tag.id != null) {
+                DataPullPushService.startActionFetchChildComments(this, tag.id ?: -1L, threadId)
+            }
+        } else {
+            Log.d(TAG, "Ignoring click event on view $commentId")
+        }
+    }
 }

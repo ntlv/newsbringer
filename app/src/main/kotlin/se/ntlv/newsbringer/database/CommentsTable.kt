@@ -35,7 +35,7 @@ public class CommentsTable {
                 COLUMN_KIDS + " text not null, " +
                 COLUMN_TEXT + " text not null, " +
                 COLUMN_TYPE + " text not null, " +
-                COLUMN_ORDINAL + " integer not null " +
+                COLUMN_ORDINAL + " real not null " +
                 ");";
 
         private val LOG_TAG = javaClass<CommentsTable>().getSimpleName()
