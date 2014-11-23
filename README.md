@@ -1,7 +1,7 @@
 # Newsbringer
 ## A hacker news reader
 
-Newsbringer (tentative name) is a simplistic and to the point reader app for <news.ycombinator.com> . The app is currently being developed as a weekend project with the hopes of releasing it on Google Play soon™.
+Newsbringer (tentative name) is a simplistic and to the point reader app for news.ycombinator.com. The app is currently being developed as a weekend project with the hopes of releasing it on Google Play soon™.
 
 ### Currently implemented
 * Fetch and cache current top hundred entries
