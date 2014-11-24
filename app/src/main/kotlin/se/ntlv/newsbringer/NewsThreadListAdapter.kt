@@ -7,7 +7,7 @@ import android.view.View
 import android.widget.TextView
 import se.ntlv.newsbringer.database.PostTable
 import se.ntlv.newsbringer.NewsThreadListAdapter.ViewHolder
-import se.ntlv.newsbringer.network.Metadata
+import se.ntlv.newsbringer.network.NewsThread.Metadata
 
 open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags: Int) :
         ResourceCursorAdapter(ctx, layout, cursor, flags) {

@@ -7,7 +7,7 @@ import android.view.View
 import android.widget.TextView
 import se.ntlv.newsbringer.database.PostTable
 import se.ntlv.newsbringer.NewsThreadListAdapter.ViewHolder
-import se.ntlv.newsbringer.network.Metadata
+import se.ntlv.newsbringer.network.NewsThread.Metadata
 import se.ntlv.newsbringer.database.CommentsTable
 import android.text.Html
 import android.graphics.Color

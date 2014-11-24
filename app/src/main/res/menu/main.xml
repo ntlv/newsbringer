@@ -6,7 +6,7 @@
         android:orderInCategory="100"
         android:showAsAction="never" />
 	<item android:id="@+id/refresh"
-		  android:title="Refresh"
+		  android:title="@string/actionbar_item_title_refresh"
 		  android:orderInCategory="0"
 		  android:showAsAction="ifRoom"/>
 

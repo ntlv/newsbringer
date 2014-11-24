@@ -179,7 +179,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         when {
             commentsExists && !disallowFetchSkip -> return
             commentsExists && disallowFetchSkip ->
-                resolver.delete(uri, selection, selectionArgs) //user wants fresh comments, refetch
+                resolver.delete(uri, selection, selectionArgs) //user wants fresh comments, fetch again
         }
         val projection = array(
                 PostTable.COLUMN_ID,

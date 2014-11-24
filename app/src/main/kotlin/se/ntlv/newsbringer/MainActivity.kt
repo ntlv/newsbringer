@@ -35,7 +35,7 @@ public class MainActivity : Activity(), AbstractCursorLoaderCallbacks {
         setContentView(R.layout.activity_swipe_refresh_list_view_layout)
 
         mSwipeView.setOnRefreshListener { refresh(isCallFromSwipeView = true) }
-        mSwipeView.setColorScheme(android.R.color.holo_blue_light,
+        mSwipeView.setColorSchemeResources(android.R.color.holo_blue_light,
                 android.R.color.holo_green_light,
                 android.R.color.holo_orange_light,
                 android.R.color.holo_red_light)
@@ -75,13 +75,13 @@ public class MainActivity : Activity(), AbstractCursorLoaderCallbacks {
     }
 
     fun refresh(isCallFromSwipeView: Boolean = false) {
-        if (!isCallFromSwipeView) {
+        if (isCallFromSwipeView.not()) {
             mSwipeView.setRefreshing(true)
         }
         DataPullPushService.startActionFetchThreads(this)
     }
 
-    override fun onCreateLoader(i: Int, bundle: Bundle?): Loader<Cursor> {
+    override fun onCreateLoader(id: Int, args: Bundle?): Loader<Cursor> {
         mSwipeView.setRefreshing(true)
         return CursorLoader(this, NewsContentProvider.CONTENT_URI_POSTS, PROJECTION, null, null, PostTable.COLUMN_ORDINAL + " DESC")
     }

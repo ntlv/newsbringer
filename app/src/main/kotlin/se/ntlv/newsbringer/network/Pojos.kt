@@ -5,7 +5,7 @@ import se.ntlv.newsbringer.database.PostTable
 import java.util.ArrayList
 import se.ntlv.newsbringer.database.CommentsTable
 
-class NewsThread {
+public class NewsThread {
     public var score: Int = 0
     public var time: Long = 0
     public var id: Long = 0
@@ -32,23 +32,23 @@ class NewsThread {
 
         return cv
     }
-}
 
-fun calculateOrdinal(time: Long, score: Int): Double {
-    val unixTime = System.currentTimeMillis().div(1000)
-    val hoursSinceSubmission = unixTime.minus(time).div(3600)
-    val adjustedScore = (score.minus(1)).toDouble()
-    return adjustedScore.div(Math.pow((hoursSinceSubmission.plus(2)).toDouble(), 1.8))
-}
+    fun calculateOrdinal(time: Long, score: Int): Double {
+        val unixTime = System.currentTimeMillis().div(1000)
+        val hoursSinceSubmission = unixTime.minus(time).div(3600)
+        val adjustedScore = (score.minus(1)).toDouble()
+        return adjustedScore.div(Math.pow((hoursSinceSubmission.plus(2)).toDouble(), 1.8))
+    }
 
-data class Metadata(id: Long?, text: String, title: String, by: String, time: String, score: String, link: String?) {
-    val id = id
-    val text = text
-    val title = title
-    val by = by
-    val time = time
-    val score = score
-    val link = link
+    data class Metadata(id: Long?, text: String, title: String, by: String, time: String, score: String, link: String?) {
+        val id = id
+        val text = text
+        val title = title
+        val by = by
+        val time = time
+        val score = score
+        val link = link
+    }
 }
 
 public class Comment {
@@ -75,11 +75,15 @@ public class Comment {
         cv.put(CommentsTable.COLUMN_TIME, time)
         cv.put(CommentsTable.COLUMN_ID, id)
         cv.put(CommentsTable.COLUMN_BY, by ?: "Unknown author")
-        cv.put(CommentsTable.COLUMN_KIDS, kids.joinToString())
+        cv.put(CommentsTable.COLUMN_KIDS, kids.joinToString(",", "", ""))
         cv.put(CommentsTable.COLUMN_TEXT, text ?: "No text")
         cv.put(CommentsTable.COLUMN_TYPE, type ?: "Unknown type")
-        cv.put(CommentsTable.COLUMN_ORDINAL, ancestorOrdinal + ordinal/Math.pow(10.0, ancestorCount.toDouble()))
+        cv.put(CommentsTable.COLUMN_ORDINAL, calculateOrdinal(ordinal, ancestorOrdinal, ancestorCount))
         cv.put(CommentsTable.COLUMN_ANCESTOR_COUNT, ancestorCount)
         return cv
+    }
+
+    fun calculateOrdinal(ordinal: Int,  ancestorOrdinal: Double, ancestorCount: Int): Double {
+        return ancestorOrdinal + ordinal/Math.pow(10.0, ancestorCount.toDouble())
     }
 }

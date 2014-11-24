@@ -6,7 +6,7 @@ import android.content.Context
 import android.os.Bundle
 import android.database.Cursor
 import android.content.Loader
-import se.ntlv.newsbringer.network.Metadata
+import se.ntlv.newsbringer.network.NewsThread.Metadata
 import android.widget.TextView
 import kotlin.properties.Delegates
 import android.widget.ListView

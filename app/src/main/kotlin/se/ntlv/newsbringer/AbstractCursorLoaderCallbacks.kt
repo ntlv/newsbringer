@@ -11,7 +11,7 @@ trait AbstractCursorLoaderCallbacks : LoaderManager.LoaderCallbacks<Cursor> {
     fun getOnLoadFinishedCallback(): ((t: Cursor?) -> Unit)? = null
     fun getOnLoaderResetCallback(): ((t: Loader<Cursor>?) -> Unit)? = null
 
-    abstract override fun onCreateLoader(id: Int, args: Bundle?) : Loader<Cursor>
+    override fun onCreateLoader(id: Int, args: Bundle?) : Loader<Cursor>
 
     override fun onLoadFinished(loader: Loader<Cursor>?, cursor: Cursor?) {
         mAdapter.swapCursor(cursor)
