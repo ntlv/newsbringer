@@ -6,6 +6,7 @@ import java.util.ArrayList
 import se.ntlv.newsbringer.database.CommentsTable
 
 public class NewsThread {
+
     public var score: Int = 0
     public var time: Long = 0
     public var id: Long = 0
@@ -16,22 +17,23 @@ public class NewsThread {
     public var type: String? = null
     public var url: String? = null
 
-    public fun getAsContentValues(): ContentValues {
-        val cv = ContentValues(9)
-        cv.put(PostTable.COLUMN_ID, id)
-        cv.put(PostTable.COLUMN_SCORE, score)
-        cv.put(PostTable.COLUMN_TIMESTAMP, time)
-        cv.put(PostTable.COLUMN_BY, by ?: "Unknown author")
-        cv.put(PostTable.COLUMN_TITLE, title ?: "No title")
-        cv.put(PostTable.COLUMN_CHILDREN, kids?.joinToString(",", "", "") ?: "no children")
-        cv.put(PostTable.COLUMN_TEXT, text ?: "No text")
-        cv.put(PostTable.COLUMN_TYPE, type ?: "Unknown type")
-        cv.put(PostTable.COLUMN_URL, url ?: "Unkown URL")
+    val contentValue: ContentValues
+        get() {
+            val cv = ContentValues(9)
+            cv.put(PostTable.COLUMN_ID, id)
+            cv.put(PostTable.COLUMN_SCORE, score)
+            cv.put(PostTable.COLUMN_TIMESTAMP, time)
+            cv.put(PostTable.COLUMN_BY, by ?: "Unknown author")
+            cv.put(PostTable.COLUMN_TITLE, title ?: "No title")
+            cv.put(PostTable.COLUMN_CHILDREN, kids?.joinToString(",", "", "") ?: "")
+            cv.put(PostTable.COLUMN_TEXT, text ?: "No text")
+            cv.put(PostTable.COLUMN_TYPE, type ?: "Unknown type")
+            cv.put(PostTable.COLUMN_URL, url ?: "Unkown URL")
 
-        cv.put(PostTable.COLUMN_ORDINAL, calculateOrdinal(time, score))
+            cv.put(PostTable.COLUMN_ORDINAL, calculateOrdinal(time, score))
 
-        return cv
-    }
+            return cv
+        }
 
     fun calculateOrdinal(time: Long, score: Int): Double {
         val unixTime = System.currentTimeMillis().div(1000)
@@ -83,7 +85,7 @@ public class Comment {
         return cv
     }
 
-    fun calculateOrdinal(ordinal: Int,  ancestorOrdinal: Double, ancestorCount: Int): Double {
-        return ancestorOrdinal + ordinal/Math.pow(10.0, ancestorCount.toDouble())
+    fun calculateOrdinal(ordinal: Int, ancestorOrdinal: Double, ancestorCount: Int): Double {
+        return ancestorOrdinal + ordinal / Math.pow(10.0, ancestorCount.toDouble())
     }
 }

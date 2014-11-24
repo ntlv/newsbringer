@@ -5,9 +5,6 @@ import android.content.Context
 import android.widget.ResourceCursorAdapter
 import android.view.View
 import android.widget.TextView
-import se.ntlv.newsbringer.database.PostTable
-import se.ntlv.newsbringer.NewsThreadListAdapter.ViewHolder
-import se.ntlv.newsbringer.network.NewsThread.Metadata
 import se.ntlv.newsbringer.database.CommentsTable
 import android.text.Html
 import android.graphics.Color
@@ -18,7 +15,7 @@ import android.graphics.drawable.ColorDrawable
 open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags: Int) :
         ResourceCursorAdapter(ctx, layout, cursor, flags) {
 
-    val pxPadding = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_PX, 16f, ctx.getResources().getDisplayMetrics())
+    val pxPadding = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, ctx.getResources().getDisplayMetrics())
 
     override fun bindView(view: View, context: Context?, cursor: Cursor) {
         val tag = view.tag
@@ -30,7 +27,7 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
         val padding = cursor.getInt(CommentsTable.COLUMN_ANCESTOR_COUNT).toFloat()
 
         view.setPadding((pxPadding + padding * 15f).toInt(), view.getPaddingTop(), view.getPaddingRight(), view.getPaddingBottom())
-        val minus = (246 - padding * 20).mod(256).toInt()
+        val minus = (246 - padding * 30).mod(256).toInt()
         val states = StateListDrawable();
 
         val pressed = IntArray(1)
@@ -48,14 +45,14 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
     fun Cursor.getString(columnName: String): String = getString(getColumnIndexOrThrow(columnName))
     fun Cursor.getLong(columnName: String): Long = getLong(getColumnIndexOrThrow(columnName))
     fun Cursor.getInt(columnName: String): Int = getInt(getColumnIndexOrThrow(columnName))
-    fun TextView.setHtmlText(source : String) = this.setText(Html.fromHtml(source))
+    fun TextView.setHtmlText(source: String) = this.setText(Html.fromHtml(source))
 
 
     class ViewHolder(root: View) {
         val text = root.findViewById(R.id.text) as TextView
         val by = root.findViewById(R.id.by) as TextView
         val time = root.findViewById(R.id.time) as TextView
-        var id : Long? = null
+        var id: Long? = null
         val kids = root.findViewById(R.id.kids) as TextView
     }
 
@@ -70,7 +67,6 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
                 return tag as ViewHolder
             }
         }
-
 
 
 }

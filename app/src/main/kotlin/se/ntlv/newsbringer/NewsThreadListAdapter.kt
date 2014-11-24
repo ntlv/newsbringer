@@ -22,6 +22,13 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
         tag.link = cursor.getString(PostTable.COLUMN_URL)
         tag.id = cursor.getLong(PostTable.COLUMN_ID)
         tag.text = cursor.getString(PostTable.COLUMN_TEXT)
+        val children = cursor.getString(PostTable.COLUMN_CHILDREN)
+        if (children.length > 0) {
+            val strings = children.split(',')
+            tag.commentCount.setText(strings.size.toString())
+        } else {
+            tag.commentCount.setText("0")
+        }
     }
 
     fun Cursor.getString(columnName: String): String = getString(getColumnIndexOrThrow(columnName))
@@ -37,6 +44,7 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
         var link: String? = null
         var id: Long? = null
         var text: String? = null
+        val commentCount = root.findViewById(R.id.comment_count) as TextView
 
         fun TextView.getContent(): String = this.getText().toString()
 

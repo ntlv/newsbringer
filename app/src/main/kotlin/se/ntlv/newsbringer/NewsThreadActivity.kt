@@ -96,8 +96,8 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
         val link = args.getString(EXTRA_NEWSTHREAD_LINK)
 
         val array = array(
-                Triple(R.id.title, title, true),
-                Triple(R.id.text, text, false),
+                Triple(R.id.title, title, false),
+                Triple(R.id.text, text, true),
                 Triple(R.id.by, by, false),
                 Triple(R.id.time, time, false),
                 Triple(R.id.score, score, false)

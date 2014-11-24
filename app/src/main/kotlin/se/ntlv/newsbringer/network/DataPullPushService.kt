@@ -30,17 +30,9 @@ import android.content.ContentResolver
  */
 public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
-    val resolver: ContentResolver by Delegates.lazy {
-        getContentResolver()
-    }
+    val resolver: ContentResolver by Delegates.lazy { getContentResolver() }
 
-    val mQueue: RequestQueue by Delegates.lazy {
-        Volley.newRequestQueue(this)
-    }
-
-    val mTemporaryResponseStorage: ArrayList<ContentValues> by Delegates.lazy {
-        ArrayList<ContentValues>(100)
-    }
+    val mQueue: RequestQueue by Delegates.lazy { Volley.newRequestQueue(this) }
 
     private val mErrorListener = object : Response.ErrorListener {
         override fun onErrorResponse(error: VolleyError) {
@@ -62,11 +54,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
     private val mNewsThreadResponseListener = object : Response.Listener<NewsThread> {
         override fun onResponse(response: NewsThread) {
-            mTemporaryResponseStorage.add(response.getAsContentValues())
-            if (mTemporaryResponseStorage.size == 100) {
-                getContentResolver().delete(NewsContentProvider.CONTENT_URI_POSTS, null, null) //empty the table
-                getContentResolver().bulkInsert(NewsContentProvider.CONTENT_URI_POSTS, mTemporaryResponseStorage.copyToArray())
-            }
+                resolver.insert(NewsContentProvider.CONTENT_URI_POSTS, response.contentValue)
         }
     }
 
@@ -76,7 +64,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         }
 
         when (this.getAction()) {
-            ACTION_FETCH_THREADS -> mQueue.add(getTopHundredRequest())
+            ACTION_FETCH_THREADS -> handleFetchThreads()
             ACTION_FETCH_COMMENTS -> fetchComments(this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L), this.getBooleanExtra(EXTRA_DISALLOW_FETCH, false))
             ACTION_FETCH_CHILD_COMMENTS -> fetchChildComments(this.getLongExtra(EXTRA_PARENT_COMMENT_ID, -1L), this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L))
             else -> Log.d(TAG, "Attempted to start $TAG with illegal argument")
@@ -186,15 +174,16 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
                 PostTable.COLUMN_CHILDREN
         )
         val commentsSelection = "${PostTable.COLUMN_ID}=$newsthreadId"
-        val result = getContentResolver().query(NewsContentProvider.CONTENT_URI_POSTS, projection, commentsSelection, null, null)
+        val result = resolver.query(NewsContentProvider.CONTENT_URI_POSTS, projection, commentsSelection, null, null)
 
         if (result.moveToFirst()) {
-            result.getString(result.getColumnIndexOrThrow(PostTable.COLUMN_CHILDREN))
-                    .split(',')
-                    .map { it.toLong() }
-                    .withIndices()
-                    .forEach { mQueue.add(makeCommentRequest(it.first, it.second, threadParent = newsthreadId)) }
-
+            val kids = result.getString(result.getColumnIndexOrThrow(PostTable.COLUMN_CHILDREN))
+            if (kids.isEmpty().not()) {
+                kids.split(',')
+                        .map { it.trim().toLong() }
+                        .withIndices()
+                        .forEach { mQueue.add(makeCommentRequest(it.first, it.second, threadParent = newsthreadId)) }
+            }
         }
         result.close()
     }
@@ -212,7 +201,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
                 CommentsTable.COLUMN_ORDINAL,
                 CommentsTable.COLUMN_KIDS
         )
-        val parentRow = getContentResolver().query(uri, projection, selection, selectionArgs, null)
+        val parentRow = resolver.query(uri, projection, selection, selectionArgs, null)
         if (parentRow.moveToFirst()) {
             val kids = parentRow.getString(parentRow.getColumnIndexOrThrow(CommentsTable.COLUMN_KIDS))
             val ancestorCount = parentRow.getInt(parentRow.getColumnIndexOrThrow(CommentsTable.COLUMN_ANCESTOR_COUNT))
@@ -234,10 +223,15 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
                             selection: String,
                             selArgs: Array<String>): Boolean {
 
-        val existingCommentsQuery = getContentResolver().query(uri, array(CommentsTable.COLUMN_PARENT), selection, selArgs, null)
+        val existingCommentsQuery = resolver.query(uri, array(CommentsTable.COLUMN_PARENT), selection, selArgs, null)
         val commentsExists = existingCommentsQuery.getCount() > 0
         existingCommentsQuery.close()
         return commentsExists
+    }
+
+    fun handleFetchThreads() {
+        resolver.delete(NewsContentProvider.CONTENT_URI_POSTS, null, null)
+        mQueue.add(getTopHundredRequest())
     }
 }
 

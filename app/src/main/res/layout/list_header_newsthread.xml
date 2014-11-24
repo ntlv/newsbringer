@@ -25,15 +25,17 @@
 
 		<TextView
 			android:id="@+id/time"
-			tools:text="time"
+			tools:text="2 hours"
+            android:layout_gravity="end"
 			android:layout_width="wrap_content"
 			android:layout_height="wrap_content"
 			android:textStyle="italic"/>
 
 		<TextView
 			android:id="@+id/score"
-			tools:text="score"
-			android:layout_width="wrap_content"
+			tools:text="42"
+            android:layout_gravity="end"
+            android:layout_width="wrap_content"
 			android:layout_height="wrap_content"/>
 	</LinearLayout>
 
