@@ -1,79 +1,161 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-				xmlns:tools="http://schemas.android.com/tools"
-				android:orientation="vertical"
-				android:layout_width="match_parent"
-				android:paddingStart="16dp"
-				android:paddingEnd="16dp"
-				android:paddingTop="8dp"
-				android:paddingBottom="8dp"
-				android:background="@drawable/list_header_bg"
-				android:layout_height="match_parent">
+              xmlns:tools="http://schemas.android.com/tools"
+              android:orientation="vertical"
+              android:layout_width="match_parent"
+              android:paddingStart="16dp"
+              android:paddingEnd="16dp"
+              android:paddingTop="8dp"
+              android:paddingBottom="8dp"
+              android:background="@drawable/list_header_bg"
+              android:layout_height="match_parent">
 
-	<RelativeLayout
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content">
+    <RelativeLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
 
-	<LinearLayout
-		android:layout_alignParentEnd="true"
-		android:layout_alignParentTop="true"
-		android:layout_alignParentRight="true"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:orientation="vertical"
-		android:id="@+id/score_time_container">
 
-		<TextView
-			android:id="@+id/time"
-			tools:text="2 hours"
-            android:layout_gravity="end"
-			android:layout_width="wrap_content"
-			android:layout_height="wrap_content"
-			android:textStyle="italic"/>
-
-		<TextView
-			android:id="@+id/score"
-			tools:text="42"
-            android:layout_gravity="end"
+        <LinearLayout
+            android:id="@+id/linearLayout"
+            android:orientation="vertical"
             android:layout_width="wrap_content"
-			android:layout_height="wrap_content"/>
-	</LinearLayout>
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginLeft="8dp"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            >
 
-		<TextView
-			android:id="@+id/title"
-			tools:text="title"
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                >
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginRight="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:src="@drawable/ic_insert_chart_grey600"
+                    android:contentDescription="@string/comment_bubble_description"/>
+
+                <TextView
+                    android:id="@+id/score"
+                    android:layout_gravity="end"
+                    android:minEms="2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="score"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                >
+
+                <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginRight="2dp"
+                    android:layout_marginEnd="2dp"
+                    android:src="@drawable/ic_mode_comment_grey600"
+                    android:contentDescription="@string/comment_bubble_description"/>
+
+                <TextView
+                    android:id="@+id/comment_count"
+                    android:layout_gravity="end"
+                    android:minEms="2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="count"/>
+            </LinearLayout>
 
 
-			android:layout_toLeftOf="@+id/score_time_container"
-			android:layout_toStartOf="@+id/score_time_container"
-			android:layout_alignParentLeft="true"
-			android:layout_alignParentStart="true"
-			android:layout_alignParentTop="true"
+        </LinearLayout>
 
-			android:textAppearance="@android:style/TextAppearance.Large"/>
 
-		<TextView
-			android:id="@+id/by"
-			tools:text="author"
-			android:layout_toLeftOf="@+id/score_time_container"
-			android:layout_toStartOf="@+id/score_time_container"
-			android:layout_alignParentLeft="true"
-			android:layout_alignParentStart="true"
-			android:layout_below="@+id/title"
-			android:layout_width="match_parent"
-			android:layout_height="wrap_content"
-			android:textStyle="bold"/>
+        <TextView
+            android:id="@+id/title"
+            tools:text="Overly loooooong title that will totatally need a linebreak"
+            android:textSize="16dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_toLeftOf="@+id/linearLayout"
+            android:layout_toStartOf="@+id/linearLayout"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_alignParentTop="true"
 
-	</RelativeLayout>
+            android:textAppearance="@android:style/TextAppearance.Large"/>
 
-	<TextView
-		android:id="@+id/text"
-		tools:text="text"
-		android:autoLink="all"
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"/>
+        <TextView
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:text="@string/by_prefix"
+            android:id="@+id/by_prefix"
+            android:layout_below="@+id/title"
+            android:layout_alignLeft="@+id/title"
+            android:layout_alignStart="@+id/title"/>
+
+        <TextView
+            android:id="@+id/by"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:layout_alignBaseline="@id/by_prefix"
+            tools:text="Author Authorsson"
+            android:layout_below="@id/title"
+            android:layout_toEndOf="@id/by_prefix"
+            android:layout_toRightOf="@id/by_prefix"
+            />
+
+        <TextView
+            android:id="@+id/spacer"
+            android:layout_width="wrap_content"
+            android:layout_toEndOf="@id/by"
+            android:layout_toRightOf="@id/by"
+            android:text="@string/nbsp"
+            android:layout_alignBaseline="@id/by_prefix"
+            android:layout_height="wrap_content"
+            />
+
+        <se.ntlv.newsbringer.DateView
+            android:id="@+id/time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:singleLine="true"
+            android:layout_alignBaseline="@id/by"
+            android:layout_gravity="end"
+            android:textStyle="italic"
+            android:layout_below="@id/title"
+            android:layout_toEndOf="@id/spacer"
+            android:layout_toRightOf="@id/spacer"
+            tools:text="8 hours"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_toEndOf="@id/time"
+            android:layout_toRightOf="@id/time"
+            android:text="@string/literal_ago"
+            android:textStyle="italic"
+            android:layout_alignBaseline="@id/by_prefix"
+            android:layout_height="wrap_content"
+            android:layout_toStartOf="@id/linearLayout"
+            android:layout_toLeftOf="@id/linearLayout"
+            />
+
+    </RelativeLayout>
+
+    <TextView
+        android:layout_marginTop="8dp"
+        android:id="@+id/text"
+        tools:text="text"
+        android:autoLink="all"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
 
 </LinearLayout>
 

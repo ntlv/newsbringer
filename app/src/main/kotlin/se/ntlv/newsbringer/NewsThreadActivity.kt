@@ -47,7 +47,7 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
         return CursorLoader(this, NewsContentProvider.CONTENT_URI_COMMENTS, projection, selection, selectionArgs, sorting)
     }
 
-    override fun getOnLoadFinishedCallback(): ((Cursor?) -> Unit)? = { mSwipeView.setRefreshing(false) }
+    override fun getOnLoadFinishedCallback(): ((Cursor?) -> Unit)? = { if(it != null && it.getCount() > 0) mSwipeView.setRefreshing(false) }
     override fun getOnLoaderResetCallback(): ((t: Loader<Cursor>?) -> Unit)? = { mSwipeView.setRefreshing(false) }
 
     override val mAdapter: CommentsListAdapter by Delegates.lazy {
@@ -94,13 +94,15 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
         val time = args.getString(EXTRA_NEWSTHREAD_TIME)
         val score = args.getString(EXTRA_NEWSTHREAD_SCORE)
         val link = args.getString(EXTRA_NEWSTHREAD_LINK)
+        val commentCount = args.getLong(EXTRA_NEWSTHREAD_KID_COUNT)
 
         val array = array(
                 Triple(R.id.title, title, false),
                 Triple(R.id.text, text, true),
                 Triple(R.id.by, by, false),
                 Triple(R.id.time, time, false),
-                Triple(R.id.score, score, false)
+                Triple(R.id.score, score, false),
+                Triple(R.id.comment_count, commentCount.toString(), false)
         )
 
         val listView = mSwipeView.findViewById(R.id.list_view) as ListView
@@ -137,12 +139,14 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
         val EXTRA_NEWSTHREAD_TIME: String = "${TAG}extra_news_thread_time"
         val EXTRA_NEWSTHREAD_SCORE: String = "${TAG}extra_news_thread_score"
         val EXTRA_NEWSTHREAD_LINK: String = "${TAG}extra_news_thread_link"
+        val EXTRA_NEWSTHREAD_KID_COUNT = "${TAG}extra_news_thread_kids"
 
         val STATE_HANDLED_POSITIONS: String = "${TAG}_handled_positions"
 
         val LOADER_ARGS_ID: String = "${TAG}loader_args_id"
 
         public fun getIntent(ctx: Context, metadata: Metadata): Intent {
+
             return Intent(ctx, javaClass<NewsThreadActivity>())
                     .putExtra(EXTRA_NEWSTHREAD_ID, metadata.id ?: -1)
                     .putExtra(EXTRA_NEWSTHREAD_TITLE, metadata.title)
@@ -151,6 +155,7 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
                     .putExtra(EXTRA_NEWSTHREAD_TIME, metadata.time)
                     .putExtra(EXTRA_NEWSTHREAD_SCORE, metadata.score)
                     .putExtra(EXTRA_NEWSTHREAD_LINK, metadata.link)
+                    .putExtra(EXTRA_NEWSTHREAD_KID_COUNT, metadata.kidCount)
 
         }
     }

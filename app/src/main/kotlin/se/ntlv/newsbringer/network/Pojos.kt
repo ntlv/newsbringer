@@ -26,7 +26,7 @@ public class NewsThread {
             cv.put(PostTable.COLUMN_BY, by ?: "Unknown author")
             cv.put(PostTable.COLUMN_TITLE, title ?: "No title")
             cv.put(PostTable.COLUMN_CHILDREN, kids?.joinToString(",", "", "") ?: "")
-            cv.put(PostTable.COLUMN_TEXT, text ?: "No text")
+            cv.put(PostTable.COLUMN_TEXT, text ?: "")
             cv.put(PostTable.COLUMN_TYPE, type ?: "Unknown type")
             cv.put(PostTable.COLUMN_URL, url ?: "Unkown URL")
 
@@ -41,8 +41,7 @@ public class NewsThread {
         val adjustedScore = (score.minus(1)).toDouble()
         return adjustedScore.div(Math.pow((hoursSinceSubmission.plus(2)).toDouble(), 1.8))
     }
-
-    data class Metadata(id: Long?, text: String, title: String, by: String, time: String, score: String, link: String?) {
+    data class Metadata(id: Long?, text: String, title: String, by: String, time: String, score: String, link: String?, kidCount: Long) {
         val id = id
         val text = text
         val title = title
@@ -50,6 +49,7 @@ public class NewsThread {
         val time = time
         val score = score
         val link = link
+        val kidCount = kidCount
     }
 }
 

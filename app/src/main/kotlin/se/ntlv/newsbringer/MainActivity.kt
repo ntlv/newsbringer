@@ -18,8 +18,6 @@ import android.view.View
 import kotlin.properties.Delegates
 import android.support.v4.widget.SwipeRefreshLayout
 import se.ntlv.newsbringer.NewsThreadListAdapter.ViewHolder
-import android.os.Looper
-import android.os.Handler
 
 
 public class MainActivity : Activity(), AbstractCursorLoaderCallbacks {
@@ -31,6 +29,8 @@ public class MainActivity : Activity(), AbstractCursorLoaderCallbacks {
     private val mSwipeView: SwipeRefreshLayout by Delegates.lazy {
         findViewById(R.id.swipe_view) as SwipeRefreshLayout
     }
+
+    var mHiding = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super< Activity>.onCreate(savedInstanceState)
@@ -71,7 +71,6 @@ public class MainActivity : Activity(), AbstractCursorLoaderCallbacks {
             R.id.refresh -> {
                 refresh(); true
             }
-            R.id.action_settings -> true
             else -> super< Activity>.onOptionsItemSelected(item)
         }
     }
@@ -83,25 +82,16 @@ public class MainActivity : Activity(), AbstractCursorLoaderCallbacks {
         DataPullPushService.startActionFetchThreads(this)
     }
 
-    fun hideRefresh(){
+    fun hideRefresh() {
         if (mHiding.not()) {
             mHiding = true
-            mSwipeView.postDelayed({mHiding = false; mSwipeView?.setRefreshing(false)}, 1000)
+            mSwipeView.postDelayed({ mHiding = false; mSwipeView.setRefreshing(false) }, 1000)
         }
     }
 
-    var mHiding: Boolean = false
-
     override fun onCreateLoader(id: Int, args: Bundle?): Loader<Cursor> {
         mSwipeView.setRefreshing(true)
-        return CursorLoader(this, NewsContentProvider.CONTENT_URI_POSTS, PROJECTION, null, null, PostTable.COLUMN_ORDINAL + " DESC")
-    }
-
-    override fun getOnLoadFinishedCallback(): ((Cursor?) -> Unit)? = { hideRefresh() }
-    override fun getOnLoaderResetCallback(): ((t: Loader<Cursor>?) -> Unit)? = { hideRefresh() }
-
-    class object {
-        private val PROJECTION = array(
+        val projection = array(
                 PostTable.COLUMN_SCORE,
                 PostTable.COLUMN_TIMESTAMP,
                 PostTable.COLUMN_BY,
@@ -112,6 +102,11 @@ public class MainActivity : Activity(), AbstractCursorLoaderCallbacks {
                 PostTable.COLUMN_ID,
                 PostTable.COLUMN_CHILDREN
         )
+        return CursorLoader(this, NewsContentProvider.CONTENT_URI_POSTS, projection, null, null, PostTable.COLUMN_ORDINAL + " DESC")
     }
+
+    override fun getOnLoadFinishedCallback(): ((Cursor?) -> Unit)? = { if (it != null && it.getCount() > 0 ) hideRefresh() }
+    override fun getOnLoaderResetCallback(): ((t: Loader<Cursor>?) -> Unit)? = { hideRefresh() }
+
 }
 

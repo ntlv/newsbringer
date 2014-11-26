@@ -16,7 +16,6 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
         val tag = view.tag
         tag.title.setText(cursor.getString(PostTable.COLUMN_TITLE))
         tag.by.setText(cursor.getString(PostTable.COLUMN_BY))
-        tag.ordinal.setText(cursor.getString(PostTable.COLUMN_ORDINAL))
         tag.time.setText(cursor.getString(PostTable.COLUMN_TIMESTAMP))
         tag.score.setText(cursor.getString(PostTable.COLUMN_SCORE))
         tag.link = cursor.getString(PostTable.COLUMN_URL)
@@ -26,8 +25,10 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
         if (children.length > 0) {
             val strings = children.split(',')
             tag.commentCount.setText(strings.size.toString())
+            tag.commentQuantity = strings.size.toLong()
         } else {
             tag.commentCount.setText("0")
+            tag.commentQuantity = 0L
         }
     }
 
@@ -38,18 +39,18 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
     class ViewHolder(root: View) {
         val title = root.findViewById(R.id.title) as TextView
         val by = root.findViewById(R.id.by) as TextView
-        val ordinal = root.findViewById(R.id.ordinal) as TextView
         val time = root.findViewById(R.id.time) as DateView
         val score = root.findViewById(R.id.score) as TextView
         var link: String? = null
         var id: Long? = null
         var text: String? = null
         val commentCount = root.findViewById(R.id.comment_count) as TextView
+        var commentQuantity: Long? = null
 
         fun TextView.getContent(): String = this.getText().toString()
 
         val metadata: Metadata
-            get() = Metadata(id, text ?: "", title.getContent(), by.getContent(), time.getContent(), score.getContent(), link)
+            get() = Metadata(id, text ?: "", title.getContent(), by.getContent(), time.getContent(), score.getContent(), link, commentQuantity ?: 0)
     }
 
     val View.tag: ViewHolder
