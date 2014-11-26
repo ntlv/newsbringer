@@ -35,6 +35,7 @@ public class MainActivity : Activity(), AbstractCursorLoaderCallbacks {
     override fun onCreate(savedInstanceState: Bundle?) {
         super< Activity>.onCreate(savedInstanceState)
         setContentView(R.layout.activity_swipe_refresh_list_view_layout)
+        setTitle(getString(R.string.frontpage))
 
         mSwipeView.setOnRefreshListener { refresh(isCallFromSwipeView = true) }
         mSwipeView.setColorSchemeResources(android.R.color.holo_blue_light,
