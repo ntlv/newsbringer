@@ -30,7 +30,6 @@
                 android:id="@+id/score_icon"
                 android:layout_width="16dp"
                 android:layout_height="16dp"
-                android:background="@android:color/holo_orange_light"
                 android:src="@drawable/ic_insert_chart_grey600"
                 android:contentDescription="@string/comment_bubble_description"/>
 
@@ -53,7 +52,6 @@
                 android:id="@+id/comment_icon"
                 android:layout_width="16dp"
                 android:layout_height="16dp"
-                android:background="@android:color/holo_blue_light"
                 android:src="@drawable/ic_mode_comment_grey600"
                 android:contentDescription="@string/comment_bubble_description"/>
 
