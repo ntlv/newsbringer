@@ -5,10 +5,11 @@ YCreader is a simplistic and to the point reader app for news.ycombinator.com. T
 
 ### Currently implemented
 * Fetch and cache current top hundred entries
-* Fetch and cache top level comments along with a few levels of replies (further replies can be fetched on demand)
+* Fetch and cache top level comments along with a few levels of replies
 
 ### TODO
 
+* Highlight child comments in a more reading friendly way.
 * User login     
 * Voting
 * Commenting

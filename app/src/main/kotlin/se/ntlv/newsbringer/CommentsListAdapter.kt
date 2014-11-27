@@ -23,7 +23,14 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
         tag.time.setText(cursor.getString(CommentsTable.COLUMN_TIME))
         tag.text.setHtmlText(cursor.getString(CommentsTable.COLUMN_TEXT))
         tag.id = cursor.getLong(CommentsTable.COLUMN_ID)
-        tag.kids.setText(cursor.getString(CommentsTable.COLUMN_KIDS))
+        val kidsString = cursor.getString(CommentsTable.COLUMN_KIDS)
+        val count = if (kidsString.isNotEmpty()) {
+            kidsString.split(',').size.toString()
+        } else {
+            ""
+        }
+        tag.kids.setText(count)
+
         val padding = cursor.getInt(CommentsTable.COLUMN_ANCESTOR_COUNT).toFloat()
 
         view.setPadding((pxPadding + padding * 15f).toInt(), view.getPaddingTop(), view.getPaddingRight(), view.getPaddingBottom())
