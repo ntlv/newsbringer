@@ -1,16 +1,18 @@
 buildscript {
+    ext.kotlin_version = '0.10.4'
     repositories {
         mavenCentral()
     }
     dependencies {
         classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:0.9.206'
-        classpath 'com.android.tools.build:gradle:0.13.2'
+        classpath 'com.android.tools.build:gradle:1.0.0'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
 apply plugin: 'com.android.application'
-
 apply plugin: 'kotlin-android'
+
 
                 repositories {
                     mavenCentral()
@@ -20,7 +22,8 @@ dependencies {
     compile 'org.jetbrains.kotlin:kotlin-stdlib:0.9.206'
     compile files('libs/volley.jar')
     compile 'com.google.code.gson:gson:2.3'
-    compile 'com.android.support:support-v4:21.0.2'
+    compile 'com.android.support:support-v4:21.0.3'
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
 }
 
@@ -34,10 +37,10 @@ android {
         minSdkVersion 14
         targetSdkVersion 21
     }
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-        }
     dexOptions {
         incremental false
     }
+}
+sourceSets {
+    main.java.srcDirs += 'src/main/kotlin'
 }
