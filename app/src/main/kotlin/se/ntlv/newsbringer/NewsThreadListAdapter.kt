@@ -64,9 +64,6 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
                 return tag as ViewHolder
             }
         }
-
-
-
 }
 
 

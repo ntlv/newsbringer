@@ -1,0 +1,32 @@
+<root>
+    <item name='com.crashlytics.android.answers.BuildConfig BUILD_TYPE'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='com.crashlytics.android.answers.Answers java.lang.String getVersion()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='com.crashlytics.android.answers.Answers java.lang.String getIdentifier()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='com.crashlytics.android.answers.BuildConfig GROUP'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='com.crashlytics.android.answers.BuildConfig BUILD_NUMBER'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='com.crashlytics.android.answers.BuildConfig FLAVOR'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='com.crashlytics.android.answers.BuildConfig APPLICATION_ID'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='com.crashlytics.android.answers.BuildConfig VERSION_NAME'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='com.crashlytics.android.answers.Answers TAG'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='com.crashlytics.android.answers.BuildConfig ARTIFACT_ID'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+</root>

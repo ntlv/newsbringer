@@ -18,6 +18,8 @@ import android.view.View
 import kotlin.properties.Delegates
 import android.support.v4.widget.SwipeRefreshLayout
 import se.ntlv.newsbringer.NewsThreadListAdapter.ViewHolder
+import com.crashlytics.android.Crashlytics
+import io.fabric.sdk.android.Fabric
 
 
 public class MainActivity : Activity(), AbstractCursorLoaderCallbacks {
@@ -34,6 +36,7 @@ public class MainActivity : Activity(), AbstractCursorLoaderCallbacks {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super< Activity>.onCreate(savedInstanceState)
+        Fabric.with(this, Crashlytics());
         setContentView(R.layout.activity_swipe_refresh_list_view_layout)
         setTitle(getString(R.string.frontpage))
 

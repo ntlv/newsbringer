@@ -1,0 +1,71 @@
+<root>
+    <item name='io.fabric.sdk.android.services.events.QueueFileEventStorage void deleteFilesInRollOverDirectory(java.util.List&lt;java.io.File&gt;) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.QueueFileEventStorage java.util.List&lt;java.io.File&gt; getBatchOfFilesToSend(int)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.EventsHandler EventsHandler(android.content.Context, io.fabric.sdk.android.services.events.EventsStrategy&lt;T&gt;, io.fabric.sdk.android.services.events.EventsFilesManager, java.util.concurrent.ScheduledExecutorService) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.EventsFilesManager ROLL_OVER_FILE_NAME_SEPARATOR'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.EventsFilesManager long parseCreationTimestampFromFileName(java.lang.String) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.EventsManager void recordEvent(T) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+        <annotation name='org.jetbrains.kannotator.runtime.annotations.Propagated'>
+            <val name="value" val="{org.jetbrains.kannotator.controlFlow.builder.analysis.NullabilityKey.class}"/>
+        </annotation>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.QueueFileEventStorage java.io.OutputStream getMoveOutputStream(java.io.File)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.GZIPQueueFileEventStorage java.io.OutputStream getMoveOutputStream(java.io.File)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.EventsHandler EventsHandler(android.content.Context, io.fabric.sdk.android.services.events.EventsStrategy&lt;T&gt;, io.fabric.sdk.android.services.events.EventsFilesManager, java.util.concurrent.ScheduledExecutorService) 2'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.EventsFilesManager rollOverListeners'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.EventsStorage void deleteFilesInRollOverDirectory(java.util.List&lt;java.io.File&gt;) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+        <annotation name='org.jetbrains.kannotator.runtime.annotations.Propagated'>
+            <val name="value" val="{org.jetbrains.kannotator.controlFlow.builder.analysis.NullabilityKey.class}"/>
+        </annotation>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.EnabledEventsStrategy void recordEvent(T) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.EventsStorage java.util.List&lt;java.io.File&gt; getBatchOfFilesToSend(int)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+        <annotation name='org.jetbrains.kannotator.runtime.annotations.Propagated'>
+            <val name="value" val="{org.jetbrains.kannotator.controlFlow.builder.analysis.NullabilityKey.class}"/>
+        </annotation>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.EventsFilesManager EventsFilesManager(android.content.Context, io.fabric.sdk.android.services.events.EventTransform&lt;T&gt;, io.fabric.sdk.android.services.common.CurrentTimeProvider, io.fabric.sdk.android.services.events.EventsStorage, int) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.EnabledEventsStrategy scheduledRolloverFutureRef'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.QueueFileEventStorage void add(byte[]) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.EventsStorage void add(byte[]) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+        <annotation name='org.jetbrains.kannotator.runtime.annotations.Propagated'>
+            <val name="value" val="{org.jetbrains.kannotator.controlFlow.builder.analysis.NullabilityKey.class}"/>
+        </annotation>
+    </item>
+    <item name='io.fabric.sdk.android.services.events.DisabledEventsStrategy void recordEvent(T) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+        <annotation name='org.jetbrains.kannotator.runtime.annotations.Propagated'>
+            <val name="value" val="{org.jetbrains.kannotator.controlFlow.builder.analysis.NullabilityKey.class}"/>
+        </annotation>
+    </item>
+</root>

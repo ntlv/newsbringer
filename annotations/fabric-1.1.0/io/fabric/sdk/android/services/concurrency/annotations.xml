@@ -1,0 +1,83 @@
+<root>
+    <item name='io.fabric.sdk.android.services.concurrency.PriorityThreadPoolExecutor java.util.concurrent.RunnableFuture&lt;T&gt; newTaskFor(java.lang.Runnable, T)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.AsyncTask.Status PENDING'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.AsyncTask.Status RUNNING'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.AsyncTask io.fabric.sdk.android.services.concurrency.AsyncTask&lt;Params,Progress,Result&gt; executeOnExecutor(java.util.concurrent.Executor, Params...)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.AsyncTask io.fabric.sdk.android.services.concurrency.AsyncTask&lt;Params,Progress,Result&gt; execute(Params...)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.AsyncTask.Status FINISHED'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.PriorityProvider io.fabric.sdk.android.services.concurrency.Priority getPriority()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+        <annotation name='org.jetbrains.kannotator.runtime.annotations.Propagated'>
+            <val name="value" val="{org.jetbrains.kannotator.controlFlow.builder.analysis.NullabilityKey.class}"/>
+        </annotation>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.PriorityThreadPoolExecutor io.fabric.sdk.android.services.concurrency.PriorityThreadPoolExecutor create()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.PriorityThreadPoolExecutor void afterExecute(java.lang.Runnable, java.lang.Throwable) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.PriorityThreadPoolExecutor.PriorityThreadFactory java.lang.Thread newThread(java.lang.Runnable)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.PriorityAsyncTask io.fabric.sdk.android.services.concurrency.Priority getPriority()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+        <annotation name='org.jetbrains.kannotator.runtime.annotations.Propagated'>
+            <val name="value" val="{org.jetbrains.kannotator.controlFlow.builder.analysis.NullabilityKey.class}"/>
+        </annotation>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.Priority IMMEDIATE'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.PriorityAsyncTask T getDelegate()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.AsyncTask SERIAL_EXECUTOR'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.PriorityThreadPoolExecutor java.util.concurrent.RunnableFuture&lt;T&gt; newTaskFor(java.util.concurrent.Callable&lt;T&gt;)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.Priority NORMAL'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.AsyncTask THREAD_POOL_EXECUTOR'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.AsyncTask io.fabric.sdk.android.services.concurrency.AsyncTask&lt;Params,Progress,Result&gt; executeOnExecutor(java.util.concurrent.Executor, Params...) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.Priority HIGH'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.PriorityThreadPoolExecutor io.fabric.sdk.android.services.concurrency.PriorityThreadPoolExecutor create(int, int)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.Priority LOW'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.PriorityTask io.fabric.sdk.android.services.concurrency.Priority getPriority()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.DelegateProvider T getDelegate()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+        <annotation name='org.jetbrains.kannotator.runtime.annotations.Propagated'>
+            <val name="value" val="{org.jetbrains.kannotator.controlFlow.builder.analysis.NullabilityKey.class}"/>
+        </annotation>
+    </item>
+    <item name='io.fabric.sdk.android.services.concurrency.PriorityThreadPoolExecutor io.fabric.sdk.android.services.concurrency.PriorityThreadPoolExecutor create(int)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+</root>

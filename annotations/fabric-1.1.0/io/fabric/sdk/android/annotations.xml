@@ -1,0 +1,104 @@
+<root>
+    <item name='io.fabric.sdk.android.Kit java.lang.String getVersion()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+        <annotation name='org.jetbrains.kannotator.runtime.annotations.Propagated'>
+            <val name="value" val="{org.jetbrains.kannotator.controlFlow.builder.analysis.NullabilityKey.class}"/>
+        </annotation>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric.Builder appInstallIdentifier(java.lang.String) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.InitializationCallback EMPTY'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric.Builder kits(io.fabric.sdk.android.Kit...) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric TAG'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric java.lang.String getVersion()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric.Builder appInstallIdentifier(java.lang.String)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric.Builder logger(io.fabric.sdk.android.Logger) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.BuildConfig APPLICATION_ID'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric build()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric.Builder initializationCallback(io.fabric.sdk.android.InitializationCallback&lt;io.fabric.sdk.android.Fabric&gt;) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric.Builder kits(io.fabric.sdk.android.Kit...)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric.Builder executorService(java.util.concurrent.ExecutorService)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric.Builder appIdentifier(java.lang.String) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.BuildConfig BUILD_TYPE'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.BuildConfig VERSION_NAME'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.BuildConfig FLAVOR'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.BuildConfig BUILD_NUMBER'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.BuildConfig ARTIFACT_ID'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric.Builder threadPoolExecutor(io.fabric.sdk.android.services.concurrency.PriorityThreadPoolExecutor)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric.Builder logger(io.fabric.sdk.android.Logger)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric java.lang.String getIdentifier()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric.Builder debuggable(boolean)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric io.fabric.sdk.android.Fabric setCurrentActivity(android.app.Activity)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Kit java.lang.String getIdentifier()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+        <annotation name='org.jetbrains.kannotator.runtime.annotations.Propagated'>
+            <val name="value" val="{org.jetbrains.kannotator.controlFlow.builder.analysis.NullabilityKey.class}"/>
+        </annotation>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder Builder(android.content.Context) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.BuildConfig GROUP'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric.Builder threadPoolExecutor(io.fabric.sdk.android.services.concurrency.PriorityThreadPoolExecutor) 0'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric.Builder appIdentifier(java.lang.String)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric.Builder handler(android.os.Handler)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric java.lang.String getAppIdentifier()'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+    <item name='io.fabric.sdk.android.Fabric.Builder io.fabric.sdk.android.Fabric.Builder initializationCallback(io.fabric.sdk.android.InitializationCallback&lt;io.fabric.sdk.android.Fabric&gt;)'>
+        <annotation name='org.jetbrains.annotations.NotNull'/>
+    </item>
+</root>
