@@ -5,17 +5,16 @@ import com.android.volley.NetworkResponse
 import com.android.volley.ParseError
 import com.android.volley.Request
 import com.android.volley.Response
-import com.android.volley.toolbox.HttpHeaderParser
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 
 import java.io.UnsupportedEncodingException
 
 import com.android.volley.Response.*
-import com.android.volley.Response.ErrorListener
-import com.android.volley.Response.Listener
 import com.android.volley.toolbox.HttpHeaderParser.*
-import com.android.volley.toolbox.HttpHeaderParser.parseCharset
+import android.util.Log
+import com.crashlytics.android.Crashlytics
+import kotlin.properties.Delegates
 
 public class GsonRequest<T>
 /**
@@ -28,6 +27,7 @@ public class GsonRequest<T>
 (url: String, private val clazz: Class<T>, private val headers: Map<String, String>?, private val listener: Listener<T>, errorListener: ErrorListener) : Request<T>(Request.Method.GET, url, errorListener) {
 
     private val gson = Gson()
+    val TAG: String by Delegates.lazy { this.javaClass.getSimpleName() }
 
     throws(javaClass<AuthFailureError>())
     override fun getHeaders(): Map<String, String> {
@@ -35,7 +35,12 @@ public class GsonRequest<T>
     }
 
     override fun deliverResponse(response: T) {
-        listener.onResponse(response)
+        if (response != null) {
+            //because sometimes the API returns a 200 OK with the response "null", bonkers
+            listener.onResponse(response)
+        } else {
+            Crashlytics.log(Log.ERROR, TAG, "Request $this resulted in null response.")
+        }
     }
 
     override fun parseNetworkResponse(response: NetworkResponse): Response<T> {
