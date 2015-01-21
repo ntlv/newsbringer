@@ -11,6 +11,9 @@ import android.graphics.Color
 import android.util.TypedValue
 import android.graphics.drawable.StateListDrawable
 import android.graphics.drawable.ColorDrawable
+import android.widget.RelativeLayout
+import android.widget.ImageView
+import android.view.ViewGroup
 
 open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags: Int) :
         ResourceCursorAdapter(ctx, layout, cursor, flags) {
@@ -25,28 +28,21 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
         tag.id = cursor.getLong(CommentsTable.COLUMN_ID)
         val kidsString = cursor.getString(CommentsTable.COLUMN_KIDS)
         val count = if (kidsString.isNotEmpty()) {
-            kidsString.split(',').size.toString()
+            kidsString.split(',').size().toString()
         } else {
             ""
         }
         tag.kids.setText(count)
 
-        val padding = cursor.getInt(CommentsTable.COLUMN_ANCESTOR_COUNT).toFloat()
+        val width = cursor.getInt(CommentsTable.COLUMN_ANCESTOR_COUNT).toFloat()
 
-        view.setPadding((pxPadding + padding * 15f).toInt(), view.getPaddingTop(), view.getPaddingRight(), view.getPaddingBottom())
-        val minus = (246 - padding * 30).mod(256).toInt()
-        val states = StateListDrawable();
+        val layoutParams = tag.inset.getLayoutParams() as? RelativeLayout.LayoutParams
+        val size = (pxPadding + width * 15f).toInt()
+        layoutParams?.width = size
 
-        val pressed = IntArray(1)
-        pressed.set(0, android.R.attr.state_pressed)
+        val minus = (246 - width * 30).mod(256).toInt()
 
-        val focused = IntArray(1)
-        focused.set(0, android.R.attr.state_focused)
-
-        states.addState(pressed, ColorDrawable(android.R.color.darker_gray));
-        states.addState(focused, ColorDrawable(android.R.color.darker_gray));
-        states.addState(IntArray(0), ColorDrawable(Color.rgb(246, minus, minus)));
-        view.setBackground(states)
+        tag.inset.setBackground(ColorDrawable(Color.rgb(246, minus, minus)))
     }
 
     fun Cursor.getString(columnName: String): String = getString(getColumnIndexOrThrow(columnName))
@@ -57,6 +53,7 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
 
     class ViewHolder(root: View) {
         val text = root.findViewById(R.id.text) as TextView
+        val inset = root.findViewById(R.id.inset) : View
         val by = root.findViewById(R.id.by) as TextView
         val time = root.findViewById(R.id.time) as TextView
         var id: Long? = null
@@ -74,8 +71,6 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
                 return tag as ViewHolder
             }
         }
-
-
 }
 
 
