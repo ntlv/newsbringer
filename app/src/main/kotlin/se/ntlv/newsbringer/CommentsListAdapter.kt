@@ -7,18 +7,16 @@ import android.view.View
 import android.widget.TextView
 import se.ntlv.newsbringer.database.CommentsTable
 import android.text.Html
-import android.graphics.Color
 import android.util.TypedValue
-import android.graphics.drawable.StateListDrawable
-import android.graphics.drawable.ColorDrawable
-import android.widget.RelativeLayout
-import android.widget.ImageView
+import android.widget.LinearLayout
 import android.view.ViewGroup
 
 open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags: Int) :
         ResourceCursorAdapter(ctx, layout, cursor, flags) {
 
-    val pxPadding = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 16f, ctx.getResources().getDisplayMetrics())
+    val pxPadding = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4f, ctx.getResources().getDisplayMetrics())
+
+    fun <T> Array<T>.getWithLoopingIndex(i: Int): T = this.get(i.mod(this.size()))
 
     override fun bindView(view: View, context: Context?, cursor: Cursor) {
         val tag = view.tag
@@ -34,15 +32,18 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
         }
         tag.kids.setText(count)
 
-        val width = cursor.getInt(CommentsTable.COLUMN_ANCESTOR_COUNT).toFloat()
+        val ancestorCount = cursor.getInt(CommentsTable.COLUMN_ANCESTOR_COUNT)
 
-        val layoutParams = tag.inset.getLayoutParams() as? RelativeLayout.LayoutParams
-        val size = (pxPadding + width * 15f).toInt()
-        layoutParams?.width = size
-
-        val minus = (246 - width * 30).mod(256).toInt()
-
-        tag.inset.setBackground(ColorDrawable(Color.rgb(246, minus, minus)))
+        if (ancestorCount < 9) {
+            (0 .. 9).forEach {
+                val colorView = tag.colorViews.get(it)
+                if (it > ancestorCount) { colorView.setGone() } else { colorView.setVisible()} }
+        } else {
+            (0 .. 8).forEach { tag.colorViews.get(it).setVisible() }
+            val missingIndents = ancestorCount - 9
+            val lastColorView = tag.colorViews.get(9)
+            lastColorView.getLayoutParams().width = missingIndents.times(pxPadding.toInt())
+        }
     }
 
     fun Cursor.getString(columnName: String): String = getString(getColumnIndexOrThrow(columnName))
@@ -53,11 +54,13 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
 
     class ViewHolder(root: View) {
         val text = root.findViewById(R.id.text) as TextView
-        val inset = root.findViewById(R.id.inset) : View
         val by = root.findViewById(R.id.by) as TextView
         val time = root.findViewById(R.id.time) as TextView
         var id: Long? = null
         val kids = root.findViewById(R.id.kids) as TextView
+        val colorViews = findColorViews(root as ViewGroup)
+
+        fun findColorViews(root : ViewGroup): Array<View> =  Array(10, { root.getChildAt(it)})
     }
 
     val View.tag: ViewHolder
@@ -71,6 +74,13 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
                 return tag as ViewHolder
             }
         }
+
+    fun max(i: Int, j: Int): Int = if (i > j) i else j
+
+    fun View.setVisible() = this.setVisibility(View.VISIBLE)
+
+    fun View.setGone() = this.setVisibility(View.GONE)
 }
+
 
 

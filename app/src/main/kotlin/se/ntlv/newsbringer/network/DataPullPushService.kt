@@ -181,8 +181,8 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
             if (kids.isEmpty().not()) {
                 kids.split(',')
                         .map { it.trim().toLong() }
-                        .withIndices()
-                        .forEach { mQueue.add(makeCommentRequest(it.first, it.second, threadParent = newsthreadId)) }
+                        .withIndex()
+                        .forEach { mQueue.add(makeCommentRequest(it.index, it.value, threadParent = newsthreadId)) }
             }
         }
         result.close()
@@ -210,9 +210,9 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
             if (kids.isEmpty().not()) {
                 kids.split(',')
                         .map { it.trim().toLong() }
-                        .withIndices()
+                        .withIndex()
                         .forEach {
-                            mQueue.add(makeCommentRequest(it.first + 1, it.second, ancestorCount + 1, ancestorOrdinal, parentThread))
+                            mQueue.add(makeCommentRequest(it.index + 1, it.value, ancestorCount + 1, ancestorOrdinal, parentThread))
                         }
             }
         }

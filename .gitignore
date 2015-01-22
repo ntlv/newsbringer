@@ -41,3 +41,6 @@ volley/
 *.iml
 *.pyc
 
+.gradletasknamecache
+app/manifest-merger-release-report.txt
+update_times.txt

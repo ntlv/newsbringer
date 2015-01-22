@@ -22,10 +22,10 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
         tag.id = cursor.getLong(PostTable.COLUMN_ID)
         tag.text = cursor.getString(PostTable.COLUMN_TEXT)
         val children = cursor.getString(PostTable.COLUMN_CHILDREN)
-        if (children.length > 0) {
+        if (children.length() > 0) {
             val strings = children.split(',')
-            tag.commentCount.setText(strings.size.toString())
-            tag.commentQuantity = strings.size.toLong()
+            tag.commentCount.setText(strings.size().toString())
+            tag.commentQuantity = strings.size().toLong()
         } else {
             tag.commentCount.setText("0")
             tag.commentQuantity = 0L

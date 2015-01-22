@@ -31,7 +31,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                >
+                tools:ignore="UseCompoundDrawables">
 
                 <ImageView
                     android:layout_width="16dp"
@@ -80,7 +80,7 @@
         <TextView
             android:id="@+id/title"
             tools:text="Overly loooooong title that will totatally need a linebreak"
-            android:textSize="16dp"
+            android:textSize="16sp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_toLeftOf="@+id/linearLayout"

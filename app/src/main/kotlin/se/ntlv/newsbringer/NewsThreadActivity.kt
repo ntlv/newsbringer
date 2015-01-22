@@ -106,6 +106,7 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
         )
 
         val listView = mSwipeView.findViewById(R.id.list_view) as ListView
+        listView.setDivider(null) //ugly, but disables dividers
         val headerView = LayoutInflater.from(this).inflate(R.layout.list_header_newsthread, listView, false) as LinearLayout
         headerView.setOnClickListener { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link))) }
 
@@ -174,8 +175,8 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
     override fun onSaveInstanceState(bundle: Bundle) {
         super<Activity>.onSaveInstanceState(bundle)
 
-        val out = LongArray(handledPositions.size)
-        handledPositions.withIndices().forEach { out.set(it.first, it.second) }
+        val out = LongArray(handledPositions.size())
+        handledPositions.withIndex().forEach { out.set(it.index, it.value) }
 
         bundle.putLongArray(STATE_HANDLED_POSITIONS, out)
     }
