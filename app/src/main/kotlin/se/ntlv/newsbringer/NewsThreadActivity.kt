@@ -23,6 +23,7 @@ import android.net.Uri
 import android.view.View
 import java.util.HashSet
 import android.util.Log
+import android.widget.Toast
 
 
 public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
@@ -47,7 +48,13 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
         return CursorLoader(this, NewsContentProvider.CONTENT_URI_COMMENTS, projection, selection, selectionArgs, sorting)
     }
 
-    override fun getOnLoadFinishedCallback(): ((Cursor?) -> Unit)? = { if(it != null && it.getCount() > 0) mSwipeView.setRefreshing(false) }
+    override fun getOnLoadFinishedCallback(): ((Cursor?) -> Unit)? = {
+        if(it != null && it.getCount() > 0) {
+            mSwipeView.setRefreshing(false)
+            (findViewById(R.id.comment_count) as? TextView)?.setText(it.getCount().toString())
+        }
+
+    }
     override fun getOnLoaderResetCallback(): ((t: Loader<Cursor>?) -> Unit)? = { mSwipeView.setRefreshing(false) }
 
     override val mAdapter: CommentsListAdapter by Delegates.lazy {
@@ -61,9 +68,9 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
     override fun onCreate(savedInstanceState: Bundle?) {
         super<Activity>.onCreate(savedInstanceState)
 
-        if(savedInstanceState != null) {
+        if (savedInstanceState != null) {
             val positions = savedInstanceState.getLongArray(STATE_HANDLED_POSITIONS)
-            positions.forEach { handledPositions.add(it) }
+            positions.toCollection(handledPositions)
         }
 
         val args = getIntent().getExtras()
@@ -182,7 +189,7 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
     }
 
     fun fetchChildComments(commentId: Long, view: View, threadId: Long) {
-        if ((commentId in handledPositions).not()) {
+        if (commentId !in handledPositions) {
             handledPositions.add(commentId)
             val tag = view.getTag()
             if (tag is CommentsListAdapter.ViewHolder && tag.id != null) {

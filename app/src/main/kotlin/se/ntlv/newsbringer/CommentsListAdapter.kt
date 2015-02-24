@@ -37,7 +37,8 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
         if (ancestorCount < 9) {
             (0 .. 9).forEach {
                 val colorView = tag.colorViews.get(it)
-                if (it > ancestorCount) { colorView.setGone() } else { colorView.setVisible()} }
+                if (it >= ancestorCount) colorView.setGone() else colorView.setVisible()
+            }
         } else {
             (0 .. 8).forEach { tag.colorViews.get(it).setVisible() }
             val missingIndents = ancestorCount - 9

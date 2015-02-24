@@ -1,7 +1,6 @@
 package se.ntlv.newsbringer.network
 
 import android.app.IntentService
-import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.util.Log
@@ -16,11 +15,11 @@ import se.ntlv.newsbringer.database.NewsContentProvider
 import com.android.volley.RequestQueue
 import kotlin.properties.Delegates
 import com.android.volley.toolbox.Volley
-import java.util.ArrayList
 import se.ntlv.newsbringer.database.PostTable
 import se.ntlv.newsbringer.database.CommentsTable
 import android.net.Uri
 import android.content.ContentResolver
+import com.crashlytics.android.Crashlytics
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -30,19 +29,19 @@ import android.content.ContentResolver
  */
 public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
-    val resolver: ContentResolver by Delegates.lazy { getContentResolver() }
-
-    val mQueue: RequestQueue by Delegates.lazy { Volley.newRequestQueue(this) }
+    val resolver: ContentResolver   by Delegates.lazy { getContentResolver() }
+    val mQueue: RequestQueue        by Delegates.lazy { Volley.newRequestQueue(this) }
 
     private val mErrorListener = object : Response.ErrorListener {
         override fun onErrorResponse(error: VolleyError) {
+            Crashlytics.log("failed to fetch: ${error.getCause()}")
             Log.e(TAG, error.toString())
         }
-
     }
+
     private val mJSONArrayListener = object : Response.Listener<JSONArray> {
         override fun onResponse(jsonArray: JSONArray) {
-            jsonArray.forEach { mQueue.add(getNewsThreadRequest("${ITEM_URI}${it}${URI_SUFFIX}")) }
+            jsonArray.forEach { mQueue.add(createNewsThreadRequest("${ITEM_URI}${it}${URI_SUFFIX}")) }
         }
     }
 
@@ -54,7 +53,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
     private val mNewsThreadResponseListener = object : Response.Listener<NewsThread> {
         override fun onResponse(response: NewsThread) {
-                resolver.insert(NewsContentProvider.CONTENT_URI_POSTS, response.contentValue)
+            resolver.insert(NewsContentProvider.CONTENT_URI_POSTS, response.contentValue)
         }
     }
 
@@ -62,7 +61,6 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         if (this == null) {
             return
         }
-
         when (this.getAction()) {
             ACTION_FETCH_THREADS -> handleFetchThreads()
             ACTION_FETCH_COMMENTS -> fetchComments(this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L), this.getBooleanExtra(EXTRA_DISALLOW_FETCH, false))
@@ -73,31 +71,39 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
     override fun onHandleIntent(intent: Intent?) = intent?.doAction()
 
-    private fun getTopHundredRequest(): JsonArrayRequest {
+    private fun createTopHundredRequest(): JsonArrayRequest {
         return JsonArrayRequest(TOP_HUNDRED_URI, mJSONArrayListener, mErrorListener)
     }
 
-    private fun getNewsThreadRequest(url: String): GsonRequest<NewsThread> {
-        return getNewsThreadRequest(mNewsThreadResponseListener, mErrorListener, url)
+    private fun createNewsThreadRequest(url: String): GsonRequest<NewsThread> {
+        return createNewsThreadRequest(mNewsThreadResponseListener, mErrorListener, url)
     }
 
-    private fun getNewsThreadRequest(listener: Response.Listener<NewsThread>,
-                                     errorListener: Response.ErrorListener,
-                                     url: String): GsonRequest<NewsThread> {
+    private fun createThreadRefreshRequest(id: Long, onCompletion: () -> Unit): GsonRequest<NewsThread> {
+        val onResponse: Response.Listener<NewsThread> = Response.Listener {
+            resolver.insert(NewsContentProvider.CONTENT_URI_POSTS, it.contentValue)
+            onCompletion.invoke()
+        }
+        return createNewsThreadRequest(onResponse, mErrorListener, "$ITEM_URI$id$URI_SUFFIX")
+    }
+
+    private fun createNewsThreadRequest(listener: Response.Listener<NewsThread>,
+                                        errorListener: Response.ErrorListener,
+                                        url: String): GsonRequest<NewsThread> {
         return GsonRequest(url, javaClass<NewsThread>(), null, listener, errorListener)
     }
 
-    fun makeCommentRequest(ordinal: Int,
-                           id: Long,
-                           ancestorCount: Int = 0,
-                           ancestorOrdinal: Double = 0.0,
-                           threadParent: Long): GsonRequest<Comment> {
+    fun createCommentRequest(ordinal: Int,
+                             id: Long,
+                             ancestorCount: Int = 0,
+                             ancestorOrdinal: Double = 0.0,
+                             threadParent: Long): GsonRequest<Comment> {
         val url = "${ITEM_URI}${id}${URI_SUFFIX}"
         val listener = object : Response.Listener<Comment> {
             override fun onResponse(response: Comment) {
                 val reified = response.getAsContentValues(ordinal, ancestorCount, ancestorOrdinal, threadParent)
                 resolver.insert(NewsContentProvider.CONTENT_URI_COMMENTS, reified)
-                if (ancestorCount in 0 .. 4 ) {
+                if (ancestorCount in 0..4 ) {
                     fetchChildComments(response.id, threadParent)
                 }
             }
@@ -111,17 +117,17 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
         val EXTRA_NEWSTHREAD_ID: String = "${TAG}extra_newsthread_id"
         val EXTRA_DISALLOW_FETCH: String = "${TAG}extra_disallow_fetch_skip"
-
         val EXTRA_PARENT_COMMENT_ID: String = "${TAG}extra_parent_comment_id"
-        val ACTION_FETCH_CHILD_COMMENTS: String = "${TAG}action_fetch_child_comments"
 
+        val ACTION_FETCH_CHILD_COMMENTS: String = "${TAG}action_fetch_child_comments"
+        val ACTION_FETCH_COMMENTS: String = "${TAG}_action_fetch_comments"
+
+        public val ACTION_FETCH_THREADS: String = "${TAG}_action_fetch_threads"
 
         public var URI_SUFFIX: String = ".json"
         public var BASE_URI: String = "https://hacker-news.firebaseio.com/v0"
         public var ITEM_URI: String = "$BASE_URI/item/"
         public var TOP_HUNDRED_URI: String = "$BASE_URI/topstories$URI_SUFFIX"
-        public val ACTION_FETCH_THREADS: String = "${TAG}_action_fetch_threads"
-        val ACTION_FETCH_COMMENTS: String = "${TAG}_action_fetch_comments"
 
         /**
          * Starts this service to fetch threads from Hacker News.
@@ -156,6 +162,26 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         }
     }
 
+    fun refreshComments(id: Long) {
+        val projection = array(
+                PostTable.COLUMN_ID,
+                PostTable.COLUMN_CHILDREN
+        )
+        val commentsSelection = "${PostTable.COLUMN_ID}=$id"
+        val result = resolver.query(NewsContentProvider.CONTENT_URI_POSTS, projection, commentsSelection, null, null)
+
+        if (result.moveToFirst()) {
+            val kids = result.getString(result.getColumnIndexOrThrow(PostTable.COLUMN_CHILDREN))
+            if (kids.isEmpty().not()) {
+                kids.split(',')
+                        .map { it.trim().toLong() }
+                        .withIndex()
+                        .forEach { mQueue.add(createCommentRequest(it.index, it.value, threadParent = id)) }
+            }
+        }
+        result.close()
+    }
+
     fun fetchComments(newsthreadId: Long, disallowFetchSkip: Boolean) {
         if (newsthreadId == -1L) {
             throw IllegalArgumentException("Thread id can't be -1")
@@ -169,23 +195,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
             commentsExists && disallowFetchSkip ->
                 resolver.delete(uri, selection, selectionArgs) //user wants fresh comments, fetch again
         }
-        val projection = array(
-                PostTable.COLUMN_ID,
-                PostTable.COLUMN_CHILDREN
-        )
-        val commentsSelection = "${PostTable.COLUMN_ID}=$newsthreadId"
-        val result = resolver.query(NewsContentProvider.CONTENT_URI_POSTS, projection, commentsSelection, null, null)
-
-        if (result.moveToFirst()) {
-            val kids = result.getString(result.getColumnIndexOrThrow(PostTable.COLUMN_CHILDREN))
-            if (kids.isEmpty().not()) {
-                kids.split(',')
-                        .map { it.trim().toLong() }
-                        .withIndex()
-                        .forEach { mQueue.add(makeCommentRequest(it.index, it.value, threadParent = newsthreadId)) }
-            }
-        }
-        result.close()
+        mQueue.add(createThreadRefreshRequest(newsthreadId, { refreshComments(newsthreadId) }))
     }
 
     fun fetchChildComments(parentComment: Long, parentThread: Long) {
@@ -212,7 +222,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
                         .map { it.trim().toLong() }
                         .withIndex()
                         .forEach {
-                            mQueue.add(makeCommentRequest(it.index + 1, it.value, ancestorCount + 1, ancestorOrdinal, parentThread))
+                            mQueue.add(createCommentRequest(it.index + 1, it.value, ancestorCount + 1, ancestorOrdinal, parentThread))
                         }
             }
         }
@@ -231,7 +241,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
     fun handleFetchThreads() {
         resolver.delete(NewsContentProvider.CONTENT_URI_POSTS, null, null)
-        mQueue.add(getTopHundredRequest())
+        mQueue.add(createTopHundredRequest())
     }
 }
 

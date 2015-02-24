@@ -130,6 +130,8 @@
             android:layout_gravity="center"
             android:layout_toLeftOf="@id/time"
             android:layout_toStartOf="@id/time"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
             />
 
         <se.ntlv.newsbringer.DateView
