@@ -49,6 +49,32 @@ public class PostTable {
             database.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
             onCreate(database)
         }
+
+        fun getDefaultProjection(): Array<String> = array(
+                PostTable.COLUMN_SCORE,
+                PostTable.COLUMN_TIMESTAMP,
+                PostTable.COLUMN_BY,
+                PostTable.COLUMN_TEXT,
+                PostTable.COLUMN_TITLE,
+                PostTable.COLUMN_URL,
+                PostTable.COLUMN_ORDINAL,
+                PostTable.COLUMN_ID,
+                PostTable.COLUMN_CHILDREN
+        )
+
+        fun getCommentsProjection(): Array<String> = array(
+                PostTable.COLUMN_ID,
+                PostTable.COLUMN_TITLE,
+                PostTable.COLUMN_TEXT,
+                PostTable.COLUMN_BY,
+                PostTable.COLUMN_TIMESTAMP,
+                PostTable.COLUMN_SCORE,
+                PostTable.COLUMN_URL
+        )
+
+
+
+        fun getOrdinalSortingString(): String = PostTable.COLUMN_ORDINAL + " DESC"
     }
 }
 

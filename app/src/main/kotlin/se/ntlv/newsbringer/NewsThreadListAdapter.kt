@@ -49,8 +49,7 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
 
         fun TextView.getContent(): String = this.getText().toString()
 
-        val metadata: Metadata
-            get() = Metadata(id as Long, text ?: "", title.getContent(), by.getContent(), time.getContent(), score.getContent(), link, commentQuantity ?: 0)
+
     }
 
     val View.tag: ViewHolder

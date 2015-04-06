@@ -57,13 +57,12 @@ public class NewsContentProvider : ContentProvider() {
 
         when (uriType) {
             POSTS -> {
-                val id = sqlDB.insert(PostTable.TABLE_NAME, null, contentValues)
+                val id = sqlDB.replace(PostTable.TABLE_NAME, null, contentValues)
                 getContext().getContentResolver().notifyChange(uri, null)
                 return Uri.parse(CONTENT_POSTS + "/" + id)
             }
             COMMENTS -> {
-                Log.d(LOG_TAG, "insert $contentValues into $sqlDB")
-                val id = sqlDB.replace(CommentsTable.TABLE_NAME, null, contentValues) //TODO figure out something better
+                val id = sqlDB.replace(CommentsTable.TABLE_NAME, null, contentValues)
                 getContext().getContentResolver().notifyChange(uri, null)
                 return Uri.parse(CONTENT_COMMENTS + "/" + id)
             }

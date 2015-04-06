@@ -1,41 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="se.ntlv.newsbringer">
+          package="se.ntlv.newsbringer">
 
-	<uses-permission android:name="android.permission.INTERNET"/>
-
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_action_"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:theme="@style/AppTheme">
         <activity
             android:name=".MainActivity"
-            android:label="@string/app_name" >
+            android:label="@string/app_name">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
                 <action android:name="android.intent.action.VIEW"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:host="news.ycombinator.com" android:scheme="http"/>
-                <data android:host="news.ycombinator.com" android:scheme="https"/>
+
+                <data
+                    android:host="news.ycombinator.com"
+                    android:scheme="https"
+                    />
+                <data
+                    android:host="news.ycombinator.com"
+                    android:scheme="http"
+                    />
             </intent-filter>
         </activity>
 
-		<activity
-			android:name=".NewsThreadActivity"
-			android:parentActivityName=".MainActivity"/>
+        <activity
+            android:name=".CommentsActivity"
+            android:label="@string/activity_comments_label"
+            android:parentActivityName=".MainActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+
+                <data
+                    android:host="news.ycombinator.com"
+                    android:pathPrefix="/item"
+                    android:scheme="https"
+                    />
+                <data
+                    android:host="news.ycombinator.com"
+                    android:pathPrefix="/item"
+                    android:scheme="http"
+                    />
+            </intent-filter>
+        </activity>
 
         <service
             android:name=".network.DataPullPushService"
-            android:exported="false" >
+            android:exported="false">
         </service>
-		<provider
-			android:authorities="se.ntlv.newsbringer.database.NewsContentProvider"
-			android:name=".database.NewsContentProvider"
-			android:enabled="true"
-			android:exported="false"/>
+        <provider
+            android:authorities="se.ntlv.newsbringer.database.NewsContentProvider"
+            android:name=".database.NewsContentProvider"
+            android:enabled="true"
+            android:exported="false"/>
     </application>
 
 </manifest>

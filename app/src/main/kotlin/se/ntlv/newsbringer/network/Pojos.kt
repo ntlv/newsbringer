@@ -1,6 +1,7 @@
 package se.ntlv.newsbringer.network
 
 import android.content.ContentValues
+import android.database.Cursor
 import se.ntlv.newsbringer.database.PostTable
 import java.util.ArrayList
 import se.ntlv.newsbringer.database.CommentsTable

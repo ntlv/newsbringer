@@ -34,9 +34,7 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
         val padding = (pxPadding * ancestorCount).toInt()
         view.setPadding(padding, view.getPaddingTop(), view.getPaddingRight(), view.getPaddingBottom())
 
-        val colorDrawable = ColorDrawable(color.get(ancestorCount.mod(color.size())))
-        Log.d("Comments adapter", "Color = $colorDrawable")
-        tag.colorView.setImageDrawable(colorDrawable)
+        tag.colorView.setBackgroundResource(color.get(ancestorCount.mod(color.size())))
 
         tag.by.setText(cursor.getString(CommentsTable.COLUMN_BY))
         tag.time.setText(cursor.getString(CommentsTable.COLUMN_TIME))
@@ -50,13 +48,7 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
             ""
         }
         tag.kids.setText(count)
-
-
     }
-
-    fun Cursor.getString(columnName: String): String = getString(getColumnIndexOrThrow(columnName))
-    fun Cursor.getLong(columnName: String): Long = getLong(getColumnIndexOrThrow(columnName))
-    fun Cursor.getInt(columnName: String): Int = getInt(getColumnIndexOrThrow(columnName))
 
     fun TextView.setHtmlText(source: String) = this.setText(Html.fromHtml(source))
 
@@ -67,7 +59,7 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
         val time = root.findViewById(R.id.time) as TextView
         var id: Long? = null
         val kids = root.findViewById(R.id.kids) as TextView
-        val colorView = root.findViewById(R.id.color_band) as ImageView
+        val colorView = root.findViewById(R.id.color_band)
     }
 
     val View.tag: ViewHolder

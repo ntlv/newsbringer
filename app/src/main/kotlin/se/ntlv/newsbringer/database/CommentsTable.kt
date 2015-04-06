@@ -50,6 +50,17 @@ public class CommentsTable {
             database.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
             onCreate(database)
         }
+
+        fun getDefaultProjection(): Array<String> = array(
+                CommentsTable.COLUMN_BY,
+                CommentsTable.COLUMN_TEXT,
+                CommentsTable.COLUMN_TIME,
+                CommentsTable.COLUMN_ORDINAL,
+                CommentsTable.COLUMN_ID,
+                CommentsTable.COLUMN_ANCESTOR_COUNT,
+                CommentsTable.COLUMN_KIDS
+
+        )
     }
 }
 

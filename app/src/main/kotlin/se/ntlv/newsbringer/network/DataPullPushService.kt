@@ -46,13 +46,19 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
     }
 
     fun JSONArray.forEach(f: (t: Any) -> Unit) {
-        val length = this.length()
+        var length = this.length()
+        if (length > 50) {
+            length = 50
+        }
         (0..length - 1).forEach { i -> f(get(i)) }
     }
 
 
     private val mNewsThreadResponseListener = object : Response.Listener<NewsThread> {
         override fun onResponse(response: NewsThread) {
+            val selection = "${PostTable.COLUMN_ID}=?"
+            val selectionArgs = array(response.id.toString())
+            resolver.delete(NewsContentProvider.CONTENT_URI_POSTS, selection, selectionArgs)
             resolver.insert(NewsContentProvider.CONTENT_URI_POSTS, response.contentValue)
         }
     }
@@ -62,6 +68,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
             return
         }
         when (this.getAction()) {
+            ACTION_FETCH_THREAD -> handleFetchThread(this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L))
             ACTION_FETCH_THREADS -> handleFetchThreads()
             ACTION_FETCH_COMMENTS -> fetchComments(this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L), this.getBooleanExtra(EXTRA_DISALLOW_FETCH, false))
             ACTION_FETCH_CHILD_COMMENTS -> fetchChildComments(this.getLongExtra(EXTRA_PARENT_COMMENT_ID, -1L), this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L))
@@ -123,6 +130,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         val ACTION_FETCH_COMMENTS: String = "${TAG}_action_fetch_comments"
 
         public val ACTION_FETCH_THREADS: String = "${TAG}_action_fetch_threads"
+        public val ACTION_FETCH_THREAD: String = "${TAG}_action_fetch_thread"
 
         public var URI_SUFFIX: String = ".json"
         public var BASE_URI: String = "https://hacker-news.firebaseio.com/v0"
@@ -147,6 +155,13 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
             intent.setAction(ACTION_FETCH_COMMENTS)
             intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
             intent.putExtra(EXTRA_DISALLOW_FETCH, disallowFetchSkip)
+            context.startService(intent)
+        }
+
+        public fun startActionFetchThread(context: Context, id: Long) {
+            val intent = Intent(context, javaClass<DataPullPushService>())
+            intent.setAction(ACTION_FETCH_THREAD)
+            intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
             context.startService(intent)
         }
 
@@ -237,6 +252,10 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         val commentsExists = existingCommentsQuery.getCount() > 0
         existingCommentsQuery.close()
         return commentsExists
+    }
+
+    private fun handleFetchThread(id: Long) {
+        mQueue.add(createNewsThreadRequest("${ITEM_URI}${id}${URI_SUFFIX}"))
     }
 
     fun handleFetchThreads() {

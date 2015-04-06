@@ -11,9 +11,9 @@
     android:paddingRight="16dp"
     >
 
-    <ImageView
-        android:src="@color/orange"
+    <View
         android:id="@+id/color_band"
+        android:background="@color/orange"
         android:layout_width="4dp"
         android:layout_height="match_parent"
         android:contentDescription="@string/color_band_content_description"/>
