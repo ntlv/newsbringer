@@ -121,7 +121,7 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
 
         listView.addHeaderView(headerView) //important to call before setAdapter if SDK_LEVEL < KITKAT
         listView.setAdapter(mAdapter)
-        listView.setOnItemClickListener {(adapterView, view, i, l) -> fetchChildComments(l, view, newsthreadId) }
+        listView.setOnItemClickListener { adapterView, view, i, l -> fetchChildComments(l, view, newsthreadId) }
 
         refresh(newsthreadId)
     }
@@ -137,7 +137,7 @@ public class NewsThreadActivity : Activity(), AbstractCursorLoaderCallbacks {
         }
     }
 
-    class object {
+    companion object {
         val TAG: String = javaClass<NewsThreadActivity>().getSimpleName()
 
         val EXTRA_NEWSTHREAD_TITLE: String = "${TAG}extra_news_thread"

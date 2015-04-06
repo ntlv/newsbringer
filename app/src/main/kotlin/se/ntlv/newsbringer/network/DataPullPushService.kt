@@ -111,7 +111,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         return GsonRequest(url, javaClass<Comment>(), null, listener, mErrorListener)
     }
 
-    class object {
+    companion object {
 
         public val TAG: String = javaClass<DataPullPushService>().getSimpleName()
 

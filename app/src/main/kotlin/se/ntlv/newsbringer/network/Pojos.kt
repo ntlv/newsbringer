@@ -41,7 +41,7 @@ public class NewsThread {
         val adjustedScore = (score.minus(1)).toDouble()
         return adjustedScore.div(Math.pow((hoursSinceSubmission.plus(2)).toDouble(), 1.8))
     }
-    data class Metadata(id: Long?, text: String, title: String, by: String, time: String, score: String, link: String?, kidCount: Long) {
+    data class Metadata(id: Long, text: String, title: String, by: String, time: String, score: String, link: String?, kidCount: Long) {
         val id = id
         val text = text
         val title = title

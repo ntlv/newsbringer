@@ -128,7 +128,7 @@ public class NewsContentProvider : ContentProvider() {
         }
     }
 
-    class object {
+    companion object {
 
         private val POSTS = 10
         private val POST_ID = 20
@@ -153,7 +153,7 @@ public class NewsContentProvider : ContentProvider() {
 
         private val LOG_TAG = "NewsContentProvider"
 
-        {
+        init {
             sUriMatcher = UriMatcher(UriMatcher.NO_MATCH)
             sUriMatcher.addURI(AUTHORITY, CONTENT_POSTS, POSTS)
             sUriMatcher.addURI(AUTHORITY, "$CONTENT_POSTS/#", POST_ID)

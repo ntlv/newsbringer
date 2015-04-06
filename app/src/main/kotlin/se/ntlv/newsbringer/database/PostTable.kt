@@ -4,7 +4,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 
 public class PostTable {
-    class object {
+    companion object {
         // Database table
         public val TABLE_NAME: String = "posts"
 

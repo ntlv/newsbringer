@@ -17,5 +17,6 @@
     <string name="day">day</string>
     <string name="days">days</string>
     <string name="frontpage">Frontpage</string>
+    <string name="color_band_content_description">A color band, only decorative</string>
 
 </resources>

@@ -17,6 +17,7 @@ import android.net.Uri
 import android.view.View
 import kotlin.properties.Delegates
 import android.support.v4.widget.SwipeRefreshLayout
+import android.util.Log
 import se.ntlv.newsbringer.NewsThreadListAdapter.ViewHolder
 import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
@@ -37,8 +38,17 @@ public class MainActivity : Activity(), AbstractCursorLoaderCallbacks {
     override fun onCreate(savedInstanceState: Bundle?) {
         super< Activity>.onCreate(savedInstanceState)
         Fabric.with(this, Crashlytics());
+        val intent = getIntent()
+
+        if (intent == null) {
+            Log.d("Main activity got an empty intent", "intent = null")
+            return
+        }
+        Log.d("Main activity got an intent", "intent = $intent")
+
         setContentView(R.layout.activity_swipe_refresh_list_view_layout)
         setTitle(getString(R.string.frontpage))
+
 
         mSwipeView.setOnRefreshListener { refresh(isCallFromSwipeView = true) }
         mSwipeView.setColorSchemeResources(android.R.color.holo_blue_light,
@@ -49,8 +59,8 @@ public class MainActivity : Activity(), AbstractCursorLoaderCallbacks {
 
         val listView = findViewById(R.id.list_view) as ListView
         listView.setAdapter(mAdapter)
-        listView.setOnItemClickListener {(adapterView, view, i, l) -> openComments(view) }
-        listView.setOnItemLongClickListener {(adapterView, view, i, l) -> openLink(view); true }
+        listView.setOnItemClickListener { adapterView, view, i, l -> openComments(view) }
+        listView.setOnItemLongClickListener { adapterView, view, i, l -> openLink(view); true }
         getLoaderManager().initLoader<Cursor>(0, null, this)
     }
 
@@ -58,6 +68,7 @@ public class MainActivity : Activity(), AbstractCursorLoaderCallbacks {
 
     private fun openComments(view: View) = (view.getTag() as? NewsThreadListAdapter.ViewHolder)?.openAsLink()
 
+    [suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")]
     fun String?.openAsLink() = startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(this)))
     fun ViewHolder.openAsLink() = startActivity(NewsThreadActivity.getIntent(this@MainActivity, this.metadata))
 
