@@ -8,21 +8,22 @@ import android.content.Intent
 import android.content.Loader
 import android.database.Cursor
 import android.net.Uri
-import android.opengl.Visibility
 import android.os.Bundle
 import android.support.v4.widget.SwipeRefreshLayout
 import android.text.Html
 import android.util.Log
-import android.view.*
+import android.view.Menu
+import android.view.MenuItem
+import android.view.View
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.ListView
-import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import se.ntlv.newsbringer.database.CommentsTable
 import se.ntlv.newsbringer.database.NewsContentProvider
 import se.ntlv.newsbringer.database.PostTable
 import se.ntlv.newsbringer.network.DataPullPushService
-import se.ntlv.newsbringer.network.NewsThread.Metadata
 import java.util.HashSet
 import kotlin.properties.Delegates
 
@@ -85,6 +86,11 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
         (findViewById(R.id.comment_count) as? TextView)?.setText(data.getCount().toString())
     }
 
+    private var mShareStory: (() ->Unit) = { toast() }
+    private var mShareComments: (() -> Unit) = { toast() }
+
+    private fun toast() = Toast.makeText(this, "Data not yet loaded", Toast.LENGTH_SHORT).show()
+
     private fun updateHeader(data: Cursor) {
         val title = data.getString(PostTable.COLUMN_TITLE)
         setTitle(title)
@@ -92,6 +98,8 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
         mListView.setVisibility(View.VISIBLE)
         mProgressView.setVisibility(View.INVISIBLE)
         val link = data.getString(PostTable.COLUMN_URL)
+        mShareStory = { shareLink(title, link)}
+        mShareComments = { shareLink(title, "https://news.ycombinator.com/item?id=$mItemId")}
         mHeaderView.setOnClickListener { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link))) }
 
         array(
@@ -101,6 +109,14 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
                 Triple(R.id.time, data.getString(PostTable.COLUMN_TIMESTAMP), false),
                 Triple(R.id.score, data.getString(PostTable.COLUMN_SCORE), false)
         ).forEach { findViewAndSetText(mHeaderView, it.first, it.second, it.third) }
+    }
+
+    private fun shareLink(title: String, link: String): Unit {
+        val i = Intent(Intent.ACTION_SEND);
+        i.setType("text/plain");
+        i.putExtra(Intent.EXTRA_SUBJECT, title);
+        i.putExtra(Intent.EXTRA_TEXT, link);
+        startActivity(Intent.createChooser(i, "Share URL"))
     }
 
     override fun onLoaderReset(loader: Loader<Cursor>?) {
@@ -197,7 +213,7 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        getMenuInflater().inflate(R.menu.main, menu)
+        getMenuInflater().inflate(R.menu.comments, menu)
         return true
     }
 
@@ -205,6 +221,12 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
         return when (item?.getItemId()) {
             R.id.refresh -> {
                 refreshComments(); true
+            }
+            R.id.share_story -> {
+                mShareStory(); true
+            }
+            R.id.share_comments -> {
+                mShareComments(); true
             }
             else -> super< Activity>.onOptionsItemSelected(item)
         }

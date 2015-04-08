@@ -6,13 +6,19 @@ import android.util.AttributeSet
 import kotlin.template.LocaleFormatter
 import android.util.Log
 import android.support.v4.util.TimeUtils
+import android.view.View
 import java.util.concurrent.TimeUnit
 
-class DateView(context: Context, attributeSet: AttributeSet) : TextView(context, attributeSet) {
-
-    val mContext = context
+class DateView: TextView {
+    constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(context, attrs, defStyle)
+    constructor(context: Context, attrs: AttributeSet) : super(context, attrs, 0)
+    constructor(context: Context) : super(context)
 
     override fun setText(text: CharSequence?, type: TextView.BufferType?) {
+        if ( isInEditMode()) {
+            super.setText(text, type)
+            return
+        }
         val reformattedText = text?.reformat()
         super<TextView>.setText(reformattedText ?: text, type)
     }
@@ -42,7 +48,7 @@ class DateView(context: Context, attributeSet: AttributeSet) : TextView(context,
         DAY    : TimeUnit(86400L, R.string.day, R.string.days)
     }
 
-    fun getString(id : Int) : String = mContext.getString(id)
+    fun getString(id : Int) : String = getContext().getString(id)
 
     fun formatTime(diff: Long, unit: TimeUnit): CharSequence {
         val time = diff.div(unit.dividend)

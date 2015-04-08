@@ -5,6 +5,7 @@ import android.util.Log
 
 public class PostTable {
     companion object {
+
         // Database table
         public val TABLE_NAME: String = "posts"
 
@@ -18,6 +19,11 @@ public class PostTable {
         public val COLUMN_TYPE: String = "type"
         public val COLUMN_URL: String = "url"
         public val COLUMN_ORDINAL: String = "ordinal"
+        public val COLUMN_STARRED: String = "starred"
+
+        val STARRED_SELECTION: String = "${COLUMN_STARRED}=?"
+        val STARRED_SELECTION_ARGS: String = "1"
+        val UNSTARRED_SELECTION_ARGS: String = "0"
 
         // Database creation SQL statement
         private val DATABASE_CREATE = "create table " + TABLE_NAME +
@@ -31,7 +37,8 @@ public class PostTable {
                 COLUMN_TITLE + " text not null, " +
                 COLUMN_TYPE + " text not null, " +
                 COLUMN_URL + " text not null, " +
-                COLUMN_ORDINAL + " real not null " +
+                COLUMN_ORDINAL + " real not null, " +
+                COLUMN_STARRED + " integer default 0 " +
                 //+ " FOREIGN KEY (" + COLUMN_ID + ") REFERENCES "
                 //+ ITAuthorTable.TABLE_NAME + " (" + ITAuthorTable.COLUMN_ID + ")"
                 ");";
@@ -59,7 +66,8 @@ public class PostTable {
                 PostTable.COLUMN_URL,
                 PostTable.COLUMN_ORDINAL,
                 PostTable.COLUMN_ID,
-                PostTable.COLUMN_CHILDREN
+                PostTable.COLUMN_CHILDREN,
+                PostTable.COLUMN_STARRED
         )
 
         fun getCommentsProjection(): Array<String> = array(
@@ -69,10 +77,9 @@ public class PostTable {
                 PostTable.COLUMN_BY,
                 PostTable.COLUMN_TIMESTAMP,
                 PostTable.COLUMN_SCORE,
-                PostTable.COLUMN_URL
+                PostTable.COLUMN_URL,
+                PostTable.COLUMN_STARRED
         )
-
-
 
         fun getOrdinalSortingString(): String = PostTable.COLUMN_ORDINAL + " DESC"
     }

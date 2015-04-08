@@ -1,25 +1,23 @@
 package se.ntlv.newsbringer.network
 
 import android.app.IntentService
+import android.content.ContentResolver
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.util.Log
-
+import com.android.volley.RequestQueue
 import com.android.volley.Response
 import com.android.volley.VolleyError
 import com.android.volley.toolbox.JsonArrayRequest
-
-import org.json.JSONArray
-
-import se.ntlv.newsbringer.database.NewsContentProvider
-import com.android.volley.RequestQueue
-import kotlin.properties.Delegates
 import com.android.volley.toolbox.Volley
-import se.ntlv.newsbringer.database.PostTable
-import se.ntlv.newsbringer.database.CommentsTable
-import android.net.Uri
-import android.content.ContentResolver
 import com.crashlytics.android.Crashlytics
+import org.json.JSONArray
+import se.ntlv.newsbringer.database.CommentsTable
+import se.ntlv.newsbringer.database.NewsContentProvider
+import se.ntlv.newsbringer.database.PostTable
+import kotlin.properties.Delegates
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -56,9 +54,9 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
     private val mNewsThreadResponseListener = object : Response.Listener<NewsThread> {
         override fun onResponse(response: NewsThread) {
-            val selection = "${PostTable.COLUMN_ID}=?"
-            val selectionArgs = array(response.id.toString())
-            resolver.delete(NewsContentProvider.CONTENT_URI_POSTS, selection, selectionArgs)
+            //val selection = "${PostTable.COLUMN_ID}=?"
+            //val selectionArgs = array(response.id.toString())
+            //resolver.delete(NewsContentProvider.CONTENT_URI_POSTS, selection, selectionArgs)
             resolver.insert(NewsContentProvider.CONTENT_URI_POSTS, response.contentValue)
         }
     }
@@ -72,8 +70,27 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
             ACTION_FETCH_THREADS -> handleFetchThreads()
             ACTION_FETCH_COMMENTS -> fetchComments(this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L), this.getBooleanExtra(EXTRA_DISALLOW_FETCH, false))
             ACTION_FETCH_CHILD_COMMENTS -> fetchChildComments(this.getLongExtra(EXTRA_PARENT_COMMENT_ID, -1L), this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L))
+            ACTION_TOGGLE_STARRED -> toggleStarred(this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L))
             else -> Log.d(TAG, "Attempted to start $TAG with illegal argument")
         }
+    }
+
+    private fun toggleStarred(id: Long) {
+        val projection = array(
+                PostTable.COLUMN_ID,
+                PostTable.COLUMN_STARRED
+        )
+        val selection = "${PostTable.COLUMN_ID}=?"
+        val selectionArgs = array("$id")
+        val result = resolver.query(NewsContentProvider.CONTENT_URI_POSTS, projection, selection, selectionArgs, null)
+        if (!result.moveToFirst()) {
+            return
+        }
+        val isStarred = 1 == result.getInt(result.getColumnIndexOrThrow(PostTable.COLUMN_STARRED))
+        val cv = ContentValues(1)
+        cv.put(PostTable.COLUMN_STARRED, (if (isStarred) 0 else 1))
+        resolver.update(NewsContentProvider.CONTENT_URI_POSTS, cv, selection, selectionArgs)
+
     }
 
     override fun onHandleIntent(intent: Intent?) = intent?.doAction()
@@ -132,6 +149,8 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         public val ACTION_FETCH_THREADS: String = "${TAG}_action_fetch_threads"
         public val ACTION_FETCH_THREAD: String = "${TAG}_action_fetch_thread"
 
+        private val ACTION_TOGGLE_STARRED: String = "${TAG}action_toggle_starred"
+
         public var URI_SUFFIX: String = ".json"
         public var BASE_URI: String = "https://hacker-news.firebaseio.com/v0"
         public var ITEM_URI: String = "$BASE_URI/item/"
@@ -174,6 +193,14 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
             intent.putExtra(EXTRA_PARENT_COMMENT_ID, id)
             intent.putExtra(EXTRA_NEWSTHREAD_ID, newsThread)
             context.startService(intent)
+        }
+
+
+        fun startActionToggleStarred(context: Context, id: Long) {
+            val intent = Intent(context, javaClass<DataPullPushService>())
+            intent.setAction(ACTION_TOGGLE_STARRED)
+            intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
+            context startService intent
         }
     }
 
@@ -259,7 +286,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
     }
 
     fun handleFetchThreads() {
-        resolver.delete(NewsContentProvider.CONTENT_URI_POSTS, null, null)
+        resolver.delete(NewsContentProvider.CONTENT_URI_POSTS, PostTable.STARRED_SELECTION, array(PostTable.UNSTARRED_SELECTION_ARGS))
         mQueue.add(createTopHundredRequest())
     }
 }

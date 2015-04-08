@@ -14,7 +14,9 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
 
     override fun bindView(view: View, context: Context?, cursor: Cursor) {
         val tag = view.tag
-        tag.title.setText(cursor.getString(PostTable.COLUMN_TITLE))
+        val isStarred = cursor.getInt(PostTable.COLUMN_STARRED) == 1
+        val title = cursor.getString(PostTable.COLUMN_TITLE) + if (isStarred) "\u2605" else ""
+        tag.title.setText(title)
         tag.by.setText(cursor.getString(PostTable.COLUMN_BY))
         tag.time.setText(cursor.getString(PostTable.COLUMN_TIMESTAMP))
         tag.score.setText(cursor.getString(PostTable.COLUMN_SCORE))
@@ -46,10 +48,6 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
         var text: String? = null
         val commentCount = root.findViewById(R.id.comment_count) as TextView
         var commentQuantity: Long? = null
-
-        fun TextView.getContent(): String = this.getText().toString()
-
-
     }
 
     val View.tag: ViewHolder

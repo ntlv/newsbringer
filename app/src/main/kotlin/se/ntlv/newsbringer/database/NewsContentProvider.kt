@@ -5,12 +5,12 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.UriMatcher
 import android.database.Cursor
+import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteQueryBuilder
 import android.net.Uri
 import android.text.TextUtils
 import android.util.Log
 import kotlin.properties.Delegates
-import android.database.sqlite.SQLiteDatabase
 
 public class NewsContentProvider : ContentProvider() {
     override fun onCreate(): Boolean {
@@ -57,7 +57,12 @@ public class NewsContentProvider : ContentProvider() {
 
         when (uriType) {
             POSTS -> {
-                val id = sqlDB.replace(PostTable.TABLE_NAME, null, contentValues)
+                var id = sqlDB.insert(PostTable.TABLE_NAME, null, contentValues)
+                if (id == -1L) {
+                    id = sqlDB.update(PostTable.TABLE_NAME, contentValues, "${PostTable.COLUMN_ID}=?",
+                            array(contentValues.getAsLong(PostTable.COLUMN_ID).toString())
+                    ).toLong()
+                }
                 getContext().getContentResolver().notifyChange(uri, null)
                 return Uri.parse(CONTENT_POSTS + "/" + id)
             }

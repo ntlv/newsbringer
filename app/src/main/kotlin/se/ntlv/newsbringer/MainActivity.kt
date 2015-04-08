@@ -13,7 +13,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.ListView
-import android.widget.ProgressBar
 import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
 import se.ntlv.newsbringer.NewsThreadListAdapter.ViewHolder
@@ -76,10 +75,17 @@ public class MainActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor> {
 
         mListView.setAdapter(mAdapter)
         mListView.setOnItemClickListener { adapterView, view, i, l -> openComments(view) }
-        mListView.setOnItemLongClickListener { adapterView, view, i, l -> openLink(view); true }
+        mListView.setOnItemLongClickListener { adapterView, view, i, l -> toggleStarredState(view); true }
 
         mProgress.setVisibility(View.VISIBLE)
         getLoaderManager().initLoader<Cursor>(R.id.loader_frontpage, null, this)
+    }
+
+    private fun toggleStarredState(view: View) {
+        val tag = (view.getTag() as? NewsThreadListAdapter.ViewHolder)?.id
+        if (tag != null) {
+            DataPullPushService.startActionToggleStarred(this, tag)
+        }
     }
 
     private fun openLink(view: View) = (view.getTag() as? NewsThreadListAdapter.ViewHolder)?.link?.openAsLink()
@@ -101,6 +107,9 @@ public class MainActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor> {
             R.id.refresh -> {
                 refresh(); true
             }
+            R.id.toggle_show_starred_only -> {
+                toggleDisplayStarredOnly(); true
+            }
             else -> super< Activity>.onOptionsItemSelected(item)
         }
     }
@@ -112,10 +121,20 @@ public class MainActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor> {
         DataPullPushService.startActionFetchThreads(this)
     }
 
+    private var mShowOnlyStarred = false
+
+    private fun toggleDisplayStarredOnly() {
+        mShowOnlyStarred = mShowOnlyStarred.not()
+        getLoaderManager().restartLoader(R.id.loader_frontpage, null, this)
+    }
+
     override fun onCreateLoader(id: Int, args: Bundle?): Loader<Cursor> {
         mSwipeView.setRefreshing(true)
+        val selection = if (mShowOnlyStarred) PostTable.STARRED_SELECTION else null
+        val selectionArgs = if (mShowOnlyStarred) array(PostTable.STARRED_SELECTION_ARGS) else null
+
         return CursorLoader(this, NewsContentProvider.CONTENT_URI_POSTS,
-                PostTable.getDefaultProjection(), null, null, PostTable.getOrdinalSortingString())
+                PostTable.getDefaultProjection(), selection, selectionArgs, PostTable.getOrdinalSortingString())
     }
 }
 

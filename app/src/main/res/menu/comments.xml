@@ -1,6 +1,6 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
       xmlns:tools="http://schemas.android.com/tools"
-      tools:context=".MainActivity">
+      tools:context=".CommentsActivity">
 
 
     <!--<item android:id="@+id/action_settings"-->
@@ -12,11 +12,17 @@
         android:title="@string/actionbar_item_title_refresh"
         android:orderInCategory="0"
         android:showAsAction="ifRoom"/>
+
     <item
-        android:id="@+id/toggle_show_starred_only"
-        android:title="@string/toggle_show_starred_only"
+        android:id="@+id/share_story"
+        android:title="@string/share_story"
         android:orderInCategory="1"
         android:showAsAction="ifRoom"
         />
-
+    <item
+        android:id="@+id/share_comments"
+        android:title="@string/share_comments"
+        android:orderInCategory="2"
+        android:showAsAction="ifRoom"
+        />
 </menu>
