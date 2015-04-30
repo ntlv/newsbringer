@@ -181,6 +181,14 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
     override fun onCreate(savedInstanceState: Bundle?) {
         super<Activity>.onCreate(savedInstanceState)
 
+        if((-1L).equals(mItemId)) {
+            Toast.makeText(this, "Broken link, loading main activity", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, javaClass<MainActivity>())
+            startActivity(intent)
+            finish()
+        }
+
+
         if (savedInstanceState != null) {
             val positions = savedInstanceState.getLongArray(STATE_HANDLED_POSITIONS)
             positions.toCollection(handledPositions)

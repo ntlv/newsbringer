@@ -70,6 +70,18 @@ public class PostTable {
                 PostTable.COLUMN_STARRED
         )
 
+        fun getFrontPageProjection(): Array<String> = array(
+                PostTable.COLUMN_SCORE,
+                PostTable.COLUMN_TIMESTAMP,
+                PostTable.COLUMN_BY,
+                PostTable.COLUMN_TITLE,
+                PostTable.COLUMN_URL,
+                PostTable.COLUMN_ORDINAL,
+                PostTable.COLUMN_ID,
+                PostTable.COLUMN_CHILDREN,
+                PostTable.COLUMN_STARRED
+        )
+
         fun getCommentsProjection(): Array<String> = array(
                 PostTable.COLUMN_ID,
                 PostTable.COLUMN_TITLE,

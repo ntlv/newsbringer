@@ -10,6 +10,7 @@
     <item
         android:id="@+id/refresh"
         android:title="@string/actionbar_item_title_refresh"
+        android:icon="@drawable/ic_action_refresh"
         android:orderInCategory="0"
         android:showAsAction="ifRoom"/>
 
@@ -17,12 +18,12 @@
         android:id="@+id/share_story"
         android:title="@string/share_story"
         android:orderInCategory="1"
-        android:showAsAction="ifRoom"
+        android:showAsAction="never"
         />
     <item
         android:id="@+id/share_comments"
         android:title="@string/share_comments"
         android:orderInCategory="2"
-        android:showAsAction="ifRoom"
+        android:showAsAction="never"
         />
 </menu>

@@ -15,14 +15,14 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
     override fun bindView(view: View, context: Context?, cursor: Cursor) {
         val tag = view.tag
         val isStarred = cursor.getInt(PostTable.COLUMN_STARRED) == 1
-        val title = cursor.getString(PostTable.COLUMN_TITLE) + if (isStarred) "\u2605" else ""
-        tag.title.setText(title)
+        val titlePrefix = if (isStarred) "\u2605" else ""
+        val title = cursor.getString(PostTable.COLUMN_TITLE)
+        tag.title.setText(titlePrefix + title)
         tag.by.setText(cursor.getString(PostTable.COLUMN_BY))
         tag.time.setText(cursor.getString(PostTable.COLUMN_TIMESTAMP))
         tag.score.setText(cursor.getString(PostTable.COLUMN_SCORE))
         tag.link = cursor.getString(PostTable.COLUMN_URL)
         tag.id = cursor.getLong(PostTable.COLUMN_ID)
-        tag.text = cursor.getString(PostTable.COLUMN_TEXT)
         val children = cursor.getString(PostTable.COLUMN_CHILDREN)
         if (children.length() > 0) {
             val strings = children.split(',')
@@ -34,10 +34,6 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
         }
     }
 
-    fun Cursor.getString(columnName: String): String = getString(getColumnIndexOrThrow(columnName))
-    fun Cursor.getLong(columnName: String): Long = getLong(getColumnIndexOrThrow(columnName))
-
-
     class ViewHolder(root: View) {
         val title = root.findViewById(R.id.title) as TextView
         val by = root.findViewById(R.id.by) as TextView
@@ -45,7 +41,6 @@ open class NewsThreadListAdapter(ctx: Context, layout: Int, cursor: Cursor?, fla
         val score = root.findViewById(R.id.score) as TextView
         var link: String? = null
         var id: Long? = null
-        var text: String? = null
         val commentCount = root.findViewById(R.id.comment_count) as TextView
         var commentQuantity: Long? = null
     }

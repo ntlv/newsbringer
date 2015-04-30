@@ -134,7 +134,7 @@ public class MainActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor> {
         val selectionArgs = if (mShowOnlyStarred) array(PostTable.STARRED_SELECTION_ARGS) else null
 
         return CursorLoader(this, NewsContentProvider.CONTENT_URI_POSTS,
-                PostTable.getDefaultProjection(), selection, selectionArgs, PostTable.getOrdinalSortingString())
+                PostTable.getFrontPageProjection(), selection, selectionArgs, PostTable.getOrdinalSortingString())
     }
 }
 

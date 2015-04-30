@@ -18,7 +18,7 @@
     <string name="days">days</string>
     <string name="frontpage">Frontpage</string>
     <string name="color_band_content_description">A color band, only decorative</string>
-    <string name="activity_comments_label">Comments viewer</string>
+    <string name="activity_comments_label">YCreader Comments viewer</string>
     <string name="loading_hint">If nothing happens, try tapping refresh</string>
     <string name="share">Share</string>
     <string name="share_story">Share story</string>
