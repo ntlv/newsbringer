@@ -16,16 +16,12 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
-import android.widget.ListView
-import android.widget.TextView
-import android.widget.Toast
+import android.widget.*
 import se.ntlv.newsbringer.database.CommentsTable
 import se.ntlv.newsbringer.database.NewsContentProvider
 import se.ntlv.newsbringer.database.PostTable
 import se.ntlv.newsbringer.network.DataPullPushService
-import java.util.HashSet
-import kotlin.properties.Delegates
+import java.util.*
 
 
 public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor> {
@@ -38,14 +34,14 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
             R.id.loader_comments_comments -> {
                 val projection = CommentsTable.getDefaultProjection()
                 val selection = "${CommentsTable.COLUMN_PARENT}=?"
-                val selectionArgs = array(args.getLong(LOADER_ARGS_ID).toString())
+                val selectionArgs = arrayOf(args.getLong(LOADER_ARGS_ID).toString())
                 val sorting = CommentsTable.COLUMN_ORDINAL + " ASC"
                 return CursorLoader(this, NewsContentProvider.CONTENT_URI_COMMENTS,
                         projection, selection, selectionArgs, sorting)
             }
             R.id.loader_comments_header -> {
                 val selection = "${PostTable.COLUMN_ID}=?"
-                val selectionArgs = array(args.getLong(LOADER_ARGS_ID).toString())
+                val selectionArgs = arrayOf(args.getLong(LOADER_ARGS_ID).toString())
                 return CursorLoader(this, NewsContentProvider.CONTENT_URI_POSTS,
                         PostTable.getCommentsProjection(), selection, selectionArgs, null)
             }
@@ -59,7 +55,7 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
         if (loader == null || data == null) {
             return
         }
-        when (loader.getId()) {
+        when (loader.id) {
             R.id.loader_comments_header -> {
                 if (!data.moveToFirst()) {
                     refreshHeader()
@@ -79,11 +75,11 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
     }
 
     private fun updateComments(data: Cursor) {
-        mSwipeView.setRefreshing(false)
+        mSwipeView.isRefreshing = false
         mAdapter.swapCursor(data)
-        mListView.setVisibility(View.VISIBLE)
-        mProgressView.setVisibility(View.INVISIBLE)
-        (findViewById(R.id.comment_count) as? TextView)?.setText(data.getCount().toString())
+        mListView.visibility = View.VISIBLE
+        mProgressView.visibility = View.INVISIBLE
+        (findViewById(R.id.comment_count) as? TextView)?.text = data.count.toString()
     }
 
     private var mShareStory: (() ->Unit) = { toast() }
@@ -95,15 +91,14 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
         val title = data.getString(PostTable.COLUMN_TITLE)
         setTitle(title)
 
-        mListView.setVisibility(View.VISIBLE)
-        mProgressView.setVisibility(View.INVISIBLE)
+        mListView.visibility = View.VISIBLE
+        mProgressView.visibility = View.INVISIBLE
         val link = data.getString(PostTable.COLUMN_URL)
         mShareStory = { shareLink(title, link)}
         mShareComments = { shareLink(title, "https://news.ycombinator.com/item?id=$mItemId")}
         mHeaderView.setOnClickListener { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link))) }
 
-        array(
-                Triple(R.id.title, title, false),
+        arrayOf(Triple(R.id.title, title, false),
                 Triple(R.id.text, data.getString(PostTable.COLUMN_TEXT), true),
                 Triple(R.id.by, data.getString(PostTable.COLUMN_BY), false),
                 Triple(R.id.time, data.getString(PostTable.COLUMN_TIMESTAMP), false),
@@ -123,11 +118,10 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
         if (loader == null) {
             return
         }
-        val loaderId = loader.getId()
+        val loaderId = loader.id
 
         if (loaderId == R.id.loader_comments_header) {
-            array(
-                    Triple(R.id.title, "Loading reset.", false),
+            arrayOf(Triple(R.id.title, "Loading reset.", false),
                     Triple(R.id.text, "", true),
                     Triple(R.id.by, "", false),
                     Triple(R.id.time, "", false),
@@ -136,7 +130,7 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
             ).forEach { findViewAndSetText(mHeaderView, it.first, it.second, it.third) }
 
         } else if (loaderId == R.id.loader_comments_comments) {
-            mSwipeView.setRefreshing(false)
+            mSwipeView.isRefreshing = false
             mAdapter.swapCursor(null)
         }
     }
@@ -145,45 +139,51 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
         val view = root?.findViewById(id)
         if (view is TextView) {
             if (isHtml) {
-                view.setText(Html.fromHtml(text))
+                view.text = Html.fromHtml(text)
             } else {
-                view.setText(text)
+                view.text = text
             }
         }
     }
 
-    private val mAdapter: CommentsListAdapter by Delegates.lazy {
+    private val mAdapter: CommentsListAdapter by lazy(LazyThreadSafetyMode.NONE) {
         CommentsListAdapter(this, R.layout.list_item_comment, null, 0)
     }
 
-    private val mSwipeView: SwipeRefreshLayout by Delegates.lazy {
+    private val mSwipeView: SwipeRefreshLayout by lazy(LazyThreadSafetyMode.NONE) {
         findViewById(R.id.swipe_view) as SwipeRefreshLayout
     }
 
-    private val mProgressView by Delegates.lazy {
+    private val mProgressView by lazy(LazyThreadSafetyMode.NONE) {
         findViewById(R.id.progress_view)
     }
 
-    private val mListView: ListView by Delegates.lazy {
+    private val mListView: ListView by lazy(LazyThreadSafetyMode.NONE) {
         findViewById(R.id.list_view) as ListView
     }
 
-    private val mHeaderView: LinearLayout by Delegates.lazy {
-        getLayoutInflater().inflate(R.layout.list_header_newsthread, mListView, false) as LinearLayout
+    private val mHeaderView: LinearLayout by lazy(LazyThreadSafetyMode.NONE) {
+        layoutInflater.inflate(R.layout.list_header_newsthread, mListView, false) as LinearLayout
     }
 
-    val mItemId by Delegates.lazy {
-        val idFromUri: Long? = getIntent().getData()?.getQueryParameter("id")?.toLong()
-        val idFromExtras: Long? = getIntent().getExtras()?.getLong(EXTRA_NEWSTHREAD_ID)
+//    private val mSwipeNavView: View by lazy(LazyThreadSafetyMode.NONE) {
+//        findViewById(R.id.swipe_navigation_detector)
+//    }
+
+
+
+    val mItemId by lazy(LazyThreadSafetyMode.NONE) {
+        val idFromUri: Long? = intent.data?.getQueryParameter("id")?.toLong()
+        val idFromExtras: Long? = intent.extras?.getLong(EXTRA_NEWSTHREAD_ID)
         idFromUri ?: (idFromExtras ?: -1L)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super<Activity>.onCreate(savedInstanceState)
+        super.onCreate(savedInstanceState)
 
         if((-1L).equals(mItemId)) {
             Toast.makeText(this, "Broken link, loading main activity", Toast.LENGTH_SHORT).show()
-            val intent = Intent(this, javaClass<MainActivity>())
+            val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
             finish()
         }
@@ -196,13 +196,13 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
 
         setContentView(R.layout.activity_swipe_refresh_list_view_layout)
 
-        mListView.setVisibility(View.INVISIBLE)
-        mProgressView.setVisibility(View.VISIBLE)
+        mListView.visibility = View.INVISIBLE
+        mProgressView.visibility = View.VISIBLE
 
         val loaderArgs = Bundle()
         loaderArgs.putLong(LOADER_ARGS_ID, mItemId)
-        getLoaderManager().initLoader(R.id.loader_comments_comments, loaderArgs, this)
-        getLoaderManager().initLoader(R.id.loader_comments_header, loaderArgs, this)
+        loaderManager.initLoader(R.id.loader_comments_comments, loaderArgs, this)
+        loaderManager.initLoader(R.id.loader_comments_header, loaderArgs, this)
 
         mSwipeView.setOnRefreshListener { refreshComments(false, true) }
         mSwipeView.setColorSchemeResources(
@@ -213,20 +213,20 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
         )
 
 
-        mListView.setDivider(null) //ugly, but disables dividers
+        mListView.divider = null //ugly, but disables dividers
 
         mListView.addHeaderView(mHeaderView) //important to call before setAdapter if SDK_LEVEL < KITKAT
-        mListView.setAdapter(mAdapter)
+        mListView.adapter = mAdapter
         mListView.setOnItemClickListener { adapterView, view, i, l -> fetchChildComments(l, view, mItemId) }
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
-        getMenuInflater().inflate(R.menu.comments, menu)
+        menuInflater.inflate(R.menu.comments, menu)
         return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
-        return when (item?.getItemId()) {
+        return when (item?.itemId) {
             R.id.refresh -> {
                 refreshComments(); true
             }
@@ -236,12 +236,37 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
             R.id.share_comments -> {
                 mShareComments(); true
             }
-            else -> super< Activity>.onOptionsItemSelected(item)
+            else -> super.onOptionsItemSelected(item)
         }
     }
 
+//    class Swiper(ctx: Context) : OnSwipeTouchDetector() {
+//        private val mCtx: Context = ctx
+//
+//        override fun onSwipeRight(): Boolean {
+//            Toast.makeText(mCtx, "Swipe right", Toast.LENGTH_SHORT).show()
+//            return true
+//        }
+//
+//        override fun onSwipeLeft(): Boolean {
+//            Toast.makeText(mCtx, "Swipe left", Toast.LENGTH_SHORT).show()
+//            return true
+//        }
+//
+//        override fun onSwipeTop(): Boolean {
+//            Toast.makeText(mCtx, "Swipe top", Toast.LENGTH_SHORT).show()
+//            return true
+//        }
+//
+//        override fun onSwipeBottom(): Boolean {
+//            Toast.makeText(mCtx, "Swipe bottom", Toast.LENGTH_SHORT).show()
+//            return true
+//        }
+//
+//    }
+
     companion object {
-        val TAG: String = javaClass<CommentsActivity>().getSimpleName()
+        val TAG: String = CommentsActivity::class.java.simpleName
 
         val EXTRA_NEWSTHREAD_ID: String = "${TAG}extra_news_thread_id"
 
@@ -250,31 +275,31 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
         val LOADER_ARGS_ID: String = "${TAG}loader_args_id"
 
         public fun getIntent(ctx: Context, id: Long): Intent {
-            return Intent(ctx, javaClass<CommentsActivity>())
+            return Intent(ctx, CommentsActivity::class.java)
                     .putExtra(EXTRA_NEWSTHREAD_ID, id)
         }
     }
 
     fun refreshHeader(shouldShowRefreshSpinner: Boolean = true) {
         if (shouldShowRefreshSpinner) {
-            mSwipeView.setRefreshing(true)
+            mSwipeView.isRefreshing = true
         }
         DataPullPushService.startActionFetchThread(this, mItemId)
     }
 
     fun refreshComments(shouldShowRefreshSpinner: Boolean = true, disallowFetchSkip: Boolean = false) {
         if (shouldShowRefreshSpinner) {
-            mSwipeView.setRefreshing(true)
+            mSwipeView.isRefreshing = true
         }
         DataPullPushService.startActionFetchComments(this, mItemId, disallowFetchSkip)
     }
 
-    val handledPositions by Delegates.lazy {
+    val handledPositions by lazy(LazyThreadSafetyMode.NONE) {
         HashSet<Long>()
     }
 
     override fun onSaveInstanceState(bundle: Bundle) {
-        super<Activity>.onSaveInstanceState(bundle)
+        super.onSaveInstanceState(bundle)
 
         val out = LongArray(handledPositions.size())
         handledPositions.withIndex().forEach { out.set(it.index, it.value) }
@@ -285,7 +310,7 @@ public class CommentsActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor
     fun fetchChildComments(commentId: Long, view: View, threadId: Long) {
         if (commentId !in handledPositions) {
             handledPositions.add(commentId)
-            val tag = view.getTag()
+            val tag = view.tag
             if (tag is CommentsListAdapter.ViewHolder && tag.id != null) {
                 DataPullPushService.startActionFetchChildComments(this, tag.id ?: -1L, threadId)
             }

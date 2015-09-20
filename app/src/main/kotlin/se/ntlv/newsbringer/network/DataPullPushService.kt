@@ -27,8 +27,8 @@ import kotlin.properties.Delegates
  */
 public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
-    val resolver: ContentResolver   by Delegates.lazy { getContentResolver() }
-    val mQueue: RequestQueue        by Delegates.lazy { Volley.newRequestQueue(this) }
+    val resolver: ContentResolver   by lazy(LazyThreadSafetyMode.NONE) { getContentResolver() }
+    val mQueue: RequestQueue        by lazy(LazyThreadSafetyMode.NONE) { Volley.newRequestQueue(this) }
 
     private val mErrorListener = object : Response.ErrorListener {
         override fun onErrorResponse(error: VolleyError) {
@@ -65,7 +65,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         if (this == null) {
             return
         }
-        when (this.getAction()) {
+        when (this.action) {
             ACTION_FETCH_THREAD -> handleFetchThread(this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L))
             ACTION_FETCH_THREADS -> handleFetchThreads()
             ACTION_FETCH_COMMENTS -> fetchComments(this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L), this.getBooleanExtra(EXTRA_DISALLOW_FETCH, false))
@@ -76,12 +76,11 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
     }
 
     private fun toggleStarred(id: Long) {
-        val projection = array(
-                PostTable.COLUMN_ID,
+        val projection = arrayOf(PostTable.COLUMN_ID,
                 PostTable.COLUMN_STARRED
         )
         val selection = "${PostTable.COLUMN_ID}=?"
-        val selectionArgs = array("$id")
+        val selectionArgs = arrayOf("$id")
         val result = resolver.query(NewsContentProvider.CONTENT_URI_POSTS, projection, selection, selectionArgs, null)
         if (!result.moveToFirst()) {
             return
@@ -93,7 +92,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
     }
 
-    override fun onHandleIntent(intent: Intent?) = intent?.doAction()
+    override fun onHandleIntent(intent: Intent?): Unit = intent?.doAction() as Unit
 
     private fun createTopHundredRequest(): JsonArrayRequest {
         return JsonArrayRequest(TOP_HUNDRED_URI, mJSONArrayListener, mErrorListener)
@@ -114,7 +113,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
     private fun createNewsThreadRequest(listener: Response.Listener<NewsThread>,
                                         errorListener: Response.ErrorListener,
                                         url: String): GsonRequest<NewsThread> {
-        return GsonRequest(url, javaClass<NewsThread>(), null, listener, errorListener)
+        return GsonRequest(url, NewsThread::class.java, null, listener, errorListener)
     }
 
     fun createCommentRequest(ordinal: Int,
@@ -122,7 +121,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
                              ancestorCount: Int = 0,
                              ancestorOrdinal: Double = 0.0,
                              threadParent: Long): GsonRequest<Comment> {
-        val url = "${ITEM_URI}${id}${URI_SUFFIX}"
+        val url = "$ITEM_URI$id$URI_SUFFIX"
         val listener = object : Response.Listener<Comment> {
             override fun onResponse(response: Comment) {
                 val reified = response.getAsContentValues(ordinal, ancestorCount, ancestorOrdinal, threadParent)
@@ -132,12 +131,12 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
                 }
             }
         }
-        return GsonRequest(url, javaClass<Comment>(), null, listener, mErrorListener)
+        return GsonRequest(url, Comment::class.java, null, listener, mErrorListener)
     }
 
     companion object {
 
-        public val TAG: String = javaClass<DataPullPushService>().getSimpleName()
+        public val TAG: String = DataPullPushService::class.java.simpleName
 
         val EXTRA_NEWSTHREAD_ID: String = "${TAG}extra_newsthread_id"
         val EXTRA_DISALLOW_FETCH: String = "${TAG}extra_disallow_fetch_skip"
@@ -162,7 +161,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
          * @see IntentService
          */
         public fun startActionFetchThreads(context: Context) {
-            val intent = Intent(context, javaClass<DataPullPushService>())
+            val intent = Intent(context, DataPullPushService::class.java)
             intent.setAction(ACTION_FETCH_THREADS)
             context.startService(intent)
         }
@@ -170,7 +169,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         public fun startActionFetchComments(context: Context, id: Long, disallowFetchSkip: Boolean) {
 
             Log.d(TAG, "Starting action fetch comments for $id")
-            val intent = Intent(context, javaClass<DataPullPushService>())
+            val intent = Intent(context, DataPullPushService::class.java)
             intent.setAction(ACTION_FETCH_COMMENTS)
             intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
             intent.putExtra(EXTRA_DISALLOW_FETCH, disallowFetchSkip)
@@ -178,7 +177,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         }
 
         public fun startActionFetchThread(context: Context, id: Long) {
-            val intent = Intent(context, javaClass<DataPullPushService>())
+            val intent = Intent(context, DataPullPushService::class.java)
             intent.setAction(ACTION_FETCH_THREAD)
             intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
             context.startService(intent)
@@ -188,7 +187,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
                                           id: Long,
                                           newsThread: Long) {
             Log.d(TAG, "Starting action fetch comments for $id")
-            val intent = Intent(context, javaClass<DataPullPushService>())
+            val intent = Intent(context, DataPullPushService::class.java)
             intent.setAction(ACTION_FETCH_CHILD_COMMENTS)
             intent.putExtra(EXTRA_PARENT_COMMENT_ID, id)
             intent.putExtra(EXTRA_NEWSTHREAD_ID, newsThread)
@@ -197,7 +196,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
 
         fun startActionToggleStarred(context: Context, id: Long) {
-            val intent = Intent(context, javaClass<DataPullPushService>())
+            val intent = Intent(context, DataPullPushService::class.java)
             intent.setAction(ACTION_TOGGLE_STARRED)
             intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
             context startService intent
@@ -205,8 +204,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
     }
 
     fun refreshComments(id: Long) {
-        val projection = array(
-                PostTable.COLUMN_ID,
+        val projection = arrayOf(PostTable.COLUMN_ID,
                 PostTable.COLUMN_CHILDREN
         )
         val commentsSelection = "${PostTable.COLUMN_ID}=$id"
@@ -230,7 +228,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         }
         val uri = NewsContentProvider.CONTENT_URI_COMMENTS
         val selection = "${CommentsTable.COLUMN_PARENT}=?"
-        val selectionArgs = array(newsthreadId.toString())
+        val selectionArgs = arrayOf(newsthreadId.toString())
         val commentsExists = hasComments(uri, selection, selectionArgs)
         when {
             commentsExists && !disallowFetchSkip -> return
@@ -246,9 +244,8 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         }
         val uri = NewsContentProvider.CONTENT_URI_COMMENTS
         val selection = "${CommentsTable.COLUMN_ID}=?"
-        val selectionArgs = array(parentComment.toString())
-        val projection = array(
-                CommentsTable.COLUMN_ID,
+        val selectionArgs = arrayOf(parentComment.toString())
+        val projection = arrayOf(CommentsTable.COLUMN_ID,
                 CommentsTable.COLUMN_ANCESTOR_COUNT,
                 CommentsTable.COLUMN_ORDINAL,
                 CommentsTable.COLUMN_KIDS
@@ -275,18 +272,18 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
                             selection: String,
                             selArgs: Array<String>): Boolean {
 
-        val existingCommentsQuery = resolver.query(uri, array(CommentsTable.COLUMN_PARENT), selection, selArgs, null)
-        val commentsExists = existingCommentsQuery.getCount() > 0
+        val existingCommentsQuery = resolver.query(uri, arrayOf(CommentsTable.COLUMN_PARENT), selection, selArgs, null)
+        val commentsExists = existingCommentsQuery.count > 0
         existingCommentsQuery.close()
         return commentsExists
     }
 
     private fun handleFetchThread(id: Long) {
-        mQueue.add(createNewsThreadRequest("${ITEM_URI}${id}${URI_SUFFIX}"))
+        mQueue.add(createNewsThreadRequest("$ITEM_URI$id$URI_SUFFIX"))
     }
 
     fun handleFetchThreads() {
-        resolver.delete(NewsContentProvider.CONTENT_URI_POSTS, PostTable.STARRED_SELECTION, array(PostTable.UNSTARRED_SELECTION_ARGS))
+        resolver.delete(NewsContentProvider.CONTENT_URI_POSTS, PostTable.STARRED_SELECTION, arrayOf(PostTable.UNSTARRED_SELECTION_ARGS))
         mQueue.add(createTopHundredRequest())
     }
 }

@@ -2,12 +2,9 @@ package se.ntlv.newsbringer
 
 import android.content.Context
 import android.database.Cursor
-import android.graphics.drawable.ColorDrawable
 import android.text.Html
-import android.util.Log
 import android.util.TypedValue
 import android.view.View
-import android.widget.ImageView
 import android.widget.ResourceCursorAdapter
 import android.widget.TextView
 import se.ntlv.newsbringer.database.CommentsTable
@@ -15,9 +12,9 @@ import se.ntlv.newsbringer.database.CommentsTable
 open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags: Int) :
         ResourceCursorAdapter(ctx, layout, cursor, flags) {
 
-    val pxPadding = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4f, ctx.getResources().getDisplayMetrics()).toInt()
+    val pxPadding = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 4f, ctx.resources.displayMetrics).toInt()
 
-    val color = array(
+    val color = arrayOf(
             R.color.cyan,
             R.color.green,
             R.color.orange,
@@ -36,9 +33,9 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
 
         tag.colorView.setBackgroundResource(color.get(ancestorCount.mod(color.size())))
 
-        tag.by.setText(cursor.getString(CommentsTable.COLUMN_BY))
-        tag.time.setText(cursor.getString(CommentsTable.COLUMN_TIME))
-        tag.text.setHtmlText(cursor.getString(CommentsTable.COLUMN_TEXT))
+        tag.by.text = cursor.getString(CommentsTable.COLUMN_BY)
+        tag.time.text = cursor.getString(CommentsTable.COLUMN_TIME)
+        tag.text.htmlText = cursor.getString(CommentsTable.COLUMN_TEXT)
         tag.id = cursor.getLong(CommentsTable.COLUMN_ID)
 
         val kidsString = cursor.getString(CommentsTable.COLUMN_KIDS)
@@ -47,11 +44,16 @@ open class CommentsListAdapter(ctx: Context, layout: Int, cursor: Cursor?, flags
         } else {
             ""
         }
-        tag.kids.setText(count)
+        tag.kids.text = count
     }
 
-    fun TextView.setHtmlText(source: String) = this.setText(Html.fromHtml(source))
-
+    var TextView.htmlText : String
+        get() {
+            return this.text as String
+        }
+        set(source: String) {
+            this.text = Html.fromHtml(source)
+        }
 
     class ViewHolder(root: View) {
         val text = root.findViewById(R.id.text) as TextView

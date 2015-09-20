@@ -38,7 +38,7 @@ public class CommentsTable {
                 COLUMN_ORDINAL + " real not null " +
                 ");";
 
-        private val LOG_TAG = javaClass<CommentsTable>().getSimpleName()
+        private val LOG_TAG = CommentsTable::class.java.simpleName
 
         public fun onCreate(database: SQLiteDatabase) {
             Log.d(LOG_TAG, "creating database")
@@ -51,7 +51,7 @@ public class CommentsTable {
             onCreate(database)
         }
 
-        fun getDefaultProjection(): Array<String> = array(
+        fun getDefaultProjection(): Array<String> = arrayOf(
                 CommentsTable.COLUMN_BY,
                 CommentsTable.COLUMN_TEXT,
                 CommentsTable.COLUMN_TIME,
@@ -59,7 +59,6 @@ public class CommentsTable {
                 CommentsTable.COLUMN_ID,
                 CommentsTable.COLUMN_ANCESTOR_COUNT,
                 CommentsTable.COLUMN_KIDS
-
         )
     }
 }
