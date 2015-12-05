@@ -55,19 +55,6 @@ public class PostTable {
             onCreate(database)
         }
 
-        fun getDefaultProjection(): Array<String> = arrayOf(
-                PostTable.COLUMN_SCORE,
-                PostTable.COLUMN_TIMESTAMP,
-                PostTable.COLUMN_BY,
-                PostTable.COLUMN_TEXT,
-                PostTable.COLUMN_TITLE,
-                PostTable.COLUMN_URL,
-                PostTable.COLUMN_ORDINAL,
-                PostTable.COLUMN_ID,
-                PostTable.COLUMN_CHILDREN,
-                PostTable.COLUMN_STARRED
-        )
-
         fun getFrontPageProjection(): Array<String> = arrayOf(
                 PostTable.COLUMN_SCORE,
                 PostTable.COLUMN_TIMESTAMP,

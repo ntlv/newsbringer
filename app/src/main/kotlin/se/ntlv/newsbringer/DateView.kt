@@ -39,7 +39,7 @@ class DateView: TextView {
         DAY(86400L, R.string.day, R.string.days)
     }
 
-    fun getString(id : Int) : String = getContext().getString(id)
+    fun getString(id : Int) : String = context.getString(id)
 
     fun formatTime(diff: Long, unit: TimeUnit): CharSequence {
         val time = diff.div(unit.dividend)

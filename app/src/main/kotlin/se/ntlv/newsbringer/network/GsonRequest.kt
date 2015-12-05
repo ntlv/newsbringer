@@ -12,7 +12,6 @@ import com.crashlytics.android.Crashlytics
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import java.io.UnsupportedEncodingException
-import kotlin.properties.Delegates
 
 public class GsonRequest<T>
 /**
@@ -25,9 +24,9 @@ public class GsonRequest<T>
 (url: String, private val clazz: Class<T>, private val headers: Map<String, String>?, private val listener: Listener<T>, errorListener: ErrorListener) : Request<T>(Request.Method.GET, url, errorListener) {
 
     private val gson = Gson()
-    val TAG: String by Delegates.lazy { this.javaClass.simpleName }
+    val TAG: String by lazy(LazyThreadSafetyMode.SYNCHRONIZED) { this.javaClass.simpleName }
 
-    @throws(AuthFailureError::class)
+    @Throws(AuthFailureError::class)
     override fun getHeaders(): Map<String, String> {
         return headers ?: super.getHeaders()
     }

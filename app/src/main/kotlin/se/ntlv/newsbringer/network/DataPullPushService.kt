@@ -9,7 +9,8 @@ import android.net.Uri
 import android.util.Log
 import com.android.volley.RequestQueue
 import com.android.volley.Response
-import com.android.volley.VolleyError
+import com.android.volley.Response.ErrorListener
+import com.android.volley.Response.Listener
 import com.android.volley.toolbox.JsonArrayRequest
 import com.android.volley.toolbox.Volley
 import com.crashlytics.android.Crashlytics
@@ -17,7 +18,6 @@ import org.json.JSONArray
 import se.ntlv.newsbringer.database.CommentsTable
 import se.ntlv.newsbringer.database.NewsContentProvider
 import se.ntlv.newsbringer.database.PostTable
-import kotlin.properties.Delegates
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -27,19 +27,17 @@ import kotlin.properties.Delegates
  */
 public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
-    val resolver: ContentResolver   by lazy(LazyThreadSafetyMode.NONE) { getContentResolver() }
+    val resolver: ContentResolver   by lazy(LazyThreadSafetyMode.NONE) { contentResolver }
     val mQueue: RequestQueue        by lazy(LazyThreadSafetyMode.NONE) { Volley.newRequestQueue(this) }
 
-    private val mErrorListener = object : Response.ErrorListener {
-        override fun onErrorResponse(error: VolleyError) {
-            Crashlytics.log("failed to fetch: ${error.getCause()}")
-            Log.e(TAG, error.toString())
-        }
+    private val mErrorListener = ErrorListener { error ->
+        Crashlytics.log("failed to fetch: ${error.cause}")
+        Log.e(TAG, error.toString())
     }
 
-    private val mJSONArrayListener = object : Response.Listener<JSONArray> {
-        override fun onResponse(jsonArray: JSONArray) {
-            jsonArray.forEach { mQueue.add(createNewsThreadRequest("${ITEM_URI}${it}${URI_SUFFIX}")) }
+    private val mJSONArrayListener = Listener<JSONArray> { jsonArray ->
+        jsonArray.forEach {
+            mQueue.add(createNewsThreadRequest("$ITEM_URI$it$URI_SUFFIX"))
         }
     }
 
@@ -51,14 +49,8 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         (0..length - 1).forEach { i -> f(get(i)) }
     }
 
-
-    private val mNewsThreadResponseListener = object : Response.Listener<NewsThread> {
-        override fun onResponse(response: NewsThread) {
-            //val selection = "${PostTable.COLUMN_ID}=?"
-            //val selectionArgs = array(response.id.toString())
-            //resolver.delete(NewsContentProvider.CONTENT_URI_POSTS, selection, selectionArgs)
-            resolver.insert(NewsContentProvider.CONTENT_URI_POSTS, response.contentValue)
-        }
+    private val mNewsThreadResponseListener = Listener<NewsThread> { response ->
+        resolver.insert(NewsContentProvider.CONTENT_URI_POSTS, response.contentValue)
     }
 
     fun Intent?.doAction() {
@@ -103,7 +95,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
     }
 
     private fun createThreadRefreshRequest(id: Long, onCompletion: () -> Unit): GsonRequest<NewsThread> {
-        val onResponse: Response.Listener<NewsThread> = Response.Listener {
+        val onResponse: Response.Listener<NewsThread> = Listener {
             resolver.insert(NewsContentProvider.CONTENT_URI_POSTS, it.contentValue)
             onCompletion.invoke()
         }
@@ -122,13 +114,11 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
                              ancestorOrdinal: Double = 0.0,
                              threadParent: Long): GsonRequest<Comment> {
         val url = "$ITEM_URI$id$URI_SUFFIX"
-        val listener = object : Response.Listener<Comment> {
-            override fun onResponse(response: Comment) {
-                val reified = response.getAsContentValues(ordinal, ancestorCount, ancestorOrdinal, threadParent)
-                resolver.insert(NewsContentProvider.CONTENT_URI_COMMENTS, reified)
-                if (ancestorCount in 0..4 ) {
-                    fetchChildComments(response.id, threadParent)
-                }
+        val listener = Listener<Comment> { response: Comment? ->
+            val reified = response?.getAsContentValues(ordinal, ancestorCount, ancestorOrdinal, threadParent)
+            resolver.insert(NewsContentProvider.CONTENT_URI_COMMENTS, reified)
+            if (ancestorCount in 0..4 && response != null) {
+                fetchChildComments(response.id, threadParent)
             }
         }
         return GsonRequest(url, Comment::class.java, null, listener, mErrorListener)
@@ -199,7 +189,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
             val intent = Intent(context, DataPullPushService::class.java)
             intent.setAction(ACTION_TOGGLE_STARRED)
             intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
-            context startService intent
+            context.startService(intent)
         }
     }
 

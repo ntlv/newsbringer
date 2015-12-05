@@ -1,7 +1,6 @@
 package se.ntlv.newsbringer.database
 
 import android.content.ContentProvider
-import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.UriMatcher
 import android.database.Cursor
@@ -56,12 +55,7 @@ public class NewsContentProvider : ContentProvider() {
 
         when (uriType) {
             POSTS -> {
-                var id = sqlDB.insert(PostTable.TABLE_NAME, null, contentValues)
-                if (id == -1L) {
-                    id = sqlDB.update(PostTable.TABLE_NAME, contentValues, "${PostTable.COLUMN_ID}=?",
-                            arrayOf(contentValues.getAsLong(PostTable.COLUMN_ID).toString())
-                    ).toLong()
-                }
+                var id = sqlDB.replace(PostTable.TABLE_NAME, null, contentValues)
                 context.contentResolver.notifyChange(uri, null)
                 return Uri.parse(CONTENT_POSTS + "/" + id)
             }

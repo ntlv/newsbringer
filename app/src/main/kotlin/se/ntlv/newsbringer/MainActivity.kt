@@ -1,6 +1,5 @@
 package se.ntlv.newsbringer
 
-import android.app.Activity
 import android.app.LoaderManager
 import android.content.CursorLoader
 import android.content.Intent
@@ -8,20 +7,34 @@ import android.content.Loader
 import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
+import android.support.design.widget.AppBarLayout
 import android.support.v4.widget.SwipeRefreshLayout
+import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
+import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.ListView
 import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
-import se.ntlv.newsbringer.NewsThreadListAdapter.ViewHolder
+import se.ntlv.newsbringer.NewsThreadAdapter.ViewHolder
 import se.ntlv.newsbringer.database.NewsContentProvider
 import se.ntlv.newsbringer.database.PostTable
 import se.ntlv.newsbringer.network.DataPullPushService
 
 
-public class MainActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor> {
+public class MainActivity : AppCompatActivity(), LoaderManager.LoaderCallbacks<Cursor>, AppBarLayout.OnOffsetChangedListener {
+
+    override fun onOffsetChanged(p0: AppBarLayout?, p1: Int) {
+        mSwipeView.isEnabled = p1 == 0
+    }
+
+    override fun onPause() {
+        super.onPause();
+        mAppBar.removeOnOffsetChangedListener(this);
+    }
+
     override fun onLoaderReset(loader: Loader<Cursor>?) {
         mAdapter.swapCursor(null)
         mSwipeView.isRefreshing = false
@@ -42,16 +55,20 @@ public class MainActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor> {
         }
     }
 
-    val mAdapter: NewsThreadListAdapter by lazy(LazyThreadSafetyMode.NONE) {
-        NewsThreadListAdapter(this, R.layout.list_item, null, 0)
+    val mAdapter: NewsThreadAdapter by lazy(LazyThreadSafetyMode.NONE) {
+        NewsThreadAdapter(R.layout.list_item_news_thread)
+    }
+
+    private val mAppBar: AppBarLayout by lazy(LazyThreadSafetyMode.NONE) {
+        findViewById(R.id.appbar) as AppBarLayout
     }
 
     private val mSwipeView: SwipeRefreshLayout by lazy(LazyThreadSafetyMode.NONE) {
         findViewById(R.id.swipe_view) as SwipeRefreshLayout
     }
 
-    private val mListView: ListView by lazy(LazyThreadSafetyMode.NONE) {
-        findViewById(R.id.list_view) as ListView
+    private val mRecyclerView: RecyclerView by lazy(LazyThreadSafetyMode.NONE) {
+        findViewById(R.id.recycler_view) as RecyclerView
     }
 
     private val mProgress by lazy(LazyThreadSafetyMode.NONE) {
@@ -60,38 +77,46 @@ public class MainActivity : Activity(), LoaderManager.LoaderCallbacks<Cursor> {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Fabric.with(this, Crashlytics());
+        if(BuildConfig.DEBUG.not()) {
+            Fabric.with(this, Crashlytics());
+        }
 
-        setContentView(R.layout.activity_swipe_refresh_list_view_layout)
+        setContentView(R.layout.activity_linear_vertical_content)
+        val toolbar = findViewById(R.id.toolbar) as Toolbar
+        setSupportActionBar(toolbar)
         title = getString(R.string.frontpage)
 
         mSwipeView.setOnRefreshListener { refresh(isCallFromSwipeView = true) }
-        mSwipeView.setColorSchemeResources(android.R.color.holo_blue_light,
-                android.R.color.holo_green_light,
-                android.R.color.holo_orange_light,
-                android.R.color.holo_red_light)
+        mSwipeView.setColorSchemeResources(R.color.primary_color)
 
+        mRecyclerView.setHasFixedSize(true);
 
-        mListView.adapter = mAdapter
-        mListView.setOnItemClickListener { adapterView, view, i, l -> openComments(view) }
-        mListView.setOnItemLongClickListener { adapterView, view, i, l -> toggleStarredState(view); true }
+        mRecyclerView.layoutManager = LinearLayoutManager(this);
+
+        //TODO set adapter
+
+        mRecyclerView.adapter = mAdapter
+        mAdapter.clickListener = { openComments(it) }
+        mAdapter.longClickListener = { toggleStarredState(it) }
 
         mProgress.visibility = View.VISIBLE
         loaderManager.initLoader<Cursor>(R.id.loader_frontpage, null, this)
     }
 
-    private fun toggleStarredState(view: View) {
-        val tag = (view.tag as? NewsThreadListAdapter.ViewHolder)?.id
-        if (tag != null) {
-            DataPullPushService.startActionToggleStarred(this, tag)
+    override fun onResume() {
+        super.onResume()
+        mAppBar.addOnOffsetChangedListener(this);
+    }
+
+    private fun toggleStarredState(holder: NewsThreadAdapter.ViewHolder?) {
+        val id = holder?.id
+        if (id != null) {
+            DataPullPushService.startActionToggleStarred(this, id)
         }
     }
 
-    private fun openLink(view: View) = (view.tag as? NewsThreadListAdapter.ViewHolder)?.link?.openAsLink()
+    private fun openComments(holder: NewsThreadAdapter.ViewHolder?) = holder?.openAsLink()
 
-    private fun openComments(view: View) = (view.tag as? NewsThreadListAdapter.ViewHolder)?.openAsLink()
-
-    //    [suppress("NULLABILITY_MISMATCH_BASED_ON_JAVA_ANNOTATIONS")]
     fun String?.openAsLink() = startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(this)))
 
     fun ViewHolder.openAsLink() = startActivity(CommentsActivity.getIntent(this@MainActivity, this.id ?: -1))

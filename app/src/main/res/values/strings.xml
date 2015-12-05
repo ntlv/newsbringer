@@ -24,5 +24,7 @@
     <string name="share_story">Share story</string>
     <string name="share_comments">Share comments</string>
     <string name="toggle_show_starred_only">Starred</string>
+    <string name="navigate_up">Navigate up</string>
+    <string name="navigate_down">Navigate down</string>
 
 </resources>

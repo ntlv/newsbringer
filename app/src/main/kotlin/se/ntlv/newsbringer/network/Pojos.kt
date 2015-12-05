@@ -1,7 +1,6 @@
 package se.ntlv.newsbringer.network
 
 import android.content.ContentValues
-import android.database.Cursor
 import se.ntlv.newsbringer.database.PostTable
 import java.util.ArrayList
 import se.ntlv.newsbringer.database.CommentsTable
@@ -42,16 +41,16 @@ public class NewsThread {
         val adjustedScore = (score.minus(1)).toDouble()
         return adjustedScore.div(Math.pow((hoursSinceSubmission.plus(2)).toDouble(), 1.8))
     }
-    data class Metadata(id: Long, text: String, title: String, by: String, time: String, score: String, link: String?, kidCount: Long) {
-        val id = id
-        val text = text
-        val title = title
-        val by = by
-        val time = time
-        val score = score
-        val link = link
-        val kidCount = kidCount
-    }
+//    data class Metadata(id: Long, text: String, title: String, by: String, time: String, score: String, link: String, kidCount: Long) {
+//        val id = id
+//        val text = text
+//        val title = title
+//        val by = by
+//        val time = time
+//        val score = score
+//        val link = link
+//        val kidCount = kidCount
+//    }
 }
 
 public class Comment {

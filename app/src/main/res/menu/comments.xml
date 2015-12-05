@@ -1,29 +1,39 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-      xmlns:tools="http://schemas.android.com/tools"
-      tools:context=".CommentsActivity">
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    tools:context=".CommentsActivity">
 
-
-    <!--<item android:id="@+id/action_settings"-->
-    <!--android:title="@string/action_settings"-->
-    <!--android:orderInCategory="100"-->
-    <!--android:showAsAction="never" />-->
     <item
         android:id="@+id/refresh"
         android:title="@string/actionbar_item_title_refresh"
         android:icon="@drawable/ic_action_refresh"
-        android:orderInCategory="0"
-        android:showAsAction="ifRoom"/>
+        android:orderInCategory="1"
+        app:showAsAction="ifRoom"/>
 
     <item
         android:id="@+id/share_story"
         android:title="@string/share_story"
-        android:orderInCategory="1"
-        android:showAsAction="never"
+        android:orderInCategory="2"
+        app:showAsAction="never"
         />
     <item
         android:id="@+id/share_comments"
         android:title="@string/share_comments"
-        android:orderInCategory="2"
-        android:showAsAction="never"
+        android:orderInCategory="3"
+        app:showAsAction="never"
+        />
+    <item
+        android:id="@+id/navigate_previous_top_comment"
+        android:icon="@android:drawable/arrow_up_float"
+        android:title="@string/navigate_up"
+        android:orderInCategory="0"
+        app:showAsAction="ifRoom"
+        />
+    <item
+        android:id="@+id/navigate_next_top_comment"
+        android:icon="@android:drawable/arrow_down_float"
+        android:title="@string/navigate_down"
+        android:orderInCategory="0"
+        app:showAsAction="ifRoom"
         />
 </menu>

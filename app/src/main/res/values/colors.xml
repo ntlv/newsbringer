@@ -10,4 +10,18 @@
     <color name="yellow">#ffeb3b</color>
     <color name="cyan">#00bcd4</color>
     <color name="brown">#795548</color>
+
+
+    <color name="accent_color">#2196F3</color>
+
+    <color name="primary_color">#FF9800</color>
+    <color name="primary_dark_color">#F57C00</color>
+    <color name="primary_darkest_color">#E65100</color>
+
+
+    <!-- main color for drawable-v21/my_ripple -->
+    <color name="my_color_highlight">@color/primary_color</color>
+    <!-- main color for drawable/my_ripple -->
+    <color name="my_color_highlight_press">@color/primary_dark_color</color>
+    <color name="my_color_highlight_focus">@color/primary_darkest_color</color>
 </resources>
