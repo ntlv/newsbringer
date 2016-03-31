@@ -1,4 +1,4 @@
-package se.ntlv.newsbringer
+package se.ntlv.newsbringer.newsthreads
 
 import android.database.Cursor
 import android.support.v7.widget.RecyclerView
@@ -6,11 +6,15 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.CursorRecyclerViewAdapter
+import se.ntlv.newsbringer.customviews.DateView
 import se.ntlv.newsbringer.database.PostTable
+import se.ntlv.newsbringer.database.getInt
+import se.ntlv.newsbringer.database.getLong
+import se.ntlv.newsbringer.database.getString
 
-open class NewsThreadAdapter(layout: Int) :
-        CursorRecyclerViewAdapter<NewsThreadAdapter.ViewHolder>(null) {
+open class NewsThreadAdapter(layout: Int) : CursorRecyclerViewAdapter<NewsThreadAdapter.ViewHolder>() {
     override val actualItemCount: Int
         get() = mCursor?.count ?: 0
 
@@ -47,7 +51,7 @@ open class NewsThreadAdapter(layout: Int) :
         viewHolder.self.setOnLongClickListener { longClickListener(viewHolder); true }
     }
 
-    public class ViewHolder(root: View) : RecyclerView.ViewHolder(root) {
+    class ViewHolder(root: View) : RecyclerView.ViewHolder(root) {
         val self = root
         val title = root.findViewById(R.id.title) as TextView
         val by = root.findViewById(R.id.by) as TextView

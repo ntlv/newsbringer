@@ -10,7 +10,7 @@ import android.net.Uri
 import android.text.TextUtils
 import android.util.Log
 
-public class NewsContentProvider : ContentProvider() {
+class NewsContentProvider : ContentProvider() {
     override fun onCreate(): Boolean {
         Log.i(LOG_TAG, "Content provider created")
         return true
@@ -136,17 +136,17 @@ public class NewsContentProvider : ContentProvider() {
         private val AUTHORITY = "se.ntlv.newsbringer.database.NewsContentProvider"
 
         private val CONTENT_POSTS = "posts"
-        public val CONTENT_URI_POSTS: Uri = Uri.parse("content://$AUTHORITY/$CONTENT_POSTS")
+        val CONTENT_URI_POSTS: Uri = Uri.parse("content://$AUTHORITY/$CONTENT_POSTS")
 
         private val CONTENT_COMMENTS = "comments"
 
-        public val CONTENT_URI_COMMENTS: Uri = Uri.parse("content://$AUTHORITY/$CONTENT_COMMENTS")
+        val CONTENT_URI_COMMENTS: Uri = Uri.parse("content://$AUTHORITY/$CONTENT_COMMENTS")
 
 
 //        public val CONTENT_TYPE: String = ContentResolver.CURSOR_DIR_BASE_TYPE + "/posts"
 //        public val CONTENT_ITEM_TYPE: String = ContentResolver.CURSOR_ITEM_BASE_TYPE + "/post"
 
-        public var sUriMatcher: UriMatcher
+        var sUriMatcher: UriMatcher
 
         private val LOG_TAG = "NewsContentProvider"
 

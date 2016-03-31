@@ -1,15 +1,16 @@
-package se.ntlv.newsbringer
+package se.ntlv.newsbringer.customviews
 
 import android.content.Context
 import android.util.AttributeSet
 import android.widget.TextView
+import se.ntlv.newsbringer.R
 
 class DateView: TextView {
     constructor(context: Context, attrs: AttributeSet, defStyle: Int) : super(context, attrs, defStyle)
     constructor(context: Context, attrs: AttributeSet) : super(context, attrs, 0)
     constructor(context: Context) : super(context)
 
-    override fun setText(text: CharSequence?, type: TextView.BufferType?) {
+    override fun setText(text: CharSequence?, type: BufferType?) {
         if ( isInEditMode) {
             super.setText(text, type)
             return

@@ -1,4 +1,4 @@
-package se.ntlv.newsbringer
+package se.ntlv.newsbringer.database
 
 import android.database.Cursor
 

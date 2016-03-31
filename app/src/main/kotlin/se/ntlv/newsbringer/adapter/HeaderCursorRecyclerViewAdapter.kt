@@ -6,11 +6,11 @@ import android.view.ViewGroup
 import se.ntlv.newsbringer.database.CommentsTable
 
 
-public abstract class HeaderCursorRecyclerViewAdapter<
+abstract class HeaderCursorRecyclerViewAdapter<
         HVH : RecyclerView.ViewHolder,
         VH : RecyclerView.ViewHolder
         >(HeaderClass : Class<HVH>, RowClass : Class<VH>) :
-        CursorRecyclerViewAdapter<RecyclerView.ViewHolder>(null) {
+        CursorRecyclerViewAdapter<RecyclerView.ViewHolder>() {
 
     val mHeaderClass = HeaderClass
     val mRowClass = RowClass

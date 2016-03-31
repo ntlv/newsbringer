@@ -49,7 +49,7 @@
             android:layout_alignLeft="@+id/text"
             android:layout_alignStart="@+id/text"/>
 
-        <se.ntlv.newsbringer.DateView
+        <se.ntlv.newsbringer.customviews.DateView
             android:id="@+id/time"
             android:paddingTop="8dp"
             android:layout_height="wrap_content"

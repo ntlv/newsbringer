@@ -22,18 +22,4 @@
         android:orderInCategory="3"
         app:showAsAction="never"
         />
-    <item
-        android:id="@+id/navigate_previous_top_comment"
-        android:icon="@android:drawable/arrow_up_float"
-        android:title="@string/navigate_up"
-        android:orderInCategory="0"
-        app:showAsAction="ifRoom"
-        />
-    <item
-        android:id="@+id/navigate_next_top_comment"
-        android:icon="@android:drawable/arrow_down_float"
-        android:title="@string/navigate_down"
-        android:orderInCategory="0"
-        app:showAsAction="ifRoom"
-        />
 </menu>

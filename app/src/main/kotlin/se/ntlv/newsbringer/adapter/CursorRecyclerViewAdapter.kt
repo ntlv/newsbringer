@@ -4,21 +4,13 @@ import android.database.Cursor
 import android.database.DataSetObserver
 import android.support.v7.widget.RecyclerView
 
-public abstract class CursorRecyclerViewAdapter<VH : RecyclerView.ViewHolder>(cursor: Cursor?) : RecyclerView.Adapter<VH>() {
+abstract class CursorRecyclerViewAdapter<VH : RecyclerView.ViewHolder>() : RecyclerView.Adapter<VH>() {
 
-    private val mDataSetObserver: DataSetObserver
+    private val mDataSetObserver = NotifyingDataSetObserver()
     private var mDataValid: Boolean = false
     private var mRowIdColumn = 0
-    public var mCursor: Cursor? = null
+    var mCursor: Cursor? = null
         private set
-
-    init {
-        mCursor = cursor
-        mDataValid = cursor != null
-        mRowIdColumn = mCursor?.getColumnIndexOrThrow("_id") ?: -1
-        mDataSetObserver = NotifyingDataSetObserver()
-        mCursor?.registerDataSetObserver(mDataSetObserver)
-    }
 
     abstract val actualItemCount: Int
 
@@ -36,7 +28,7 @@ public abstract class CursorRecyclerViewAdapter<VH : RecyclerView.ViewHolder>(cu
         super.setHasStableIds(true)
     }
 
-    public abstract fun onBindViewHolder(viewHolder: VH, cursor: Cursor)
+    abstract fun onBindViewHolder(viewHolder: VH, cursor: Cursor)
 
     fun Cursor?.moveToPositionOrThrow(pos: Int): Boolean =
             this?.moveToPosition(pos) ?: throw IllegalStateException("Attempted to move null cursor")
@@ -50,9 +42,9 @@ public abstract class CursorRecyclerViewAdapter<VH : RecyclerView.ViewHolder>(cu
         }
     }
 
-    public fun swapCursor(newCursor: Cursor?): Cursor? {
+    fun swapCursor(newCursor: Cursor?) {
         if (newCursor === mCursor) {
-            return null
+            return
         }
         mCursor?.unregisterDataSetObserver(mDataSetObserver)
         val oldCursor = mCursor
@@ -62,7 +54,7 @@ public abstract class CursorRecyclerViewAdapter<VH : RecyclerView.ViewHolder>(cu
         mCursor?.getColumnIndexOrThrow("_id") ?: -1
         mDataValid = mCursor != null
         notifyDataSetChanged()
-        return oldCursor
+        oldCursor?.close()
     }
 
     private inner class NotifyingDataSetObserver : DataSetObserver() {

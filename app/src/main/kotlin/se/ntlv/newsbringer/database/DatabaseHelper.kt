@@ -5,7 +5,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
 
-public class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DatabaseHelper.DATABASE_NAME, null, DatabaseHelper.DATABASE_VERSION) {
+class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DatabaseHelper.DATABASE_NAME, null, DatabaseHelper.DATABASE_VERSION) {
 
     // Method is called during creation of the database
     override fun onCreate(database: SQLiteDatabase) {
@@ -28,6 +28,5 @@ public class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, Databa
     companion object {
         private val DATABASE_NAME = "ycreader.db"
         private val DATABASE_VERSION = 2
-        private val LOG_TAG = "DatabaseHelper"
     }
 }

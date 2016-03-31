@@ -5,15 +5,18 @@
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <application
+        android:name=".YcReaderApplication"
         android:allowBackup="true"
         android:icon="@drawable/ic_action_"
         android:label="@string/app_name"
         android:theme="@style/AppTheme"
+        android:supportsRtl="false"
+        android:fullBackupContent="false"
         >
         <activity
-            android:name=".MainActivity"
+            android:name=".newsthreads.NewsThreadsActivity"
             android:label="@string/app_name">
-            <intent-filter>
+            <intent-filter tools:ignore="GoogleAppIndexingWarning">
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
                 <action android:name="android.intent.action.VIEW"/>
@@ -21,9 +24,9 @@
         </activity>
 
         <activity
-            android:name=".CommentsActivity"
+            android:name=".comments.CommentsActivity"
             android:label="@string/activity_comments_label"
-            android:parentActivityName=".MainActivity"
+            android:parentActivityName=".newsthreads.NewsThreadsActivity"
             tools:ignore="UnusedAttribute"
             android:uiOptions="splitActionBarWhenNarrow">
             <meta-data android:name="android.support.UI_OPTIONS"

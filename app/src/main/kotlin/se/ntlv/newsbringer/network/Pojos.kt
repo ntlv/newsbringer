@@ -1,21 +1,21 @@
 package se.ntlv.newsbringer.network
 
 import android.content.ContentValues
-import se.ntlv.newsbringer.database.PostTable
-import java.util.ArrayList
 import se.ntlv.newsbringer.database.CommentsTable
+import se.ntlv.newsbringer.database.PostTable
+import java.util.*
 
-public class NewsThread {
+class NewsThread {
 
-    public var score: Int = 0
-    public var time: Long = 0
-    public var id: Long = 0
-    public var by: String? = null
-    public var title: String? = null
-    public var kids: LongArray? = null
-    public var text: String? = null
-    public var type: String? = null
-    public var url: String? = null
+    var score: Int = 0
+    var time: Long = 0
+    var id: Long = 0
+    var by: String? = null
+    var title: String? = null
+    var kids: LongArray? = null
+    var text: String? = null
+    var type: String? = null
+    var url: String? = null
 
     val contentValue: ContentValues
         get() {
@@ -53,17 +53,17 @@ public class NewsThread {
 //    }
 }
 
-public class Comment {
+class Comment {
 
-    public var parent: Long = 0
-    public var time: Long = 0
-    public var id: Long = 0
-    public var by: String? = null
-    public var kids: List<Long> = ArrayList()
-    public var text: String? = null
-    public var type: String? = null
+    var parent: Long = 0
+    var time: Long = 0
+    var id: Long = 0
+    var by: String? = null
+    var kids: List<Long> = ArrayList()
+    var text: String? = null
+    var type: String? = null
 
-    public fun getAsContentValues(ordinal: Int,
+    fun getAsContentValues(ordinal: Int,
                                   ancestorCount: Int,
                                   ancestorOrdinal: Double,
                                   threadParent: Long): ContentValues {

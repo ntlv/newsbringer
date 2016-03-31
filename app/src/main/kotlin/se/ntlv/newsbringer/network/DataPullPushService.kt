@@ -13,8 +13,8 @@ import com.android.volley.Response.ErrorListener
 import com.android.volley.Response.Listener
 import com.android.volley.toolbox.JsonArrayRequest
 import com.android.volley.toolbox.Volley
-import com.crashlytics.android.Crashlytics
 import org.json.JSONArray
+import se.ntlv.newsbringer.crashlyticsLogIfPossible
 import se.ntlv.newsbringer.database.CommentsTable
 import se.ntlv.newsbringer.database.NewsContentProvider
 import se.ntlv.newsbringer.database.PostTable
@@ -25,13 +25,13 @@ import se.ntlv.newsbringer.database.PostTable
  * <p>
  * helper methods.
  */
-public class DataPullPushService : IntentService(DataPullPushService.TAG) {
+class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
     val resolver: ContentResolver   by lazy(LazyThreadSafetyMode.NONE) { contentResolver }
     val mQueue: RequestQueue        by lazy(LazyThreadSafetyMode.NONE) { Volley.newRequestQueue(this) }
 
     private val mErrorListener = ErrorListener { error ->
-        Crashlytics.log("failed to fetch: ${error.cause}")
+        crashlyticsLogIfPossible(Log.ERROR, TAG, "failed to fetch: ${error.cause}")
         Log.e(TAG, error.toString())
     }
 
@@ -126,7 +126,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
     companion object {
 
-        public val TAG: String = DataPullPushService::class.java.simpleName
+        val TAG: String = DataPullPushService::class.java.simpleName
 
         val EXTRA_NEWSTHREAD_ID: String = "${TAG}extra_newsthread_id"
         val EXTRA_DISALLOW_FETCH: String = "${TAG}extra_disallow_fetch_skip"
@@ -135,40 +135,40 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
         val ACTION_FETCH_CHILD_COMMENTS: String = "${TAG}action_fetch_child_comments"
         val ACTION_FETCH_COMMENTS: String = "${TAG}_action_fetch_comments"
 
-        public val ACTION_FETCH_THREADS: String = "${TAG}_action_fetch_threads"
-        public val ACTION_FETCH_THREAD: String = "${TAG}_action_fetch_thread"
+        val ACTION_FETCH_THREADS: String = "${TAG}_action_fetch_threads"
+        val ACTION_FETCH_THREAD: String = "${TAG}_action_fetch_thread"
 
         private val ACTION_TOGGLE_STARRED: String = "${TAG}action_toggle_starred"
 
-        public var URI_SUFFIX: String = ".json"
-        public var BASE_URI: String = "https://hacker-news.firebaseio.com/v0"
-        public var ITEM_URI: String = "$BASE_URI/item/"
-        public var TOP_HUNDRED_URI: String = "$BASE_URI/topstories$URI_SUFFIX"
+        var URI_SUFFIX: String = ".json"
+        var BASE_URI: String = "https://hacker-news.firebaseio.com/v0"
+        var ITEM_URI: String = "$BASE_URI/item/"
+        var TOP_HUNDRED_URI: String = "$BASE_URI/topstories$URI_SUFFIX"
 
         /**
          * Starts this service to fetch threads from Hacker News.
          *
          * @see IntentService
          */
-        public fun startActionFetchThreads(context: Context) {
+        fun startActionFetchThreads(context: Context) {
             val intent = Intent(context, DataPullPushService::class.java)
-            intent.setAction(ACTION_FETCH_THREADS)
+            intent.action = ACTION_FETCH_THREADS
             context.startService(intent)
         }
 
-        public fun startActionFetchComments(context: Context, id: Long, disallowFetchSkip: Boolean) {
+        fun startActionFetchComments(context: Context, id: Long, disallowFetchSkip: Boolean) {
 
             Log.d(TAG, "Starting action fetch comments for $id")
             val intent = Intent(context, DataPullPushService::class.java)
-            intent.setAction(ACTION_FETCH_COMMENTS)
+            intent.action = ACTION_FETCH_COMMENTS
             intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
             intent.putExtra(EXTRA_DISALLOW_FETCH, disallowFetchSkip)
             context.startService(intent)
         }
 
-        public fun startActionFetchThread(context: Context, id: Long) {
+        fun startActionFetchThread(context: Context, id: Long) {
             val intent = Intent(context, DataPullPushService::class.java)
-            intent.setAction(ACTION_FETCH_THREAD)
+            intent.action = ACTION_FETCH_THREAD
             intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
             context.startService(intent)
         }
@@ -178,7 +178,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
                                           newsThread: Long) {
             Log.d(TAG, "Starting action fetch comments for $id")
             val intent = Intent(context, DataPullPushService::class.java)
-            intent.setAction(ACTION_FETCH_CHILD_COMMENTS)
+            intent.action = ACTION_FETCH_CHILD_COMMENTS
             intent.putExtra(EXTRA_PARENT_COMMENT_ID, id)
             intent.putExtra(EXTRA_NEWSTHREAD_ID, newsThread)
             context.startService(intent)
@@ -187,7 +187,7 @@ public class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
         fun startActionToggleStarred(context: Context, id: Long) {
             val intent = Intent(context, DataPullPushService::class.java)
-            intent.setAction(ACTION_TOGGLE_STARRED)
+            intent.action = ACTION_TOGGLE_STARRED
             intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
             context.startService(intent)
         }

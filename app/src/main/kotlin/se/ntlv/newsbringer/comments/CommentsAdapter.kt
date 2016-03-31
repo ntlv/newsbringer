@@ -1,4 +1,4 @@
-package se.ntlv.newsbringer
+package se.ntlv.newsbringer.comments
 
 import android.content.Context
 import android.database.Cursor
@@ -10,13 +10,18 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.HeaderCursorRecyclerViewAdapter
+import se.ntlv.newsbringer.customviews.DateView
 import se.ntlv.newsbringer.database.CommentsTable
+import se.ntlv.newsbringer.database.getInt
+import se.ntlv.newsbringer.database.getLong
+import se.ntlv.newsbringer.database.getString
 
 open class CommentsAdapter(ctx: Context, manager: LinearLayoutManager) :
         HeaderCursorRecyclerViewAdapter<CommentsAdapter.HeaderHolder, CommentsAdapter.RowHolder>(
-                CommentsAdapter.HeaderHolder::class.java,
-                CommentsAdapter.RowHolder::class.java
+                HeaderHolder::class.java,
+                RowHolder::class.java
         ) {
 
     override fun onCreateHeaderViewHolder(parent: ViewGroup?): RecyclerView.ViewHolder =
@@ -29,7 +34,12 @@ open class CommentsAdapter(ctx: Context, manager: LinearLayoutManager) :
         viewHolder.title.text = mTitle
         viewHolder.by.text = mBy
         viewHolder.time.text = mTime
-        viewHolder.text.htmlText = mText
+        if (mText.isNullOrEmpty()) {
+            viewHolder.text.visibility = View.GONE
+        } else {
+            viewHolder.text.visibility = View.VISIBLE
+            viewHolder.text.htmlText = mText
+        }
         viewHolder.score.text = mScore
         viewHolder.commentCount.text = mCommentCount
         viewHolder.self.setOnClickListener(headerClickListener)
@@ -70,7 +80,7 @@ open class CommentsAdapter(ctx: Context, manager: LinearLayoutManager) :
     private val HEADER_VIEW = 0
     private val COMMENTS_VIEW = 1
 
-    public var mCommentCount: String = ""
+    var mCommentCount: String = ""
 
     override fun getItemCount(): Int {
         val count = super.getItemCount()
@@ -119,7 +129,7 @@ open class CommentsAdapter(ctx: Context, manager: LinearLayoutManager) :
 
     }
 
-    public class HeaderHolder(root: View) : RecyclerView.ViewHolder(root) {
+    class HeaderHolder(root: View) : RecyclerView.ViewHolder(root) {
         val self = root
         val title = root.findViewById(R.id.title) as TextView
         val by = root.findViewById(R.id.by) as TextView
