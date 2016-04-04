@@ -25,8 +25,8 @@ fun ContentResolver.query(uri : Uri, projection : Array<out String>, selection :
 }
 
 fun Cursor.getStringByName(columnName: String): String = getString(getColumnIndexOrThrow(columnName))
-fun Cursor.getLong(columnName: String): Long = getLong(getColumnIndexOrThrow(columnName))
-fun Cursor.getInt(columnName: String): Int = getInt(getColumnIndexOrThrow(columnName))
+fun Cursor.getLongByName(columnName: String): Long = getLong(getColumnIndexOrThrow(columnName))
+fun Cursor.getIntByName(columnName: String): Int = getInt(getColumnIndexOrThrow(columnName))
 
 fun Cursor.moveToPositionOrThrow(pos: Int) {
     if (this.isClosed || moveToPosition(pos).not()) {

@@ -72,17 +72,18 @@ abstract class ObservableCursorData<T>(val data: Cursor) : ObservableData<T> {
 
 class NewsThreadData(data: Cursor) : ObservableCursorData<NewsThreadUiData>(data) {
     override fun getItem(): NewsThreadUiData {
-        val isStarred = data.getInt(PostTable.COLUMN_STARRED)
+        val isStarred = data.getIntByName(PostTable.COLUMN_STARRED)
         val title = data.getStringByName(PostTable.COLUMN_TITLE)
         val by = data.getStringByName(PostTable.COLUMN_BY)
         val time = data.getStringByName(PostTable.COLUMN_TIMESTAMP)
         val score = data.getStringByName(PostTable.COLUMN_SCORE)
         val url = data.getStringByName(PostTable.COLUMN_URL)
-        val id = data.getLong(PostTable.COLUMN_ID)
+        val id = data.getLongByName(PostTable.COLUMN_ID)
         val children = data.getStringByName(PostTable.COLUMN_CHILDREN)
-        val descendants = data.getLong(PostTable.COLUMN_DESCENDANTS)
+        val descendants = data.getLongByName(PostTable.COLUMN_DESCENDANTS)
+        val ordinal = data.getStringByName(PostTable.COLUMN_ORDINAL)
 
-        return NewsThreadUiData(isStarred, title, by, time, score, url, id, children, descendants)
+        return NewsThreadUiData(isStarred, title, by, time, score, url, id, children, descendants, ordinal)
     }
 }
 
@@ -90,12 +91,12 @@ class CommentsData(data: Cursor) : ObservableCursorData<CommentUiData>(data) {
 
     override fun getItem(): CommentUiData {
         val pos = data.position
-        val time = data.getLong(CommentsTable.COLUMN_TIME)
+        val time = data.getLongByName(CommentsTable.COLUMN_TIME)
         val text = data.getStringByName(CommentsTable.COLUMN_TEXT)
-        val id = data.getLong(CommentsTable.COLUMN_ID)
+        val id = data.getLongByName(CommentsTable.COLUMN_ID)
         val kids = data.getStringByName(CommentsTable.COLUMN_KIDS)
         val by = data.getStringByName(CommentsTable.COLUMN_BY)
-        val ancestorCount = data.getInt(CommentsTable.COLUMN_ANCESTOR_COUNT)
+        val ancestorCount = data.getIntByName(CommentsTable.COLUMN_ANCESTOR_COUNT)
 
         return CommentUiData(pos, time, id, by, kids, text, ancestorCount)
     }

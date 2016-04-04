@@ -42,6 +42,7 @@ open class NewsThreadAdapter(layout: Int, f: DataLoadingFacilitator) : GenericRe
         var link: String? = null
         var id: Long? = null
         val commentCount = root.find<TextView>(R.id.comment_count)
+        val ordinal = root.find<TextView>(R.id.ordinal)
 
         fun bind(item: NewsThreadUiData, onClick: (ViewHolder?) -> Unit?, onLongClick: (ViewHolder?) -> Boolean) {
             val titlePrefix = if (item.isStarred == 1) "\u2605" else ""
@@ -52,6 +53,7 @@ open class NewsThreadAdapter(layout: Int, f: DataLoadingFacilitator) : GenericRe
             link = item.url
             id = item.id
             commentCount.text = item.descendants.toString()
+            ordinal.text = item.ordinal
 
             view.onClick { onClick(this) }
             view.onLongClick { onLongClick(this) }

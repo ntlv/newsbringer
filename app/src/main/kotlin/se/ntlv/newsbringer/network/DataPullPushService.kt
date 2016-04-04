@@ -19,7 +19,7 @@ import se.ntlv.newsbringer.database.CommentsTable
 import se.ntlv.newsbringer.database.NewsContentProvider.Companion.CONTENT_URI_COMMENTS
 import se.ntlv.newsbringer.database.NewsContentProvider.Companion.CONTENT_URI_POSTS
 import se.ntlv.newsbringer.database.PostTable
-import se.ntlv.newsbringer.database.getInt
+import se.ntlv.newsbringer.database.getIntByName
 import se.ntlv.newsbringer.database.query
 import java.io.BufferedReader
 import java.io.File
@@ -157,7 +157,7 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
         if (ordinalCursor.moveToFirst().not()) {
             throw IllegalArgumentException("NewsThread does not exist in DB")
         }
-        val ordinal = ordinalCursor.getInt(PostTable.COLUMN_ORDINAL)
+        val ordinal = ordinalCursor.getIntByName(PostTable.COLUMN_ORDINAL)
         ordinalCursor.close()
 
         val thread = "$ITEM_URI$newsthreadId$URI_SUFFIX".blockingGetRequestToModel<NewsThread>(okHttp, gson)
@@ -215,15 +215,16 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
             throw IllegalArgumentException("Invalid fetch range")
         }
         val sel = PostTable.STARRED_SELECTION_W_RANGE
-        val selArgs = arrayOf(PostTable.UNSTARRED_SELECTION_ARGS, start.toString(), end.toString())
+        val selArgs = arrayOf(PostTable.UNSTARRED_SELECTION_ARGS, start.toString(), (if (start == 0) MAX_THREAD_IDX + 1 else end).toString())
         resolver.delete(CONTENT_URI_POSTS, sel, selArgs)
 
         val ids = TOP_FIFTY_URI.blockingGetRequestToModel<Array<Long>>(okHttp, gson)
         val batch = ids
-                ?.copyOfRange(start, end)
-                ?.mapIndexed { idx, itemId ->
-                    val item = "$ITEM_URI$itemId$URI_SUFFIX".blockingGetRequestToModel<NewsThread>(okHttp, gson)
-                    item?.toContentValues(idx)
+                ?.mapIndexed { idx, itemId -> Pair(idx, itemId) }
+                ?.filter { it.first in start..end }
+                ?.map {
+                    val item = "$ITEM_URI${it.second}$URI_SUFFIX".blockingGetRequestToModel<NewsThread>(okHttp, gson)
+                    item?.toContentValues(it.first)
                 }
                 ?.filterNotNull()
                 ?.toTypedArray()

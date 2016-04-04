@@ -131,7 +131,7 @@ class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLis
         mAppBar.removeOnOffsetChangedListener(this)
     }
 
-    override fun onStop() {
+    override fun onDestroy() {
         super.onStop()
         mPresenter.destroy()
     }

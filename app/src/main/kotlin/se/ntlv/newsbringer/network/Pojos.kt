@@ -45,7 +45,8 @@ data class NewsThreadUiData(val isStarred: Int,
                             val url: String,
                             val id: Long,
                             val children: String,
-                            val descendants : Long
+                            val descendants : Long,
+                            val ordinal : String
 )
 
 

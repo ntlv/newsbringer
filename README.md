@@ -4,13 +4,13 @@
 YCreader is a simplistic and to the point reader app for news.ycombinator.com. The app is currently being developed as a weekend project, it is available from the [Play Store](http://goo.gl/KaFqz9).
 
 ### Currently implemented
-* Fetch and cache current top hundred entries
-* Fetch and cache top level comments along with a few levels of replies
+* Display frontpage (still a bit buggy)
+* Display complete posts (no support for polls and similar special posts yet)
 
 ### TODO
 
 * Highlight child comments in a more reading friendly way.
-* User login     
+* User login
 * Voting
 * Commenting
 * Scheduled prefetching

@@ -11,6 +11,20 @@
                 android:layout_height="wrap_content"
                 android:background="?android:selectableItemBackground"
     >
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Large Text"
+        android:id="@+id/ordinal"
+        android:layout_centerVertical="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_marginRight="8dp"
+        android:layout_marginEnd="8dp"
+        tools:text="500"
+        />
+
 
     <LinearLayout
         android:id="@+id/linearLayout"
@@ -75,13 +89,11 @@
         android:layout_height="wrap_content"
         tools:text="Way looooong title that totally is going to need a line wrap"
         android:textSize="16sp"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
         android:layout_alignParentTop="true"
         android:layout_toLeftOf="@id/linearLayout"
-        android:layout_toStartOf="@id/linearLayout"
         android:layout_marginBottom="8dp"
-        />
+        android:layout_toRightOf="@+id/ordinal"
+        android:layout_toEndOf="@+id/ordinal" />
 
     <TextView
         android:layout_height="wrap_content"
