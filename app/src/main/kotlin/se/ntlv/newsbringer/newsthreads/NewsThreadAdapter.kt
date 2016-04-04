@@ -1,25 +1,26 @@
 package se.ntlv.newsbringer.newsthreads
 
-import android.database.Cursor
 import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import org.jetbrains.anko.find
+import org.jetbrains.anko.onClick
+import org.jetbrains.anko.onLongClick
 import se.ntlv.newsbringer.R
-import se.ntlv.newsbringer.adapter.CursorRecyclerViewAdapter
+import se.ntlv.newsbringer.adapter.DataLoadingFacilitator
+import se.ntlv.newsbringer.adapter.GenericRecyclerViewAdapter
 import se.ntlv.newsbringer.customviews.DateView
-import se.ntlv.newsbringer.database.PostTable
-import se.ntlv.newsbringer.database.getInt
-import se.ntlv.newsbringer.database.getLong
-import se.ntlv.newsbringer.database.getString
+import se.ntlv.newsbringer.network.NewsThreadUiData
 
-open class NewsThreadAdapter(layout: Int) : CursorRecyclerViewAdapter<NewsThreadAdapter.ViewHolder>() {
+open class NewsThreadAdapter(layout: Int, f: DataLoadingFacilitator) : GenericRecyclerViewAdapter<NewsThreadUiData, NewsThreadAdapter.ViewHolder>(f) {
+
     override val actualItemCount: Int
-        get() = mCursor?.count ?: 0
+        get() = data?.count ?: 0
 
     var clickListener: (ViewHolder?) -> Unit? = {}
-    var longClickListener: (ViewHolder?) -> Unit? = {}
+    var longClickListener: (ViewHolder?) -> Boolean = { false }
 
     val mLayout = layout
 
@@ -28,39 +29,33 @@ open class NewsThreadAdapter(layout: Int) : CursorRecyclerViewAdapter<NewsThread
         return ViewHolder(v)
     }
 
-    override fun onBindViewHolder(viewHolder: ViewHolder, cursor: Cursor) {
-        val isStarred = cursor.getInt(PostTable.COLUMN_STARRED) == 1
-        val titlePrefix = if (isStarred) "\u2605" else ""
-        val title = cursor.getString(PostTable.COLUMN_TITLE)
-        viewHolder.title.text = titlePrefix + title
-        viewHolder.by.text = cursor.getString(PostTable.COLUMN_BY)
-        viewHolder.time.text = cursor.getString(PostTable.COLUMN_TIMESTAMP)
-        viewHolder.score.text = cursor.getString(PostTable.COLUMN_SCORE)
-        viewHolder.link = cursor.getString(PostTable.COLUMN_URL)
-        viewHolder.id = cursor.getLong(PostTable.COLUMN_ID)
-        val children = cursor.getString(PostTable.COLUMN_CHILDREN)
-        if (children.length > 0) {
-            val strings = children.split(',')
-            viewHolder.commentCount.text = strings.size.toString()
-            viewHolder.commentQuantity = strings.size.toLong()
-        } else {
-            viewHolder.commentCount.text = "0"
-            viewHolder.commentQuantity = 0L
-        }
-        viewHolder.self.setOnClickListener { clickListener(viewHolder) }
-        viewHolder.self.setOnLongClickListener { longClickListener(viewHolder); true }
+    override fun onBindViewHolder(viewHolder: ViewHolder, item: NewsThreadUiData) {
+        viewHolder.bind(item, clickListener, longClickListener)
     }
 
     class ViewHolder(root: View) : RecyclerView.ViewHolder(root) {
-        val self = root
-        val title = root.findViewById(R.id.title) as TextView
-        val by = root.findViewById(R.id.by) as TextView
-        val time = root.findViewById(R.id.time) as DateView
-        val score = root.findViewById(R.id.score) as TextView
+        val view = root
+        val title = root.find<TextView>(R.id.title)
+        val by = root.find<TextView>(R.id.by)
+        val time = root.find<DateView>(R.id.time)
+        val score = root.find<TextView>(R.id.score)
         var link: String? = null
         var id: Long? = null
-        val commentCount = root.findViewById(R.id.comment_count) as TextView
-        var commentQuantity: Long? = null
+        val commentCount = root.find<TextView>(R.id.comment_count)
+
+        fun bind(item: NewsThreadUiData, onClick: (ViewHolder?) -> Unit?, onLongClick: (ViewHolder?) -> Boolean) {
+            val titlePrefix = if (item.isStarred == 1) "\u2605" else ""
+            title.text = titlePrefix + item.title
+            by.text = item.by
+            time.text = item.time
+            score.text = item.score
+            link = item.url
+            id = item.id
+            commentCount.text = item.descendants.toString()
+
+            view.onClick { onClick(this) }
+            view.onLongClick { onLongClick(this) }
+        }
     }
 }
 

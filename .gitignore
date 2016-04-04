@@ -44,3 +44,5 @@ volley/
 .gradletasknamecache
 app/manifest-merger-release-report.txt
 update_times.txt
+annotations
+captures

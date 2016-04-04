@@ -37,21 +37,6 @@ class CommentsTable {
                         COLUMN_ORDINAL real notNull
                 )
 
-        // Database creation SQL statement
-        private val DATABASE_CREATE_OLD = "create table " + TABLE_NAME +
-                "(" +
-                COLUMN_ID + " integer primary key, " +
-                COLUMN_TIME + " integer not null, " +
-                COLUMN_BY + " text not null, " +
-                COLUMN_PARENT + " integer REFERENCES " + PostTable.TABLE_NAME + "(" + PostTable.COLUMN_ID + ")" + " ON DELETE CASCADE, " +
-                COLUMN_PARENT_COMMENT + " integer REFERENCES " + CommentsTable.TABLE_NAME + "(" + CommentsTable.COLUMN_ID + ")" + " ON DELETE CASCADE, " +
-                COLUMN_ANCESTOR_COUNT + " integer default 0, " +
-                COLUMN_KIDS + " text not null, " +
-                COLUMN_TEXT + " text not null, " +
-                COLUMN_TYPE + " text not null, " +
-                COLUMN_ORDINAL + " real not null" +
-                ");";
-
         private val LOG_TAG = CommentsTable::class.java.simpleName
 
         fun onCreate(database: SQLiteDatabase) {

@@ -5,19 +5,26 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.util.Log
-import com.android.volley.RequestQueue
-import com.android.volley.Response
-import com.android.volley.Response.ErrorListener
-import com.android.volley.Response.Listener
-import com.android.volley.toolbox.JsonArrayRequest
-import com.android.volley.toolbox.Volley
-import org.json.JSONArray
-import se.ntlv.newsbringer.crashlyticsLogIfPossible
+import com.google.gson.Gson
+import com.google.gson.JsonParseException
+import com.google.gson.JsonSyntaxException
+import com.google.gson.reflect.TypeToken
+import okhttp3.Cache
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.verbose
 import se.ntlv.newsbringer.database.CommentsTable
-import se.ntlv.newsbringer.database.NewsContentProvider
+import se.ntlv.newsbringer.database.NewsContentProvider.Companion.CONTENT_URI_COMMENTS
+import se.ntlv.newsbringer.database.NewsContentProvider.Companion.CONTENT_URI_POSTS
 import se.ntlv.newsbringer.database.PostTable
+import se.ntlv.newsbringer.database.getInt
+import se.ntlv.newsbringer.database.query
+import java.io.BufferedReader
+import java.io.File
+import java.io.IOException
+import java.io.InputStreamReader
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -25,47 +32,98 @@ import se.ntlv.newsbringer.database.PostTable
  * <p>
  * helper methods.
  */
-class DataPullPushService : IntentService(DataPullPushService.TAG) {
+class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
 
-    val resolver: ContentResolver   by lazy(LazyThreadSafetyMode.NONE) { contentResolver }
-    val mQueue: RequestQueue        by lazy(LazyThreadSafetyMode.NONE) { Volley.newRequestQueue(this) }
+    companion object {
 
-    private val mErrorListener = ErrorListener { error ->
-        crashlyticsLogIfPossible(Log.ERROR, TAG, "failed to fetch: ${error.cause}")
-        Log.e(TAG, error.toString())
-    }
+        //TODO abstract this
+        val MAX_THREAD_IDX = 500
 
-    private val mJSONArrayListener = Listener<JSONArray> { jsonArray ->
-        jsonArray.forEach {
-            mQueue.add(createNewsThreadRequest("$ITEM_URI$it$URI_SUFFIX"))
+        private val TAG: String = DataPullPushService::class.java.simpleName
+
+        private val EXTRA_NEWSTHREAD_ID: String = "${TAG}extra_newsthread_id"
+        private val EXTRA_ALLOW_FETCH_SKIP: String = "${TAG}extra_disallow_fetch_skip"
+        private val EXTRA_FETCH_RANGE_START: String = "${TAG}extra_fetch_range_start"
+        private val EXTRA_FETCH_RANGE_END: String = "${TAG}extra_fetch_range_end"
+
+        private val ACTION_FETCH_COMMENTS: String = "${TAG}_action_fetch_comments"
+        private val ACTION_FETCH_THREADS: String = "${TAG}_action_fetch_threads"
+
+        private val ACTION_TOGGLE_STARRED: String = "${TAG}action_toggle_starred"
+
+        var URI_SUFFIX: String = ".json"
+        var BASE_URI: String = "https://hacker-news.firebaseio.com/v0"
+        var ITEM_URI: String = "$BASE_URI/item/"
+        var TOP_FIFTY_URI: String = "$BASE_URI/topstories$URI_SUFFIX"
+
+        /**
+         * Starts this service to fetch threads from Hacker News.
+         *
+         * @see IntentService
+         */
+        fun startActionFetchThreads(context: Context, start: Int = 0, end: Int = 9) {
+            val intent = Intent(context, DataPullPushService::class.java)
+            intent.action = ACTION_FETCH_THREADS
+            intent.putExtra(EXTRA_FETCH_RANGE_START, start)
+            intent.putExtra(EXTRA_FETCH_RANGE_END, end)
+            if (context.startService(intent) == null) {
+                throw IllegalStateException("Unable to start data service")
+            }
+        }
+
+        fun startActionFetchComments(context: Context, id: Long, allowFetchSkip: Boolean) {
+
+            Log.d(TAG, "Starting action fetch comments for $id")
+            val intent = Intent(context, DataPullPushService::class.java)
+            intent.action = ACTION_FETCH_COMMENTS
+            intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
+            intent.putExtra(EXTRA_ALLOW_FETCH_SKIP, allowFetchSkip)
+            if (context.startService(intent) == null) {
+                throw IllegalStateException("Unable to start data service")
+            }
+        }
+
+        fun startActionToggleStarred(context: Context, id: Long): Boolean {
+            val intent = Intent(context, DataPullPushService::class.java)
+            intent.action = ACTION_TOGGLE_STARRED
+            intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
+            return context.startService(intent) != null
         }
     }
 
-    fun JSONArray.forEach(f: (t: Any) -> Unit) {
-        var length = this.length()
-        if (length > 50) {
-            length = 50
-        }
-        (0..length - 1).forEach { i -> f(get(i)) }
+    private val resolver: ContentResolver by lazy { contentResolver }
+
+    private val gson: Gson by lazy { Gson() }
+
+    private val okHttp: OkHttpClient by lazy {
+        val httpCacheDirectory: File = File(cacheDir, "responses");
+        val cacheSize: Long = 10 * 1024 * 1024; // 10 MiB
+        OkHttpClient.Builder()
+                .cache(Cache(httpCacheDirectory, cacheSize))
+                .build()
     }
 
-    private val mNewsThreadResponseListener = Listener<NewsThread> { response ->
-        resolver.insert(NewsContentProvider.CONTENT_URI_POSTS, response.contentValue)
-    }
 
-    fun Intent?.doAction() {
+    private fun Intent?.doAction() {
         if (this == null) {
             return
         }
+        verbose("Service handling ${this.action}")
         when (this.action) {
-            ACTION_FETCH_THREAD -> handleFetchThread(this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L))
-            ACTION_FETCH_THREADS -> handleFetchThreads()
-            ACTION_FETCH_COMMENTS -> fetchComments(this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L), this.getBooleanExtra(EXTRA_DISALLOW_FETCH, false))
-            ACTION_FETCH_CHILD_COMMENTS -> fetchChildComments(this.getLongExtra(EXTRA_PARENT_COMMENT_ID, -1L), this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L))
+            ACTION_FETCH_THREADS -> handleFetchThreads(
+                    this.getIntExtra(EXTRA_FETCH_RANGE_START, -1),
+                    this.getIntExtra(EXTRA_FETCH_RANGE_END, -1)
+            )
+            ACTION_FETCH_COMMENTS -> handleFetchComments(
+                    this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L),
+                    this.getBooleanExtra(EXTRA_ALLOW_FETCH_SKIP, true)
+            )
             ACTION_TOGGLE_STARRED -> toggleStarred(this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L))
-            else -> Log.d(TAG, "Attempted to start $TAG with illegal argument")
+            else -> throw IllegalArgumentException("Attempted to start $TAG with illegal argument")
         }
     }
+
+    override fun onHandleIntent(intent: Intent?): Unit = intent?.doAction() as Unit
 
     private fun toggleStarred(id: Long) {
         val projection = arrayOf(PostTable.COLUMN_ID,
@@ -73,208 +131,126 @@ class DataPullPushService : IntentService(DataPullPushService.TAG) {
         )
         val selection = "${PostTable.COLUMN_ID}=?"
         val selectionArgs = arrayOf("$id")
-        val result = resolver.query(NewsContentProvider.CONTENT_URI_POSTS, projection, selection, selectionArgs, null)
+        val result = resolver.query(CONTENT_URI_POSTS, projection, selection, selectionArgs)
         if (!result.moveToFirst()) {
             return
         }
         val isStarred = 1 == result.getInt(result.getColumnIndexOrThrow(PostTable.COLUMN_STARRED))
         val cv = ContentValues(1)
         cv.put(PostTable.COLUMN_STARRED, (if (isStarred) 0 else 1))
-        resolver.update(NewsContentProvider.CONTENT_URI_POSTS, cv, selection, selectionArgs)
-
+        resolver.update(CONTENT_URI_POSTS, cv, selection, selectionArgs)
     }
 
-    override fun onHandleIntent(intent: Intent?): Unit = intent?.doAction() as Unit
-
-    private fun createTopHundredRequest(): JsonArrayRequest {
-        return JsonArrayRequest(TOP_HUNDRED_URI, mJSONArrayListener, mErrorListener)
-    }
-
-    private fun createNewsThreadRequest(url: String): GsonRequest<NewsThread> {
-        return createNewsThreadRequest(mNewsThreadResponseListener, mErrorListener, url)
-    }
-
-    private fun createThreadRefreshRequest(id: Long, onCompletion: () -> Unit): GsonRequest<NewsThread> {
-        val onResponse: Response.Listener<NewsThread> = Listener {
-            resolver.insert(NewsContentProvider.CONTENT_URI_POSTS, it.contentValue)
-            onCompletion.invoke()
-        }
-        return createNewsThreadRequest(onResponse, mErrorListener, "$ITEM_URI$id$URI_SUFFIX")
-    }
-
-    private fun createNewsThreadRequest(listener: Response.Listener<NewsThread>,
-                                        errorListener: Response.ErrorListener,
-                                        url: String): GsonRequest<NewsThread> {
-        return GsonRequest(url, NewsThread::class.java, null, listener, errorListener)
-    }
-
-    fun createCommentRequest(ordinal: Int,
-                             id: Long,
-                             ancestorCount: Int = 0,
-                             ancestorOrdinal: Double = 0.0,
-                             threadParent: Long): GsonRequest<Comment> {
-        val url = "$ITEM_URI$id$URI_SUFFIX"
-        val listener = Listener<Comment> { response: Comment? ->
-            val reified = response?.getAsContentValues(ordinal, ancestorCount, ancestorOrdinal, threadParent)
-            resolver.insert(NewsContentProvider.CONTENT_URI_COMMENTS, reified)
-            if (ancestorCount in 0..4 && response != null) {
-                fetchChildComments(response.id, threadParent)
-            }
-        }
-        return GsonRequest(url, Comment::class.java, null, listener, mErrorListener)
-    }
-
-    companion object {
-
-        val TAG: String = DataPullPushService::class.java.simpleName
-
-        val EXTRA_NEWSTHREAD_ID: String = "${TAG}extra_newsthread_id"
-        val EXTRA_DISALLOW_FETCH: String = "${TAG}extra_disallow_fetch_skip"
-        val EXTRA_PARENT_COMMENT_ID: String = "${TAG}extra_parent_comment_id"
-
-        val ACTION_FETCH_CHILD_COMMENTS: String = "${TAG}action_fetch_child_comments"
-        val ACTION_FETCH_COMMENTS: String = "${TAG}_action_fetch_comments"
-
-        val ACTION_FETCH_THREADS: String = "${TAG}_action_fetch_threads"
-        val ACTION_FETCH_THREAD: String = "${TAG}_action_fetch_thread"
-
-        private val ACTION_TOGGLE_STARRED: String = "${TAG}action_toggle_starred"
-
-        var URI_SUFFIX: String = ".json"
-        var BASE_URI: String = "https://hacker-news.firebaseio.com/v0"
-        var ITEM_URI: String = "$BASE_URI/item/"
-        var TOP_HUNDRED_URI: String = "$BASE_URI/topstories$URI_SUFFIX"
-
-        /**
-         * Starts this service to fetch threads from Hacker News.
-         *
-         * @see IntentService
-         */
-        fun startActionFetchThreads(context: Context) {
-            val intent = Intent(context, DataPullPushService::class.java)
-            intent.action = ACTION_FETCH_THREADS
-            context.startService(intent)
-        }
-
-        fun startActionFetchComments(context: Context, id: Long, disallowFetchSkip: Boolean) {
-
-            Log.d(TAG, "Starting action fetch comments for $id")
-            val intent = Intent(context, DataPullPushService::class.java)
-            intent.action = ACTION_FETCH_COMMENTS
-            intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
-            intent.putExtra(EXTRA_DISALLOW_FETCH, disallowFetchSkip)
-            context.startService(intent)
-        }
-
-        fun startActionFetchThread(context: Context, id: Long) {
-            val intent = Intent(context, DataPullPushService::class.java)
-            intent.action = ACTION_FETCH_THREAD
-            intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
-            context.startService(intent)
-        }
-
-        fun startActionFetchChildComments(context: Context,
-                                          id: Long,
-                                          newsThread: Long) {
-            Log.d(TAG, "Starting action fetch comments for $id")
-            val intent = Intent(context, DataPullPushService::class.java)
-            intent.action = ACTION_FETCH_CHILD_COMMENTS
-            intent.putExtra(EXTRA_PARENT_COMMENT_ID, id)
-            intent.putExtra(EXTRA_NEWSTHREAD_ID, newsThread)
-            context.startService(intent)
-        }
-
-
-        fun startActionToggleStarred(context: Context, id: Long) {
-            val intent = Intent(context, DataPullPushService::class.java)
-            intent.action = ACTION_TOGGLE_STARRED
-            intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
-            context.startService(intent)
-        }
-    }
-
-    fun refreshComments(id: Long) {
-        val projection = arrayOf(PostTable.COLUMN_ID,
-                PostTable.COLUMN_CHILDREN
-        )
-        val commentsSelection = "${PostTable.COLUMN_ID}=$id"
-        val result = resolver.query(NewsContentProvider.CONTENT_URI_POSTS, projection, commentsSelection, null, null)
-
-        if (result.moveToFirst()) {
-            val kids = result.getString(result.getColumnIndexOrThrow(PostTable.COLUMN_CHILDREN))
-            if (kids.isEmpty().not()) {
-                kids.split(',')
-                        .map { it.trim().toLong() }
-                        .withIndex()
-                        .forEach { mQueue.add(createCommentRequest(it.index, it.value, threadParent = id)) }
-            }
-        }
-        result.close()
-    }
-
-    fun fetchComments(newsthreadId: Long, disallowFetchSkip: Boolean) {
+    fun handleFetchComments(newsthreadId: Long, allowFetchSkip: Boolean) {
+        // valid id?
         if (newsthreadId == -1L) {
             throw IllegalArgumentException("Thread id can't be -1")
         }
-        val uri = NewsContentProvider.CONTENT_URI_COMMENTS
+        // can skip fetching?
+        if (checkCanSkipFetch(newsthreadId, allowFetchSkip)) {
+            return
+        }
+        val projection = PostTable.getIdAndOrdinalProjection()
+        val ordinalSelection = "${PostTable.COLUMN_ID}=$newsthreadId"
+
+        val ordinalCursor = resolver.query(CONTENT_URI_POSTS, projection, ordinalSelection)
+        if (ordinalCursor.moveToFirst().not()) {
+            throw IllegalArgumentException("NewsThread does not exist in DB")
+        }
+        val ordinal = ordinalCursor.getInt(PostTable.COLUMN_ORDINAL)
+        ordinalCursor.close()
+
+        val thread = "$ITEM_URI$newsthreadId$URI_SUFFIX".blockingGetRequestToModel<NewsThread>(okHttp, gson)
+        resolver.insert(CONTENT_URI_POSTS, thread?.getContentValues(ordinal))
+
+        var index = 0
+        thread?.kids?.forEach {
+            index = getAllChildComments(index, it, 0, newsthreadId)
+        }
+
+    }
+
+    private fun checkCanSkipFetch(id: Long, skipsAllowed: Boolean): Boolean {
+        val uri = CONTENT_URI_COMMENTS
+        val projection = arrayOf(CommentsTable.COLUMN_PARENT)
         val selection = "${CommentsTable.COLUMN_PARENT}=?"
-        val selectionArgs = arrayOf(newsthreadId.toString())
-        val commentsExists = hasComments(uri, selection, selectionArgs)
-        when {
-            commentsExists && !disallowFetchSkip -> return
-            commentsExists && disallowFetchSkip ->
-                resolver.delete(uri, selection, selectionArgs) //user wants fresh comments, fetch again
-        }
-        mQueue.add(createThreadRefreshRequest(newsthreadId, { refreshComments(newsthreadId) }))
-    }
+        val selectionArgs = arrayOf(id.toString())
 
-    fun fetchChildComments(parentComment: Long, parentThread: Long) {
-        if (parentComment == -1L || parentThread == -1L) {
-            throw IllegalArgumentException("Thread id can't be -1")
-        }
-        val uri = NewsContentProvider.CONTENT_URI_COMMENTS
-        val selection = "${CommentsTable.COLUMN_ID}=?"
-        val selectionArgs = arrayOf(parentComment.toString())
-        val projection = arrayOf(CommentsTable.COLUMN_ID,
-                CommentsTable.COLUMN_ANCESTOR_COUNT,
-                CommentsTable.COLUMN_ORDINAL,
-                CommentsTable.COLUMN_KIDS
-        )
-        val parentRow = resolver.query(uri, projection, selection, selectionArgs, null)
-        if (parentRow.moveToFirst()) {
-            val kids = parentRow.getString(parentRow.getColumnIndexOrThrow(CommentsTable.COLUMN_KIDS))
-            val ancestorCount = parentRow.getInt(parentRow.getColumnIndexOrThrow(CommentsTable.COLUMN_ANCESTOR_COUNT))
-            val ancestorOrdinal = parentRow.getDouble(parentRow.getColumnIndexOrThrow(CommentsTable.COLUMN_ORDINAL))
-
-            if (kids.isEmpty().not()) {
-                kids.split(',')
-                        .map { it.trim().toLong() }
-                        .withIndex()
-                        .forEach {
-                            mQueue.add(createCommentRequest(it.index + 1, it.value, ancestorCount + 1, ancestorOrdinal, parentThread))
-                        }
-            }
-        }
-        parentRow.close()
-    }
-
-    private fun hasComments(uri: Uri,
-                            selection: String,
-                            selArgs: Array<String>): Boolean {
-
-        val existingCommentsQuery = resolver.query(uri, arrayOf(CommentsTable.COLUMN_PARENT), selection, selArgs, null)
+        val existingCommentsQuery = resolver.query(uri, projection, selection, selectionArgs)
         val commentsExists = existingCommentsQuery.count > 0
+
         existingCommentsQuery.close()
-        return commentsExists
+        return when {
+            commentsExists && skipsAllowed -> true
+            commentsExists && skipsAllowed.not() -> {
+                resolver.delete(uri, selection, selectionArgs); false
+            }
+            else -> false
+        }
     }
 
-    private fun handleFetchThread(id: Long) {
-        mQueue.add(createNewsThreadRequest("$ITEM_URI$id$URI_SUFFIX"))
+
+    inline fun <reified T> String.blockingGetRequestToModel(client: OkHttpClient, gson: Gson): T? {
+        return Request.Builder().url(this).get().build().blockingCallToModel(client, gson)
     }
 
-    fun handleFetchThreads() {
-        resolver.delete(NewsContentProvider.CONTENT_URI_POSTS, PostTable.STARRED_SELECTION, arrayOf(PostTable.UNSTARRED_SELECTION_ARGS))
-        mQueue.add(createTopHundredRequest())
+    inline fun <reified T> Request.blockingCallToModel(client: OkHttpClient, gson: Gson): T? {
+        try {
+            val body = client.newCall(this).execute().body()
+            val bytes = BufferedReader(InputStreamReader(body.byteStream()))
+            return gson.fromJson<T>(bytes, object : TypeToken<T>() {}.type)
+        } catch(ex: IOException) {
+            return null
+        } catch(ex: IllegalStateException) {
+            return null
+        } catch(ex: JsonParseException) {
+            return null
+        } catch(ex: JsonSyntaxException) {
+            return null
+        }
+    }
+
+    fun handleFetchThreads(start: Int, end: Int) {
+        if (start == -1 || end == -1) {
+            throw IllegalArgumentException("Invalid fetch range")
+        }
+        val sel = PostTable.STARRED_SELECTION_W_RANGE
+        val selArgs = arrayOf(PostTable.UNSTARRED_SELECTION_ARGS, start.toString(), end.toString())
+        resolver.delete(CONTENT_URI_POSTS, sel, selArgs)
+
+        val ids = TOP_FIFTY_URI.blockingGetRequestToModel<Array<Long>>(okHttp, gson)
+        val batch = ids
+                ?.copyOfRange(start, end)
+                ?.mapIndexed { idx, itemId ->
+                    val item = "$ITEM_URI$itemId$URI_SUFFIX".blockingGetRequestToModel<NewsThread>(okHttp, gson)
+                    item?.getContentValues(idx)
+                }
+                ?.filterNotNull()
+                ?.toTypedArray()
+        if (batch != null) {
+            resolver.bulkInsert(CONTENT_URI_POSTS, batch)
+        }
+    }
+
+    /**
+     * Hand this function a origin comment and it will insert it into database as well
+     * as fetch all of its children and add those to DB as well.
+     */
+    private fun getAllChildComments(startOrdinal: Int, targetId: Long, ancestorCount: Int, threadParentId: Long): Int {
+
+        val comment = "$ITEM_URI$targetId$URI_SUFFIX".blockingGetRequestToModel<Comment>(okHttp, gson)
+
+        val reified = comment?.asContentValues(startOrdinal, ancestorCount, threadParentId)
+        if (reified != null) {
+            resolver.insert(CONTENT_URI_COMMENTS, reified)
+        }
+        var index = startOrdinal
+
+        comment?.kids?.forEach {
+            index.inc()
+            index = getAllChildComments(index, it, ancestorCount + 1, threadParentId)
+        }
+        return index + 1
     }
 }
 

@@ -27,6 +27,6 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DatabaseHelpe
 
     companion object {
         private val DATABASE_NAME = "ycreader.db"
-        private val DATABASE_VERSION = 2
+        private val DATABASE_VERSION = 3
     }
 }

@@ -20,10 +20,13 @@ class PostTable {
         val COLUMN_URL: String = "url"
         val COLUMN_ORDINAL: String = "ordinal"
         val COLUMN_STARRED: String = "starred"
+        val COLUMN_DESCENDANTS: String = "descendants"
 
         val STARRED_SELECTION: String = "$COLUMN_STARRED=?"
         val STARRED_SELECTION_ARGS: String = "1"
         val UNSTARRED_SELECTION_ARGS: String = "0"
+
+        val STARRED_SELECTION_W_RANGE = "$COLUMN_STARRED=? AND $COLUMN_ORDINAL>=? AND $COLUMN_ORDINAL<=?"
 
 
         //Database creation SQL statement
@@ -39,7 +42,8 @@ class PostTable {
                     COLUMN_TYPE text notNull,
                     COLUMN_URL text notNull,
                     COLUMN_ORDINAL real notNull,
-                    COLUMN_STARRED int defaultZero
+                    COLUMN_STARRED int defaultZero,
+                    COLUMN_DESCENDANTS int defaultZero
             )
 
 
@@ -57,6 +61,11 @@ class PostTable {
             onCreate(database)
         }
 
+        fun getIdAndOrdinalProjection() = arrayOf(
+                PostTable.COLUMN_ID,
+                PostTable.COLUMN_ORDINAL
+        )
+
         fun getFrontPageProjection() = arrayOf(
                 PostTable.COLUMN_SCORE,
                 PostTable.COLUMN_TIMESTAMP,
@@ -66,7 +75,8 @@ class PostTable {
                 PostTable.COLUMN_ORDINAL,
                 PostTable.COLUMN_ID,
                 PostTable.COLUMN_CHILDREN,
-                PostTable.COLUMN_STARRED
+                PostTable.COLUMN_STARRED,
+                PostTable.COLUMN_DESCENDANTS
         )
 
         fun getCommentsProjection() = arrayOf(PostTable.COLUMN_ID,
@@ -76,10 +86,11 @@ class PostTable {
                 PostTable.COLUMN_TIMESTAMP,
                 PostTable.COLUMN_SCORE,
                 PostTable.COLUMN_URL,
-                PostTable.COLUMN_STARRED
+                PostTable.COLUMN_STARRED,
+                PostTable.COLUMN_DESCENDANTS
         )
 
-        fun getOrdinalSortingString() = PostTable.COLUMN_ORDINAL + " DESC"
+        fun getOrdinalSortingString() = PostTable.COLUMN_ORDINAL + " ASC"
     }
 }
 

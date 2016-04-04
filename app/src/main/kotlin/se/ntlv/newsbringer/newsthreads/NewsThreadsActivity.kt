@@ -1,7 +1,6 @@
 package se.ntlv.newsbringer.newsthreads
 
 import android.content.Context
-import android.database.Cursor
 import android.os.Bundle
 import android.support.design.widget.AppBarLayout
 import android.support.design.widget.FloatingActionButton
@@ -13,9 +12,14 @@ import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.find
+import org.jetbrains.anko.verbose
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
+import se.ntlv.newsbringer.adapter.DataLoadingFacilitator
+import se.ntlv.newsbringer.adapter.ObservableData
+import se.ntlv.newsbringer.network.NewsThreadUiData
 import kotlin.LazyThreadSafetyMode.NONE
 
 interface NewsThreadsViewBinder {
@@ -23,10 +27,16 @@ interface NewsThreadsViewBinder {
 
     val context: Context
 
-    var data: Cursor?
+    var data: ObservableData<NewsThreadUiData>?
 }
 
-class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedListener, NewsThreadsViewBinder {
+class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedListener, NewsThreadsViewBinder, AnkoLogger, DataLoadingFacilitator {
+
+    val layoutManagerStateParcelName = "layoutManagerState"
+
+    override fun onMoreDataNeeded(currentMaxItem: Int) {
+        mPresenter.onMoreDataNeeded(currentMaxItem)
+    }
 
     /*
         val mFire: Firebase by lazy {
@@ -68,7 +78,7 @@ class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLis
 
     */
 
-    val mAdapter: NewsThreadAdapter by lazy(NONE) { NewsThreadAdapter(R.layout.list_item_news_thread) }
+    val mAdapter: NewsThreadAdapter by lazy(NONE) { NewsThreadAdapter(R.layout.list_item_news_thread, this) }
 
     private val mAppBar: AppBarLayout by lazy(NONE) { find<AppBarLayout>(R.id.appbar) }
 
@@ -83,14 +93,15 @@ class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLis
     //ANDROID ACTIVITY CALLBACKS
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        verbose("Get loader manager to avoid loader manager being in stopped state ${loaderManager.toString()}")
 
         setContentView(R.layout.activity_linear_vertical_content)
-        val toolbar = findViewById(R.id.toolbar) as Toolbar
+        val toolbar = find<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
         title = getString(R.string.frontpage)
 
         mSwipeView.setOnRefreshListener { mPresenter.refreshData(false) }
-        mSwipeView.setColorSchemeResources(R.color.primary_color)
+        mSwipeView.setColorSchemeResources(R.color.accent_color)
 
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.layoutManager = LinearLayoutManager(this);
@@ -100,12 +111,19 @@ class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLis
         mAdapter.longClickListener = { mPresenter.onItemLongClick(it?.id) }
 
         find<FloatingActionButton>(R.id.fab).visibility = View.GONE
+
+        mPresenter.onViewReady()
     }
 
     override fun onResume() {
         super.onResume()
         mAppBar.addOnOffsetChangedListener(this);
-        mPresenter.onViewReady()
+    }
+
+    override fun onSaveInstanceState(out: Bundle) {
+        super.onSaveInstanceState(out)
+        val state = mRecyclerView.layoutManager.onSaveInstanceState()
+        out.putParcelable(layoutManagerStateParcelName, state)
     }
 
     override fun onPause() {
@@ -146,10 +164,10 @@ class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLis
     override val context: NewsThreadsActivity
         get() = this
 
-    override var data: Cursor?
-        get() = mAdapter.mCursor
-        set(c: Cursor?) {
-            mAdapter.swapCursor(c)
+    override var data: ObservableData<NewsThreadUiData>?
+        get() = mAdapter.data
+        set(c: ObservableData<NewsThreadUiData>?) {
+            mAdapter.data = c
         }
 }
 

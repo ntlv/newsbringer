@@ -6,13 +6,15 @@ import android.content.CursorLoader
 import android.content.Loader
 import android.database.Cursor
 import android.os.Bundle
-import android.util.Log
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
+import se.ntlv.newsbringer.adapter.CommentsData
+import se.ntlv.newsbringer.adapter.ObservableData
 import se.ntlv.newsbringer.database.CommentsTable
 import se.ntlv.newsbringer.database.NewsContentProvider
 import se.ntlv.newsbringer.database.PostTable
-import se.ntlv.newsbringer.database.getString
+import se.ntlv.newsbringer.database.getStringByName
+import se.ntlv.newsbringer.network.CommentUiData
 import se.ntlv.newsbringer.network.DataPullPushService
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
@@ -28,10 +30,10 @@ class CommentsInteractor(val context: Context,
         get() {
             return "https://news.ycombinator.com/item?id=$newsThreadId"
         }
-    var onHeaderLoadCompletion: ((String, String, String, String, String, String) -> Unit) =
-            { s: String, s1: String, s2: String, s3: String, s4: String, s5: String -> }
+    var onHeaderLoadCompletion: ((String, String, String, String, String, String, String) -> Unit) =
+            { s: String, s1: String, s2: String, s3: String, s4: String, s5: String, s6 : String -> }
 
-    var onCommentsLoadCompletion: ((Cursor?) -> Unit) = {}
+    var onCommentsLoadCompletion: ((ObservableData<CommentUiData>?) -> Unit) = {}
 
     private val TAG: String = CommentsInteractor::class.java.simpleName
 
@@ -74,30 +76,31 @@ class CommentsInteractor(val context: Context,
             R.id.loader_comments_header -> {
                 if (!data.moveToFirst()) {
                     if (shouldRequestDataIfLoaderFails.getAndSet(false)) {
-                        refreshComments(false)
+                        refreshComments(true)
                     } else {
                         onLoaderReset(loader)
                     }
                 } else {
-                    title = data.getString(PostTable.COLUMN_TITLE)
-                    link = data.getString(PostTable.COLUMN_URL)
-                    val by = data.getString(PostTable.COLUMN_BY)
-                    val text = data.getString(PostTable.COLUMN_TEXT)
-                    val time = data.getString(PostTable.COLUMN_TIMESTAMP)
-                    val score = data.getString(PostTable.COLUMN_SCORE)
-                    onHeaderLoadCompletion(title, text, by, time, score, link)
+                    title = data.getStringByName(PostTable.COLUMN_TITLE)
+                    link = data.getStringByName(PostTable.COLUMN_URL)
+                    val by = data.getStringByName(PostTable.COLUMN_BY)
+                    val text = data.getStringByName(PostTable.COLUMN_TEXT)
+                    val time = data.getStringByName(PostTable.COLUMN_TIMESTAMP)
+                    val score = data.getStringByName(PostTable.COLUMN_SCORE)
+                    val descendantCount = data.getStringByName(PostTable.COLUMN_DESCENDANTS)
+                    onHeaderLoadCompletion(title, text, by, time, score, link, descendantCount)
                 }
 
             }
             R.id.loader_comments_comments -> {
                 if (!data.moveToFirst()) {
                     if (shouldRequestDataIfLoaderFails.getAndSet(false)) {
-                        refreshComments(false)
+                        refreshComments(true)
                     } else {
                         onLoaderReset(loader)
                     }
                 } else {
-                    onCommentsLoadCompletion(data)
+                    onCommentsLoadCompletion(CommentsData(data))
                 }
             }
         }
@@ -109,7 +112,7 @@ class CommentsInteractor(val context: Context,
         }
         when (loader.id) {
             R.id.loader_comments_header -> {
-                onHeaderLoadCompletion("", "", "", "", "", "")
+                onHeaderLoadCompletion("", "", "", "", "", "", "")
             }
             R.id.loader_comments_comments -> {
                 onCommentsLoadCompletion(null)
@@ -117,8 +120,8 @@ class CommentsInteractor(val context: Context,
         }
     }
 
-    fun loadData(headerCompletion: ((String, String, String, String, String, String) -> Unit),
-                 commentsCompletion: ((Cursor?) -> Unit)) {
+    fun loadData(headerCompletion: ((String, String, String, String, String, String, String) -> Unit),
+                 commentsCompletion: ((ObservableData<CommentUiData>?) -> Unit)) {
         onHeaderLoadCompletion = headerCompletion
         onCommentsLoadCompletion = commentsCompletion
         val loaderArgs = Bundle()
@@ -127,11 +130,11 @@ class CommentsInteractor(val context: Context,
         loaderManager.initLoader(R.id.loader_comments_header, loaderArgs, this)
     }
 
-    fun refreshComments(disallowFetchSkip: Boolean) {
-        DataPullPushService.startActionFetchComments(context, newsThreadId, disallowFetchSkip)
+    fun refreshComments(allowFetchSkip: Boolean) {
+        DataPullPushService.startActionFetchComments(context, newsThreadId, allowFetchSkip)
     }
 
-    fun onCommentLongClick(commentId: Long?): Boolean {
+    /*fun onCommentLongClick(commentId: Long?): Boolean {
         if (commentId == null || commentId in handledPositions) {
             Log.d(TAG, "Ignoring click event on view $commentId")
             return false
@@ -139,7 +142,7 @@ class CommentsInteractor(val context: Context,
         handledPositions.add(commentId)
         DataPullPushService.startActionFetchChildComments(context, commentId, newsThreadId)
         return true
-    }
+    }*/
 
     fun destroy(): Unit {
         loaderManager.destroyLoader(R.id.loader_comments_comments)

@@ -11,6 +11,7 @@ import android.view.View
 class AppBarLayoutDependencyBehaviour : CoordinatorLayout.Behavior<FloatingActionButton> {
 
     constructor() : super()
+
     constructor (context: Context, attrs: AttributeSet) : super(context, attrs)
 
     override fun onStartNestedScroll(coordinatorLayout: CoordinatorLayout?, child: FloatingActionButton?, directTargetChild: View?, target: View?, nestedScrollAxes: Int): Boolean {
@@ -27,5 +28,13 @@ class AppBarLayoutDependencyBehaviour : CoordinatorLayout.Behavior<FloatingActio
         } else if (dyConsumed < 0 && child?.visibility != View.VISIBLE) {
             child?.show();
         }
+    }
+}
+
+fun FloatingActionButton?.applyAppBarLayoutDependency() {
+    if (this != null) {
+        val p = this.layoutParams as (CoordinatorLayout.LayoutParams)
+        p.behavior = AppBarLayoutDependencyBehaviour()
+        this.layoutParams = p
     }
 }

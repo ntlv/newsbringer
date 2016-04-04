@@ -1,7 +1,8 @@
 package se.ntlv.newsbringer.newsthreads
 
-import android.database.Cursor
 import se.ntlv.newsbringer.Navigator
+import se.ntlv.newsbringer.adapter.ObservableData
+import se.ntlv.newsbringer.network.NewsThreadUiData
 
 
 class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
@@ -13,13 +14,17 @@ class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
         interactor.loadData({ onDataLoaded(it) })
     }
 
-    fun onDataLoaded(data: Cursor?) {
+    fun onDataLoaded(data: ObservableData<NewsThreadUiData>?) {
         viewBinder.data = data
-        viewBinder.indicateDataLoading(false)
+        if (data?.hasContent() ?: false) {
+            viewBinder.indicateDataLoading(false)
+        }
     }
 
     fun refreshData(needToIndicateLoading: Boolean) {
-        viewBinder.indicateDataLoading(needToIndicateLoading)
+        if (needToIndicateLoading) {
+            viewBinder.indicateDataLoading(true)
+        }
         interactor.refreshData()
     }
 
@@ -30,12 +35,17 @@ class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
 
     fun onItemClick(itemId: Long?) = navigator.navigateToItemComments(itemId)
 
-    fun onItemLongClick(itemId: Long?) {
-        if (itemId != null) {
-            interactor.toggleItemStarredState(itemId)
-        }
+    fun onItemLongClick(itemId: Long?): Boolean = when {
+        itemId != null -> interactor.toggleItemStarredState(itemId)
+        else -> false
     }
 
     fun destroy() = interactor.destroy()
+
+    fun onMoreDataNeeded(currentMaxItem: Int) {
+        if (interactor.loadMoreData(currentMaxItem)){
+            viewBinder.indicateDataLoading(true)
+        }
+    }
 }
 
