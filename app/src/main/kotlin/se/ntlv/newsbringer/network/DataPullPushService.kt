@@ -45,6 +45,7 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
         private val EXTRA_ALLOW_FETCH_SKIP: String = "${TAG}extra_disallow_fetch_skip"
         private val EXTRA_FETCH_RANGE_START: String = "${TAG}extra_fetch_range_start"
         private val EXTRA_FETCH_RANGE_END: String = "${TAG}extra_fetch_range_end"
+        private val EXTRA_DO_FULL_WIPE: String = "${TAG}extra_do_full_wipe"
 
         private val ACTION_FETCH_COMMENTS: String = "${TAG}_action_fetch_comments"
         private val ACTION_FETCH_THREADS: String = "${TAG}_action_fetch_threads"
@@ -61,11 +62,12 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
          *
          * @see IntentService
          */
-        fun startActionFetchThreads(context: Context, start: Int = 0, end: Int = 9) {
+        fun startActionFetchThreads(context: Context, start: Int = 0, end: Int = 9, doFullWipe: Boolean) {
             val intent = Intent(context, DataPullPushService::class.java)
             intent.action = ACTION_FETCH_THREADS
             intent.putExtra(EXTRA_FETCH_RANGE_START, start)
             intent.putExtra(EXTRA_FETCH_RANGE_END, end)
+            intent.putExtra(EXTRA_DO_FULL_WIPE, doFullWipe)
             if (context.startService(intent) == null) {
                 throw IllegalStateException("Unable to start data service")
             }
@@ -112,7 +114,8 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
         when (this.action) {
             ACTION_FETCH_THREADS -> handleFetchThreads(
                     this.getIntExtra(EXTRA_FETCH_RANGE_START, -1),
-                    this.getIntExtra(EXTRA_FETCH_RANGE_END, -1)
+                    this.getIntExtra(EXTRA_FETCH_RANGE_END, -1),
+                    this.getBooleanExtra(EXTRA_DO_FULL_WIPE, false)
             )
             ACTION_FETCH_COMMENTS -> handleFetchComments(
                     this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L),
@@ -210,12 +213,19 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
         }
     }
 
-    fun handleFetchThreads(start: Int, end: Int) {
+    fun handleFetchThreads(start: Int, end: Int, doFullWipe : Boolean) {
         if (start == -1 || end == -1) {
             throw IllegalArgumentException("Invalid fetch range")
         }
-        val sel = PostTable.STARRED_SELECTION_W_RANGE
-        val selArgs = arrayOf(PostTable.UNSTARRED_SELECTION_ARGS, start.toString(), (if (start == 0) MAX_THREAD_IDX + 1 else end).toString())
+        val sel : String
+        val selArgs : Array<out String>
+        if (doFullWipe) {
+            sel = PostTable.STARRED_SELECTION
+            selArgs = arrayOf(PostTable.UNSTARRED_SELECTION_ARGS)
+        } else {
+            sel = PostTable.STARRED_SELECTION_W_RANGE
+            selArgs = arrayOf(PostTable.UNSTARRED_SELECTION_ARGS, start.toString(), end.toString())
+        }
         resolver.delete(CONTENT_URI_POSTS, sel, selArgs)
 
         val ids = TOP_FIFTY_URI.blockingGetRequestToModel<Array<Long>>(okHttp, gson)

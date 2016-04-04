@@ -32,7 +32,7 @@ class NewsThreadsInteractor
 
     override fun onLoaderReset(loader: Loader<Cursor>?) = onDataLoaded(null)
 
-    fun refreshData() = DataPullPushService.startActionFetchThreads(context)
+    fun refreshData() = DataPullPushService.startActionFetchThreads(context, doFullWipe = true)
 
     fun loadData(completion: (data: ObservableData<NewsThreadUiData>?) -> Unit) {
         onDataLoaded = completion
@@ -55,7 +55,7 @@ class NewsThreadsInteractor
         if (currentMaxItem >= DataPullPushService.MAX_THREAD_IDX ) {
             return false
         } else {
-            DataPullPushService.startActionFetchThreads(context, currentMaxItem + 1, currentMaxItem + 10)
+            DataPullPushService.startActionFetchThreads(context, currentMaxItem + 1, currentMaxItem + 10, false)
             return true
         }
     }
