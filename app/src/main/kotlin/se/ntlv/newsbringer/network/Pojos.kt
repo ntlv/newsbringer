@@ -18,7 +18,7 @@ class NewsThread {
     var url: String? = null
     var descendants : Long = 0
 
-    fun getContentValues(ordinal : Int): ContentValues {
+    fun toContentValues(ordinal : Int): ContentValues {
             val cv = ContentValues(10)
             cv.put(PostTable.COLUMN_ID, id)
             cv.put(PostTable.COLUMN_SCORE, score)
@@ -67,33 +67,7 @@ class Comment {
     var text: String? = null
     var type: String? = null
 
-    fun getAsContentValues(ordinal: Int,
-                           ancestorCount: Int,
-                           ancestorOrdinal: Double,
-                           threadParent: Long): ContentValues {
-        val cv = ContentValues(8)
-        if (ancestorCount > 0) {
-            cv.put(CommentsTable.COLUMN_PARENT_COMMENT, parent)
-            cv.put(CommentsTable.COLUMN_PARENT, threadParent)
-        } else {
-            cv.put(CommentsTable.COLUMN_PARENT, parent)
-        }
-        cv.put(CommentsTable.COLUMN_TIME, time)
-        cv.put(CommentsTable.COLUMN_ID, id)
-        cv.put(CommentsTable.COLUMN_BY, by ?: "Unknown author")
-        cv.put(CommentsTable.COLUMN_KIDS, kids.joinToString(","))
-        cv.put(CommentsTable.COLUMN_TEXT, text ?: "No text")
-        cv.put(CommentsTable.COLUMN_TYPE, type ?: "Unknown type")
-        cv.put(CommentsTable.COLUMN_ORDINAL, calculateOrdinal(ordinal, ancestorOrdinal, ancestorCount))
-        cv.put(CommentsTable.COLUMN_ANCESTOR_COUNT, ancestorCount)
-        return cv
-    }
-
-    fun calculateOrdinal(ordinal: Int, ancestorOrdinal: Double, ancestorCount: Int): Double {
-        return ancestorOrdinal + ordinal / Math.pow(10.0, ancestorCount.toDouble())
-    }
-
-    fun asContentValues(ordinal : Int, ancestorCount: Int,threadParent: Long): ContentValues? {
+    fun toContentValues(ordinal : Int, ancestorCount: Int, threadParent: Long): ContentValues? {
         val cv = ContentValues(8)
         if (ancestorCount > 0) {
             cv.put(CommentsTable.COLUMN_PARENT_COMMENT, parent)

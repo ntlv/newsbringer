@@ -161,7 +161,7 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
         ordinalCursor.close()
 
         val thread = "$ITEM_URI$newsthreadId$URI_SUFFIX".blockingGetRequestToModel<NewsThread>(okHttp, gson)
-        resolver.insert(CONTENT_URI_POSTS, thread?.getContentValues(ordinal))
+        resolver.insert(CONTENT_URI_POSTS, thread?.toContentValues(ordinal))
 
         var index = 0
         thread?.kids?.forEach {
@@ -223,7 +223,7 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
                 ?.copyOfRange(start, end)
                 ?.mapIndexed { idx, itemId ->
                     val item = "$ITEM_URI$itemId$URI_SUFFIX".blockingGetRequestToModel<NewsThread>(okHttp, gson)
-                    item?.getContentValues(idx)
+                    item?.toContentValues(idx)
                 }
                 ?.filterNotNull()
                 ?.toTypedArray()
@@ -240,7 +240,7 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
 
         val comment = "$ITEM_URI$targetId$URI_SUFFIX".blockingGetRequestToModel<Comment>(okHttp, gson)
 
-        val reified = comment?.asContentValues(startOrdinal, ancestorCount, threadParentId)
+        val reified = comment?.toContentValues(startOrdinal, ancestorCount, threadParentId)
         if (reified != null) {
             resolver.insert(CONTENT_URI_COMMENTS, reified)
         }
