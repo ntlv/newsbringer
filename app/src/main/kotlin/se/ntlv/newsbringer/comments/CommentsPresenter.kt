@@ -46,8 +46,4 @@ class CommentsPresenter
     fun onShareStoryClicked() = interactor.shareStory()
 
     fun onShareCommentsClicked() = interactor.shareComments()
-
-    fun saveTemporaryState(bundle: Bundle) = interactor.saveTemporaryState(bundle)
-    fun restoreTemporaryState(savedInstanceState: Bundle?) = interactor.restoreTemporaryState(savedInstanceState)
-
 }

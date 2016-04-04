@@ -38,8 +38,6 @@ class CommentsInteractor(val context: Context,
     private val TAG: String = CommentsInteractor::class.java.simpleName
 
     private val LOADER_ARGS_ID: String = "$TAG:loader_args_id"
-    private val handledPositions = HashSet<Long>()
-    private val STATE_HANDLED_POSITIONS: String = "${TAG}_handled_positions"
 
     private var shouldRequestDataIfLoaderFails = AtomicBoolean(true)
 
@@ -134,30 +132,9 @@ class CommentsInteractor(val context: Context,
         DataPullPushService.startActionFetchComments(context, newsThreadId, allowFetchSkip)
     }
 
-    /*fun onCommentLongClick(commentId: Long?): Boolean {
-        if (commentId == null || commentId in handledPositions) {
-            Log.d(TAG, "Ignoring click event on view $commentId")
-            return false
-        }
-        handledPositions.add(commentId)
-        DataPullPushService.startActionFetchChildComments(context, commentId, newsThreadId)
-        return true
-    }*/
-
     fun destroy(): Unit {
         loaderManager.destroyLoader(R.id.loader_comments_comments)
         loaderManager.destroyLoader(R.id.loader_comments_header)
-    }
-
-    fun saveTemporaryState(bundle: Bundle) {
-        val out = LongArray(handledPositions.size)
-        handledPositions.withIndex().forEach { out[it.index] = it.value }
-        bundle.putLongArray(STATE_HANDLED_POSITIONS, out)
-    }
-
-    fun restoreTemporaryState(savedInstanceState: Bundle?) {
-        val positions = savedInstanceState?.getLongArray(STATE_HANDLED_POSITIONS)
-        positions?.toCollection(handledPositions)
     }
 
     fun shareComments() = navigator.goToShareLink(title, commentsLink)

@@ -1,6 +1,7 @@
 package se.ntlv.newsbringer.newsthreads
 
 import se.ntlv.newsbringer.Navigator
+import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.ObservableData
 import se.ntlv.newsbringer.network.NewsThreadUiData
 
@@ -44,6 +45,7 @@ class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
 
     fun onMoreDataNeeded(currentMaxItem: Int) {
         if (interactor.loadMoreData(currentMaxItem)){
+            viewBinder.showStatusMessage(R.string.status_loading_more_data)
             viewBinder.indicateDataLoading(true)
         }
     }

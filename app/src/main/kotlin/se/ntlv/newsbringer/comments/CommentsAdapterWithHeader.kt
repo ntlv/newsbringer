@@ -2,6 +2,7 @@ package se.ntlv.newsbringer.comments
 
 import android.support.v7.widget.RecyclerView
 import android.text.Html
+import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -98,10 +99,11 @@ open class CommentsAdapterWithHeader(val commentNestingPaddingIncrement : Int) :
 
     var TextView.htmlText: String
         get() {
-            return this.text as String
+            return text as String
         }
         set(source: String) {
-            this.text = Html.fromHtml(source)
+            text = Html.fromHtml(source)
+            movementMethod = LinkMovementMethod.getInstance()
         }
 
     class RowHolder(root: View) : RecyclerView.ViewHolder(root) {

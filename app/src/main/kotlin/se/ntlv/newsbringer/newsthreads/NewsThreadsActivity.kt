@@ -2,6 +2,7 @@ package se.ntlv.newsbringer.newsthreads
 
 import android.content.Context
 import android.os.Bundle
+import android.support.annotation.StringRes
 import android.support.design.widget.AppBarLayout
 import android.support.design.widget.FloatingActionButton
 import android.support.v4.widget.SwipeRefreshLayout
@@ -14,6 +15,7 @@ import android.view.MenuItem
 import android.view.View
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.find
+import org.jetbrains.anko.toast
 import org.jetbrains.anko.verbose
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
@@ -28,9 +30,14 @@ interface NewsThreadsViewBinder {
     val context: Context
 
     var data: ObservableData<NewsThreadUiData>?
+
+    fun showStatusMessage(@StringRes messageResource: Int)
 }
 
 class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedListener, NewsThreadsViewBinder, AnkoLogger, DataLoadingFacilitator {
+    override fun showStatusMessage(messageResource: Int) {
+        toast(messageResource)
+    }
 
     val layoutManagerStateParcelName = "layoutManagerState"
 
@@ -115,8 +122,13 @@ class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLis
         mPresenter.onViewReady()
     }
 
-    override fun onResume() {
-        super.onResume()
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.main, menu)
+        return true
+    }
+
+    override fun onStart() {
+        super.onStart()
         mAppBar.addOnOffsetChangedListener(this);
     }
 
@@ -126,19 +138,14 @@ class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLis
         out.putParcelable(layoutManagerStateParcelName, state)
     }
 
-    override fun onPause() {
-        super.onPause();
+    override fun onStop() {
+        super.onStop();
         mAppBar.removeOnOffsetChangedListener(this)
     }
 
     override fun onDestroy() {
         super.onStop()
         mPresenter.destroy()
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.main, menu)
-        return true
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean = when (item?.itemId) {

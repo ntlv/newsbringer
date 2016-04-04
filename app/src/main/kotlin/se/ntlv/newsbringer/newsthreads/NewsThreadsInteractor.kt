@@ -13,10 +13,13 @@ import se.ntlv.newsbringer.database.NewsContentProvider.Companion.CONTENT_URI_PO
 import se.ntlv.newsbringer.database.PostTable
 import se.ntlv.newsbringer.network.DataPullPushService
 import se.ntlv.newsbringer.network.NewsThreadUiData
+import java.util.*
 
 class NewsThreadsInteractor
 (val context: Context,
  val loaderManager: LoaderManager) : LoaderManager.LoaderCallbacks<Cursor> {
+
+    val handledMoreLoadRequests : MutableSet<Int> = HashSet()
 
     override fun onCreateLoader(id: Int, args: Bundle?): Loader<Cursor> {
         val selection = if (showOnlyStarred) PostTable.STARRED_SELECTION else null
@@ -32,7 +35,10 @@ class NewsThreadsInteractor
 
     override fun onLoaderReset(loader: Loader<Cursor>?) = onDataLoaded(null)
 
-    fun refreshData() = DataPullPushService.startActionFetchThreads(context, doFullWipe = true)
+    fun refreshData() {
+        handledMoreLoadRequests.clear()
+        DataPullPushService.startActionFetchThreads(context, doFullWipe = true)
+    }
 
     fun loadData(completion: (data: ObservableData<NewsThreadUiData>?) -> Unit) {
         onDataLoaded = completion
@@ -52,9 +58,11 @@ class NewsThreadsInteractor
     fun toggleItemStarredState(itemId: Long): Boolean = DataPullPushService.startActionToggleStarred(context, itemId)
 
     fun loadMoreData(currentMaxItem: Int): Boolean {
-        if (currentMaxItem >= DataPullPushService.MAX_THREAD_IDX ) {
+        val alreadyHandled = handledMoreLoadRequests.contains(currentMaxItem)
+        if (alreadyHandled || currentMaxItem >= DataPullPushService.MAX_THREAD_IDX ) {
             return false
         } else {
+            handledMoreLoadRequests.add(currentMaxItem)
             DataPullPushService.startActionFetchThreads(context, currentMaxItem + 1, currentMaxItem + 10, false)
             return true
         }

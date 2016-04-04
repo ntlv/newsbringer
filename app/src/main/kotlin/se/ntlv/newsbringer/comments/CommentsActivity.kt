@@ -139,41 +139,31 @@ class CommentsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedListen
         mRecyclerView.layoutManager = mManager
         mRecyclerView.adapter = mAdapter
 
-        presenter.restoreTemporaryState(savedInstanceState)
-
         fab.applyAppBarLayoutDependency()
         fab.onClick { mNavigateDown() }
         fab.onLongClick { mNavigateUp(); true }
-    }
 
-    override fun onStart() {
-        super.onStart()
         presenter.onViewReady()
-    }
-
-    override fun onResume() {
-        super.onResume();
-        mAppBar.addOnOffsetChangedListener(this);
-    }
-
-    override fun onSaveInstanceState(bundle: Bundle) {
-        super.onSaveInstanceState(bundle)
-        presenter.saveTemporaryState(bundle)
-    }
-
-    override fun onPause() {
-        super.onPause();
-        mAppBar.removeOnOffsetChangedListener(this);
-    }
-
-    override fun onStop() {
-        super.onStop()
-        presenter.destroy()
     }
 
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.comments, menu)
         return true
+    }
+
+    override fun onStart() {
+        super.onStart()
+        mAppBar.addOnOffsetChangedListener(this);
+    }
+
+    override fun onStop() {
+        super.onStop();
+        mAppBar.removeOnOffsetChangedListener(this);
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        presenter.destroy()
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
