@@ -32,18 +32,14 @@ interface NewsThreadsViewBinder {
     var data: ObservableData<NewsThreadUiData>?
 
     fun showStatusMessage(@StringRes messageResource: Int)
+
+    fun toggleDynamicLoading()
 }
 
 class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedListener, NewsThreadsViewBinder, AnkoLogger, DataLoadingFacilitator {
-    override fun showStatusMessage(messageResource: Int) {
-        toast(messageResource)
-    }
+
 
     val layoutManagerStateParcelName = "layoutManagerState"
-
-    override fun onMoreDataNeeded(currentMaxItem: Int) {
-        mPresenter.onMoreDataNeeded(currentMaxItem)
-    }
 
     /*
         val mFire: Firebase by lazy {
@@ -164,6 +160,12 @@ class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLis
     }
 
     //VIEW MODEL IMPLEMENTATION
+    override var data: ObservableData<NewsThreadUiData>?
+        get() = mAdapter.data
+        set(c: ObservableData<NewsThreadUiData>?) {
+            mAdapter.data = c
+        }
+
     override fun indicateDataLoading(isLoading: Boolean) {
         mSwipeView.isRefreshing = isLoading
     }
@@ -171,10 +173,17 @@ class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLis
     override val context: NewsThreadsActivity
         get() = this
 
-    override var data: ObservableData<NewsThreadUiData>?
-        get() = mAdapter.data
-        set(c: ObservableData<NewsThreadUiData>?) {
-            mAdapter.data = c
-        }
+    override fun toggleDynamicLoading() {
+        mAdapter.toggleDynamicLoading()
+    }
+
+    override fun showStatusMessage(@StringRes messageResource: Int) {
+        toast(messageResource)
+    }
+
+    //ADAPTER DYNAMIC LOADING CALLBACKS
+    override fun onMoreDataNeeded(currentMaxItem: Int) {
+        mPresenter.onMoreDataNeeded(currentMaxItem)
+    }
 }
 

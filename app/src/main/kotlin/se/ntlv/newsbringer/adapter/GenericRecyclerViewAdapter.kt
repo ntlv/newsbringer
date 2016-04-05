@@ -11,6 +11,8 @@ abstract class GenericRecyclerViewAdapter<T, VH : RecyclerView.ViewHolder>(
 
     abstract val actualItemCount: Int
 
+    var shouldLoadDataDynamic = facilitator != null
+
     override fun getItemCount() = when {
         data != null && data!!.isValid -> actualItemCount
         else -> 0
@@ -23,7 +25,7 @@ abstract class GenericRecyclerViewAdapter<T, VH : RecyclerView.ViewHolder>(
     override fun onBindViewHolder(viewHolder: VH, position: Int): Unit {
         val item: T = data?.getItem(position) ?: throw IllegalStateException()
         val max = actualItemCount
-        if (position >= max - 1) {
+        if (shouldLoadDataDynamic && itemCount > 9 && position >= max - 1) {
             facilitator?.onMoreDataNeeded(max)
         }
         onBindViewHolder(viewHolder, item)
@@ -36,25 +38,13 @@ abstract class GenericRecyclerViewAdapter<T, VH : RecyclerView.ViewHolder>(
                 return
             }
             val old = field
-//            val fieldIdxs = old?.count?.minus(1) ?: 0
-//            val newIdxs = newData?.count?.minus(1) ?: 0
-
-//            val iterEnd = Math.max(fieldIdxs, newIdxs)
-
             field = newData
-
-//            for (idx in 0..iterEnd) {
-//                if (idx in 0..fieldIdxs && idx in 0..newIdxs) {
-//                    val fieldElem = field?.getItem(idx)
-//                    val newItem = newData?.getItem(idx)
-//                    if (fieldElem?.equals(newItem)?.not() ?: false) {
-//                        notifyItemChanged(idx)
-//                    }
-//                } else {
-//                    notifyItemChanged(idx)
-//                }
-//            }
             old?.close()
             notifyDataSetChanged()
         }
+
+    fun toggleDynamicLoading() {
+        if (facilitator == null) return
+        shouldLoadDataDynamic = shouldLoadDataDynamic.not()
+    }
 }

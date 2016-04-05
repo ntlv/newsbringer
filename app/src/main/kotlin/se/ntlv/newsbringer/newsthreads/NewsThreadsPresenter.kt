@@ -31,6 +31,7 @@ class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
 
     fun toggleShowOnlyStarred() {
         viewBinder.indicateDataLoading(true)
+        viewBinder.toggleDynamicLoading()
         interactor.showOnlyStarred = !interactor.showOnlyStarred
     }
 

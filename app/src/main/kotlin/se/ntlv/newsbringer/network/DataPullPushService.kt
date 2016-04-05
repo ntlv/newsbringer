@@ -5,6 +5,7 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.database.Cursor
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonParseException
@@ -15,16 +16,14 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.verbose
-import se.ntlv.newsbringer.database.CommentsTable
+import se.ntlv.newsbringer.database.*
 import se.ntlv.newsbringer.database.NewsContentProvider.Companion.CONTENT_URI_COMMENTS
 import se.ntlv.newsbringer.database.NewsContentProvider.Companion.CONTENT_URI_POSTS
-import se.ntlv.newsbringer.database.PostTable
-import se.ntlv.newsbringer.database.getIntByName
-import se.ntlv.newsbringer.database.query
 import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
 import java.io.InputStreamReader
+import java.util.*
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -121,26 +120,26 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
                     this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L),
                     this.getBooleanExtra(EXTRA_ALLOW_FETCH_SKIP, true)
             )
-            ACTION_TOGGLE_STARRED -> toggleStarred(this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L))
-            else -> throw IllegalArgumentException("Attempted to start $TAG with illegal argument")
+            ACTION_TOGGLE_STARRED -> toggleStarred(
+                    this.getLongExtra(EXTRA_NEWSTHREAD_ID, -1L))
+            else -> throw IllegalArgumentException("Attempted to start $TAG with illegal argument ${this.action}")
         }
     }
 
     override fun onHandleIntent(intent: Intent?): Unit = intent?.doAction() as Unit
 
     private fun toggleStarred(id: Long) {
-        val projection = arrayOf(PostTable.COLUMN_ID,
-                PostTable.COLUMN_STARRED
-        )
+        val projection = arrayOf(PostTable.COLUMN_ID, PostTable.COLUMN_STARRED)
         val selection = "${PostTable.COLUMN_ID}=?"
         val selectionArgs = arrayOf("$id")
         val result = resolver.query(CONTENT_URI_POSTS, projection, selection, selectionArgs)
         if (!result.moveToFirst()) {
             return
         }
-        val isStarred = 1 == result.getInt(result.getColumnIndexOrThrow(PostTable.COLUMN_STARRED))
+        val currentStarredStatus = result.getIntByName(PostTable.COLUMN_STARRED).equals(1)
+        val newStatus = if (currentStarredStatus) 0 else 1
         val cv = ContentValues(1)
-        cv.put(PostTable.COLUMN_STARRED, (if (isStarred) 0 else 1))
+        cv.put(PostTable.COLUMN_STARRED, newStatus)
         resolver.update(CONTENT_URI_POSTS, cv, selection, selectionArgs)
     }
 
@@ -228,10 +227,18 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
         }
         resolver.delete(CONTENT_URI_POSTS, sel, selArgs)
 
+        val starredProjection = arrayOf(PostTable.COLUMN_ID, PostTable.COLUMN_STARRED)
+        val starredSel = PostTable.STARRED_SELECTION
+        val starredSelArgs = arrayOf(PostTable.STARRED_SELECTION_ARGS)
+
+        val starredThreads = resolver.query(CONTENT_URI_POSTS, starredProjection, starredSel, starredSelArgs)
+        val starredIds = starredThreads.toList({it.getLongByName(PostTable.COLUMN_ID)})
+        starredThreads.close()
+
         val ids = TOP_FIFTY_URI.blockingGetRequestToModel<Array<Long>>(okHttp, gson)
         val batch = ids
                 ?.mapIndexed { idx, itemId -> Pair(idx, itemId) }
-                ?.filter { it.first in start..end }
+                ?.filter { it.first in start..end && it.second !in starredIds}
                 ?.map {
                     val item = "$ITEM_URI${it.second}$URI_SUFFIX".blockingGetRequestToModel<NewsThread>(okHttp, gson)
                     item?.toContentValues(it.first)

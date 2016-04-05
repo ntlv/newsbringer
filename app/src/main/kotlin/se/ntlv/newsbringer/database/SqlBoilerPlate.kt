@@ -28,6 +28,19 @@ fun Cursor.getStringByName(columnName: String): String = getString(getColumnInde
 fun Cursor.getLongByName(columnName: String): Long = getLong(getColumnIndexOrThrow(columnName))
 fun Cursor.getIntByName(columnName: String): Int = getInt(getColumnIndexOrThrow(columnName))
 
+fun Cursor?.hasContent() : Boolean = (this?.count ?: 0) > 0
+
+fun <T> Cursor?.toList(extractor : ((Cursor) -> T)) : List<T> {
+    if (this == null || hasContent().not()) return emptyList()
+    moveToPositionOrThrow(0)
+    val listInProgress = mutableListOf<T>()
+    do {
+        val value = extractor(this)
+        listInProgress.add(value)
+    } while (moveToNext())
+    return emptyList<T>().plus(listInProgress)
+}
+
 fun Cursor.moveToPositionOrThrow(pos: Int) {
     if (this.isClosed || moveToPosition(pos).not()) {
         throw IndexOutOfBoundsException()

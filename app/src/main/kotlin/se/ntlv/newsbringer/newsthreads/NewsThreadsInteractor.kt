@@ -51,7 +51,7 @@ class NewsThreadsInteractor
 
     var showOnlyStarred = false
         set(b: Boolean) {
-            showOnlyStarred = b
+            field = b
             loaderManager.restartLoader(R.id.loader_frontpage, null, this)
         }
 
