@@ -177,6 +177,9 @@ class CommentsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedListen
             R.id.share_comments -> {
                 presenter.onShareCommentsClicked(); true
             }
+            R.id.open_link -> {
+                presenter.onHeaderClick(); true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }

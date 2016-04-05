@@ -152,18 +152,18 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
         if (checkCanSkipFetch(newsthreadId, allowFetchSkip)) {
             return
         }
-        val projection = PostTable.getIdAndOrdinalProjection()
+        val projection = PostTable.getOrdinalAndStarredProjection()
         val ordinalSelection = "${PostTable.COLUMN_ID}=$newsthreadId"
 
         val ordinalCursor = resolver.query(CONTENT_URI_POSTS, projection, ordinalSelection)
-        if (ordinalCursor.moveToFirst().not()) {
-            throw IllegalArgumentException("NewsThread does not exist in DB")
-        }
+        ordinalCursor.moveToPositionOrThrow(0)
+
         val ordinal = ordinalCursor.getIntByName(PostTable.COLUMN_ORDINAL)
+        val isStarred = ordinalCursor.getIntByName(PostTable.COLUMN_STARRED)
         ordinalCursor.close()
 
         val thread = "$ITEM_URI$newsthreadId$URI_SUFFIX".blockingGetRequestToModel<NewsThread>(okHttp, gson)
-        resolver.insert(CONTENT_URI_POSTS, thread?.toContentValues(ordinal))
+        resolver.insert(CONTENT_URI_POSTS, thread?.toContentValues(ordinal, isStarred == 1))
 
         var index = 0
         thread?.kids?.forEach {

@@ -18,7 +18,7 @@ class NewsThread {
     var url: String? = null
     var descendants : Long = 0
 
-    fun toContentValues(ordinal : Int): ContentValues {
+    fun toContentValues(ordinal: Int, isStarredOverride: Boolean = false): ContentValues {
             val cv = ContentValues(10)
             cv.put(PostTable.COLUMN_ID, id)
             cv.put(PostTable.COLUMN_SCORE, score)
@@ -30,7 +30,9 @@ class NewsThread {
             cv.put(PostTable.COLUMN_TYPE, type ?: "Unknown type")
             cv.put(PostTable.COLUMN_URL, url ?: "Unkown URL")
             cv.put(PostTable.COLUMN_DESCENDANTS, descendants)
-
+        if (isStarredOverride) {
+            cv.put(PostTable.COLUMN_STARRED, 1)
+        }
             cv.put(PostTable.COLUMN_ORDINAL, ordinal)
 
             return cv

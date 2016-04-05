@@ -61,9 +61,10 @@ class PostTable {
             onCreate(database)
         }
 
-        fun getIdAndOrdinalProjection() = arrayOf(
+        fun getOrdinalAndStarredProjection() = arrayOf(
                 PostTable.COLUMN_ID,
-                PostTable.COLUMN_ORDINAL
+                PostTable.COLUMN_ORDINAL,
+                PostTable.COLUMN_STARRED
         )
 
         fun getFrontPageProjection() = arrayOf(
