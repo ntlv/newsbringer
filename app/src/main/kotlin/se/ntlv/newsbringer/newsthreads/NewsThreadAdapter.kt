@@ -14,7 +14,9 @@ import se.ntlv.newsbringer.adapter.GenericRecyclerViewAdapter
 import se.ntlv.newsbringer.customviews.DateView
 import se.ntlv.newsbringer.network.NewsThreadUiData
 
-open class NewsThreadAdapter(layout: Int, f: DataLoadingFacilitator) : GenericRecyclerViewAdapter<NewsThreadUiData, NewsThreadAdapter.ViewHolder>(f) {
+open class NewsThreadAdapter(val layout: Int, f: DataLoadingFacilitator) : GenericRecyclerViewAdapter<NewsThreadUiData, NewsThreadAdapter.ViewHolder>(f) {
+
+    override val deltaUpdatingEnabled = false
 
     override val actualItemCount: Int
         get() = data?.count ?: 0
@@ -22,10 +24,8 @@ open class NewsThreadAdapter(layout: Int, f: DataLoadingFacilitator) : GenericRe
     var clickListener: (ViewHolder?) -> Unit? = {}
     var longClickListener: (ViewHolder?) -> Boolean = { false }
 
-    val mLayout = layout
-
     override fun onCreateViewHolder(parent: ViewGroup?, viewType: Int): ViewHolder? {
-        val v = LayoutInflater.from(parent?.context).inflate(mLayout, parent, false)
+        val v = LayoutInflater.from(parent?.context).inflate(layout, parent, false)
         return ViewHolder(v)
     }
 
@@ -48,12 +48,12 @@ open class NewsThreadAdapter(layout: Int, f: DataLoadingFacilitator) : GenericRe
             val titlePrefix = if (item.isStarred == 1) "\u2605" else ""
             title.text = titlePrefix + item.title
             by.text = item.by
-            time.text = item.time
-            score.text = item.score
+            time.text = item.time.toString()
+            score.text = item.score.toString()
             link = item.url
             id = item.id
             commentCount.text = item.descendants.toString()
-            ordinal.text = item.ordinal
+            ordinal.text = item.ordinal.toString()
 
             view.onClick { onClick(this) }
             view.onLongClick { onLongClick(this) }

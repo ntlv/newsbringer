@@ -1,6 +1,5 @@
 package se.ntlv.newsbringer.comments
 
-import android.os.Bundle
 import se.ntlv.newsbringer.adapter.ObservableData
 import se.ntlv.newsbringer.network.CommentUiData
 
@@ -23,8 +22,15 @@ class CommentsPresenter
     fun onViewReady() {
         viewBinder.indicateDataLoading(true)
         interactor.loadData(
-                { title: String, text: String, by: String, time: String, score: String, link: String, descendantsCount : String  ->
-                    onHeaderLoaded(title, text, by, time, score, link, descendantsCount)
+                { model ->
+                    if (model == null) {
+                        onHeaderLoaded("", "", "", "", "", "", "")
+                    } else {
+                        val time = model.time.toString()
+                        val score = model.score.toString()
+                        val descendantCount = model.descendants.toString()
+                        onHeaderLoaded(model.title, model.text, model.by, time, score, model.url, descendantCount)
+                    }
                 },
                 { onCommentsLoaded(it) }
         )
@@ -39,7 +45,7 @@ class CommentsPresenter
 
     fun onHeaderClick() = interactor.goToLink()
 
-//    fun onCommentLongClick(commentId: Long?) = interactor.onCommentLongClick(commentId)
+    //    fun onCommentLongClick(commentId: Long?) = interactor.onCommentLongClick(commentId)
 
     fun destroy() = interactor.destroy()
 

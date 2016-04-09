@@ -109,7 +109,7 @@ class CommentsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedListen
         get() = this
 
     override fun updateComments(data: ObservableData<CommentUiData>?) {
-        mAdapter.data = data
+        mAdapter.updateContent(data)
     }
 
     //APP BAR CALLBACKS
@@ -126,6 +126,7 @@ class CommentsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedListen
             val intent = Intent(this, NewsThreadsActivity::class.java)
             startActivity(intent)
             finish()
+            return
         }
 
         setContentView(R.layout.activity_linear_vertical_content)

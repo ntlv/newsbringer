@@ -3,4 +3,5 @@
     <item type="id" name="loader_comments_header"/>
     <item type="id" name="loader_comments_comments"/>
     <item type="id" name="loader_frontpage"/>
+    <item type="id" name="anko_appbar"/>
 </resources>

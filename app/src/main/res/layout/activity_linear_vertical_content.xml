@@ -26,6 +26,5 @@
         android:layout_gravity="bottom|end"
         app:layout_anchorGravity="bottom|right|end"
         />
-    <!--app:layout_behavior="se.ntlv.newsbringer.AppBarLayoutDependencyBehaviour"-->
 
 </android.support.design.widget.CoordinatorLayout>

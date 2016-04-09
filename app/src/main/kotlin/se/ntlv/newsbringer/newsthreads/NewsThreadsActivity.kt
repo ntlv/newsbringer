@@ -1,6 +1,6 @@
 package se.ntlv.newsbringer.newsthreads
 
-import android.content.Context
+import android.animation.Animator
 import android.os.Bundle
 import android.support.annotation.StringRes
 import android.support.design.widget.AppBarLayout
@@ -13,10 +13,10 @@ import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.find
-import org.jetbrains.anko.toast
-import org.jetbrains.anko.verbose
+import android.view.animation.Animation
+import android.widget.ImageView
+import org.jetbrains.anko.*
+import se.ntlv.newsbringer.BuildConfig
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.DataLoadingFacilitator
@@ -27,59 +27,20 @@ import kotlin.LazyThreadSafetyMode.NONE
 interface NewsThreadsViewBinder {
     fun indicateDataLoading(isLoading: Boolean): Unit
 
-    val context: Context
-
-    var data: ObservableData<NewsThreadUiData>?
+    fun presentData(data: ObservableData<NewsThreadUiData>?)
 
     fun showStatusMessage(@StringRes messageResource: Int)
+
+    fun showLongStatusMessage(content: String)
 
     fun toggleDynamicLoading()
 }
 
-class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedListener, NewsThreadsViewBinder, AnkoLogger, DataLoadingFacilitator {
-
-
-    val layoutManagerStateParcelName = "layoutManagerState"
-
-    /*
-        val mFire: Firebase by lazy {
-            Firebase("https://hacker-news.firebaseio.com/v0")
-
-            //TODO Fixup firebase stuff
-                    val stories = mFire.child("topstories")
-                    val item = mFire.child("item")
-
-
-                    stories.addValueEventListener(object : ValueEventListener {
-                        override fun onDataChange(p: DataSnapshot?) {
-                            val l = Listener()
-                            val idxs = p?.getValue(ArrayList<Long>().javaClass)?.take(5)
-                            idxs?.forEach {
-                                val id : String = it.toString()
-                                val child = item.child(id)
-                                Log.d("ITEM LISTENER LOOP", "Adding listener to ${child.toString()}")
-                                child.addListenerForSingleValueEvent(l)
-                            }
-                        }
-
-                        override fun onCancelled(p: FirebaseError?) {
-                            throw UnsupportedOperationException()
-                        }
-                    })
-    }
-
-    class Listener : ValueEventListener {
-    override fun onDataChange(p0: DataSnapshot?) {
-        Log.d("LISTENER", p0?.value.toString())
-    }
-
-    override fun onCancelled(p0: FirebaseError?) {
-        throw UnsupportedOperationException()
-    }
-
-}
-
-    */
+class NewsThreadsActivity : AppCompatActivity(),
+        AppBarLayout.OnOffsetChangedListener,
+        NewsThreadsViewBinder,
+        AnkoLogger,
+        DataLoadingFacilitator {
 
     val mAdapter: NewsThreadAdapter by lazy(NONE) { NewsThreadAdapter(R.layout.list_item_news_thread, this) }
 
@@ -118,20 +79,17 @@ class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLis
         mPresenter.onViewReady()
     }
 
+    private var refreshButton: MenuItem? = null
+
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main, menu)
+        refreshButton = menu.findItem(R.id.refresh)
         return true
     }
 
     override fun onStart() {
         super.onStart()
         mAppBar.addOnOffsetChangedListener(this);
-    }
-
-    override fun onSaveInstanceState(out: Bundle) {
-        super.onSaveInstanceState(out)
-        val state = mRecyclerView.layoutManager.onSaveInstanceState()
-        out.putParcelable(layoutManagerStateParcelName, state)
     }
 
     override fun onStop() {
@@ -160,30 +118,35 @@ class NewsThreadsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedLis
     }
 
     //VIEW MODEL IMPLEMENTATION
-    override var data: ObservableData<NewsThreadUiData>?
-        get() = mAdapter.data
-        set(c: ObservableData<NewsThreadUiData>?) {
-            mAdapter.data = c
-        }
+    override fun presentData(data: ObservableData<NewsThreadUiData>?) = mAdapter.updateContent(data)
 
     override fun indicateDataLoading(isLoading: Boolean) {
         mSwipeView.isRefreshing = isLoading
+        refreshButton?.isEnabled = !isLoading
+
+        if (isLoading) {
+            val image = ImageView(this)
+            image.minimumWidth = dip(56)
+            image.padding = dip(8)
+            image.setImageResource(R.drawable.ic_action_refresh)
+            image.animate().alpha(0.25f)
+            refreshButton?.actionView = image
+        } else {
+            refreshButton?.actionView?.animate()?.alpha(1.0f)?.withEndAction {
+                refreshButton?.actionView = null
+            }
+        }
     }
 
-    override val context: NewsThreadsActivity
-        get() = this
+    override fun toggleDynamicLoading() = mAdapter.toggleDynamicLoading()
 
-    override fun toggleDynamicLoading() {
-        mAdapter.toggleDynamicLoading()
-    }
+    override fun showStatusMessage(@StringRes messageResource: Int) = toast(messageResource)
 
-    override fun showStatusMessage(@StringRes messageResource: Int) {
-        toast(messageResource)
+    override fun showLongStatusMessage(content: String) {
+        if (BuildConfig.DEBUG) alert(content, "CRITIAL ERROR", { show() })
     }
 
     //ADAPTER DYNAMIC LOADING CALLBACKS
-    override fun onMoreDataNeeded(currentMaxItem: Int) {
-        mPresenter.onMoreDataNeeded(currentMaxItem)
-    }
+    override fun onMoreDataNeeded(currentMaxItem: Int) = mPresenter.onMoreDataNeeded(currentMaxItem)
 }
 

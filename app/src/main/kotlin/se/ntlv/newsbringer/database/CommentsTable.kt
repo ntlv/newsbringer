@@ -1,10 +1,14 @@
 package se.ntlv.newsbringer.database
 
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
-import android.util.Log
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.debug
+import org.jetbrains.anko.warn
+import se.ntlv.newsbringer.network.CommentUiData
 
 class CommentsTable {
-    companion object {
+    companion object : AnkoLogger {
 
         // Database table
         val TABLE_NAME: String = "comment"
@@ -37,15 +41,13 @@ class CommentsTable {
                         COLUMN_ORDINAL real notNull
                 )
 
-        private val LOG_TAG = CommentsTable::class.java.simpleName
-
         fun onCreate(database: SQLiteDatabase) {
-            Log.d(LOG_TAG, "creating database")
+            debug("creating database")
             database.execSQL(DATABASE_CREATE)
         }
 
         fun onUpgrade(database: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-            Log.w(LOG_TAG, "Upgrading database from version $oldVersion to $newVersion, which will destroy all old data")
+            warn("Upgrading database from version $oldVersion to $newVersion, which will destroy all old data")
             database.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
             onCreate(database)
         }
@@ -59,6 +61,23 @@ class CommentsTable {
                 CommentsTable.COLUMN_ANCESTOR_COUNT,
                 CommentsTable.COLUMN_KIDS
         )
+
+    }
+
+    class CommentsTableCursor(base: Cursor) : TypedCursor<CommentUiData>(base) {
+        override fun extract(raw: TypedCursor<CommentUiData>): CommentUiData {
+
+            val pos = raw.position
+            val time = raw.getLongByName(COLUMN_TIME)
+            val text = raw.getStringByName(COLUMN_TEXT)
+            val id = raw.getLongByName(COLUMN_ID)
+            val kids = raw.getStringByName(COLUMN_KIDS)
+            val by = raw.getStringByName(COLUMN_BY)
+            val ancestorCount = raw.getIntByName(COLUMN_ANCESTOR_COUNT)
+
+            return CommentUiData(pos, time, id, by, kids, text, ancestorCount)
+        }
+
     }
 }
 

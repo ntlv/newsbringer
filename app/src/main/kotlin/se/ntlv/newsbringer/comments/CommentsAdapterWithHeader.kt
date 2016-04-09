@@ -13,10 +13,12 @@ import se.ntlv.newsbringer.adapter.GenericWithHeaderRecyclerViewAdapter
 import se.ntlv.newsbringer.customviews.DateView
 import se.ntlv.newsbringer.network.CommentUiData
 
-open class CommentsAdapterWithHeader(val commentNestingPaddingIncrement : Int) : GenericWithHeaderRecyclerViewAdapter<
+class CommentsAdapterWithHeader(val commentNestingPaddingIncrement : Int) : GenericWithHeaderRecyclerViewAdapter<
         CommentUiData,
         CommentsAdapterWithHeader.HeaderHolder,
         CommentsAdapterWithHeader.RowHolder>(HeaderHolder::class.java, RowHolder::class.java) {
+
+    override val deltaUpdatingEnabled = false
 
     override fun onCreateHeaderViewHolder(parent: ViewGroup?): RecyclerView.ViewHolder =
             HeaderHolder(LayoutInflater.from(parent?.context).inflate(R.layout.list_header_newsthread, parent, false))

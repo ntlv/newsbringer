@@ -7,6 +7,10 @@ import java.util.*
 
 class NewsThread {
 
+    constructor(itemId: Long) {
+        id = itemId
+    }
+
     var score: Int = 0
     var time: Long = 0
     var id: Long = 0
@@ -24,7 +28,7 @@ class NewsThread {
             cv.put(PostTable.COLUMN_SCORE, score)
             cv.put(PostTable.COLUMN_TIMESTAMP, time)
             cv.put(PostTable.COLUMN_BY, by ?: "Unknown author")
-            cv.put(PostTable.COLUMN_TITLE, title ?: "No title")
+        cv.put(PostTable.COLUMN_TITLE, title ?: "")
             cv.put(PostTable.COLUMN_CHILDREN, kids?.joinToString(",") ?: "")
             cv.put(PostTable.COLUMN_TEXT, text ?: "")
             cv.put(PostTable.COLUMN_TYPE, type ?: "Unknown type")
@@ -42,13 +46,14 @@ class NewsThread {
 data class NewsThreadUiData(val isStarred: Int,
                             val title: String,
                             val by: String,
-                            val time: String,
-                            val score: String,
+                            val time: Long,
+                            val score: Int,
                             val url: String,
                             val id: Long,
                             val children: String,
-                            val descendants : Long,
-                            val ordinal : String
+                            val descendants: Long,
+                            val ordinal: Int,
+                            val text: String
 )
 
 

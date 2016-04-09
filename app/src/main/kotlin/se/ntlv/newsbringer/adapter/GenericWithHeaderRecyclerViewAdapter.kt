@@ -17,10 +17,6 @@ abstract class GenericWithHeaderRecyclerViewAdapter<T, HVH : ViewHolder, VH : Vi
     abstract fun onBindHeaderViewHolder(viewHolder: HVH)
     abstract fun onBindRowViewHolder(viewHolder: VH, data: T)
 
-
-    /**
-     * Main entry point called by Recycler view to bind data.
-     */
     final override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
         if (position == 0 && headerClass.isInstance(viewHolder)) {
             val castedHolder = headerClass.cast(viewHolder)

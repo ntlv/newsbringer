@@ -12,11 +12,11 @@ class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
 
     fun onViewReady() {
         viewBinder.indicateDataLoading(true)
-        interactor.loadData({ onDataLoaded(it) })
+        interactor.loadData({ onDataLoaded(it)}, {viewBinder.showLongStatusMessage(it)})
     }
 
-    fun onDataLoaded(data: ObservableData<NewsThreadUiData>?) {
-        viewBinder.data = data
+    private fun onDataLoaded(data: ObservableData<NewsThreadUiData>?) {
+        viewBinder.presentData(data)
         if (data?.hasContent() ?: false) {
             viewBinder.indicateDataLoading(false)
         }

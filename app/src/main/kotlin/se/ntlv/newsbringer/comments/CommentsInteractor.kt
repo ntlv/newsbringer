@@ -1,28 +1,82 @@
 package se.ntlv.newsbringer.comments
 
 import android.app.LoaderManager
+import android.content.ContentResolver
 import android.content.Context
-import android.content.CursorLoader
 import android.content.Loader
-import android.database.Cursor
 import android.os.Bundle
+import android.os.CancellationSignal
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
-import se.ntlv.newsbringer.adapter.CommentsData
+import se.ntlv.newsbringer.adapter.ObservableCursorData
 import se.ntlv.newsbringer.adapter.ObservableData
-import se.ntlv.newsbringer.database.CommentsTable
-import se.ntlv.newsbringer.database.NewsContentProvider
-import se.ntlv.newsbringer.database.PostTable
-import se.ntlv.newsbringer.database.getStringByName
+import se.ntlv.newsbringer.database.*
 import se.ntlv.newsbringer.network.CommentUiData
 import se.ntlv.newsbringer.network.DataPullPushService
-import java.util.*
+import se.ntlv.newsbringer.network.NewsThreadUiData
 import java.util.concurrent.atomic.AtomicBoolean
 
 class CommentsInteractor(val context: Context,
                          val loaderManager: LoaderManager,
                          val newsThreadId: Long,
-                         val navigator: Navigator) : LoaderManager.LoaderCallbacks<Cursor> {
+                         val navigator: Navigator) {
+
+    inner class HeaderCallbacks : LoaderManager.LoaderCallbacks<TypedCursor<NewsThreadUiData>> {
+        override fun onLoadFinished(loader: Loader<TypedCursor<NewsThreadUiData>>?, data: TypedCursor<NewsThreadUiData>?) {
+            if (data?.hasContent?.not() ?: false) {
+                if (shouldRequestDataIfLoaderFails.getAndSet(false)) {
+                    refreshComments(true)
+                } else {
+                    onLoaderReset(loader)
+                }
+            } else {
+                val model = data!!.getRow(0)
+                title = model.title
+                link = model.url
+
+                onHeaderLoadCompletion(model)
+            }
+        }
+
+        override fun onCreateLoader(id: Int, args: Bundle?): Loader<TypedCursor<NewsThreadUiData>>? {
+            if (args == null || args.getLong(LOADER_ARGS_ID, -1L) == -1L) {
+                throw IllegalArgumentException("Cannot instantiate loader will null arguments or missing arguments")
+            }
+            val threadId = args.getLong(LOADER_ARGS_ID)
+            return NewsThreadHeaderLoader(context, threadId)
+        }
+
+        override fun onLoaderReset(loader: Loader<TypedCursor<NewsThreadUiData>>?) {
+            onHeaderLoadCompletion(null)
+        }
+
+    }
+
+    inner class CommentsCallbacks : LoaderManager.LoaderCallbacks<TypedCursor<CommentUiData>> {
+        override fun onCreateLoader(id: Int, args: Bundle?): Loader<TypedCursor<CommentUiData>>? {
+            if (args == null || args.getLong(LOADER_ARGS_ID, -1L) == -1L) {
+                throw IllegalArgumentException("Cannot instantiate loader will null arguments or missing arguments")
+            }
+            val threadId = args.getLong(LOADER_ARGS_ID)
+            return NewsThreadCommentsLoader(context, threadId)
+        }
+
+        override fun onLoadFinished(loader: Loader<TypedCursor<CommentUiData>>?, data: TypedCursor<CommentUiData>?) {
+            if (data?.hasContent?.not() ?: false) {
+                if (shouldRequestDataIfLoaderFails.getAndSet(false)) {
+                    refreshComments(true)
+                } else {
+                    onLoaderReset(loader)
+                }
+            } else {
+                onCommentsLoadCompletion(ObservableCursorData(data!!))
+            }
+        }
+
+        override fun onLoaderReset(loader: Loader<TypedCursor<CommentUiData>>?) {
+            onCommentsLoadCompletion(null)
+        }
+    }
 
     var title: String = ""
     var link: String = ""
@@ -30,8 +84,7 @@ class CommentsInteractor(val context: Context,
         get() {
             return "https://news.ycombinator.com/item?id=$newsThreadId"
         }
-    var onHeaderLoadCompletion: ((String, String, String, String, String, String, String) -> Unit) =
-            { s: String, s1: String, s2: String, s3: String, s4: String, s5: String, s6 : String -> }
+    var onHeaderLoadCompletion: ((NewsThreadUiData?) -> Unit) = { model -> }
 
     var onCommentsLoadCompletion: ((ObservableData<CommentUiData>?) -> Unit) = {}
 
@@ -41,91 +94,14 @@ class CommentsInteractor(val context: Context,
 
     private var shouldRequestDataIfLoaderFails = AtomicBoolean(true)
 
-    override fun onCreateLoader(id: Int, args: Bundle?): Loader<Cursor> {
-        if (args == null || args.getLong(LOADER_ARGS_ID, -1L) == -1L) {
-            throw IllegalArgumentException("Cannot instantiate loader will null arguments or missing arguments")
-        }
-        when (id) {
-            R.id.loader_comments_comments -> {
-                val projection = CommentsTable.getDefaultProjection()
-                val selection = "${CommentsTable.COLUMN_PARENT}=?"
-                val selectionArgs = arrayOf(args.getLong(LOADER_ARGS_ID).toString())
-                val sorting = CommentsTable.COLUMN_ORDINAL + " ASC"
-                return CursorLoader(context, NewsContentProvider.CONTENT_URI_COMMENTS,
-                        projection, selection, selectionArgs, sorting)
-            }
-            R.id.loader_comments_header -> {
-                val selection = "${PostTable.COLUMN_ID}=?"
-                val selectionArgs = arrayOf(args.getLong(LOADER_ARGS_ID).toString())
-                return CursorLoader(context, NewsContentProvider.CONTENT_URI_POSTS,
-                        PostTable.getCommentsProjection(), selection, selectionArgs, null)
-            }
-            else -> {
-                throw IllegalArgumentException("Invalid loader id")
-            }
-        }
-    }
-
-    override fun onLoadFinished(loader: Loader<Cursor>?, data: Cursor?) {
-        if (loader == null || data == null) {
-            return
-        }
-        when (loader.id) {
-            R.id.loader_comments_header -> {
-                if (!data.moveToFirst()) {
-                    if (shouldRequestDataIfLoaderFails.getAndSet(false)) {
-                        refreshComments(true)
-                    } else {
-                        onLoaderReset(loader)
-                    }
-                } else {
-                    title = data.getStringByName(PostTable.COLUMN_TITLE)
-                    link = data.getStringByName(PostTable.COLUMN_URL)
-                    val by = data.getStringByName(PostTable.COLUMN_BY)
-                    val text = data.getStringByName(PostTable.COLUMN_TEXT)
-                    val time = data.getStringByName(PostTable.COLUMN_TIMESTAMP)
-                    val score = data.getStringByName(PostTable.COLUMN_SCORE)
-                    val descendantCount = data.getStringByName(PostTable.COLUMN_DESCENDANTS)
-                    onHeaderLoadCompletion(title, text, by, time, score, link, descendantCount)
-                }
-
-            }
-            R.id.loader_comments_comments -> {
-                if (!data.moveToFirst()) {
-                    if (shouldRequestDataIfLoaderFails.getAndSet(false)) {
-                        refreshComments(true)
-                    } else {
-                        onLoaderReset(loader)
-                    }
-                } else {
-                    onCommentsLoadCompletion(CommentsData(data))
-                }
-            }
-        }
-    }
-
-    override fun onLoaderReset(loader: Loader<Cursor>?) {
-        if (loader == null) {
-            throw IllegalArgumentException("Passed null loader in reset")
-        }
-        when (loader.id) {
-            R.id.loader_comments_header -> {
-                onHeaderLoadCompletion("", "", "", "", "", "", "")
-            }
-            R.id.loader_comments_comments -> {
-                onCommentsLoadCompletion(null)
-            }
-        }
-    }
-
-    fun loadData(headerCompletion: ((String, String, String, String, String, String, String) -> Unit),
+    fun loadData(headerCompletion: ((NewsThreadUiData?) -> Unit),
                  commentsCompletion: ((ObservableData<CommentUiData>?) -> Unit)) {
         onHeaderLoadCompletion = headerCompletion
         onCommentsLoadCompletion = commentsCompletion
         val loaderArgs = Bundle()
         loaderArgs.putLong(LOADER_ARGS_ID, newsThreadId)
-        loaderManager.initLoader(R.id.loader_comments_comments, loaderArgs, this)
-        loaderManager.initLoader(R.id.loader_comments_header, loaderArgs, this)
+        loaderManager.initLoader(R.id.loader_comments_comments, loaderArgs, CommentsCallbacks())
+        loaderManager.initLoader(R.id.loader_comments_header, loaderArgs, HeaderCallbacks())
     }
 
     fun refreshComments(allowFetchSkip: Boolean) {
@@ -142,5 +118,35 @@ class CommentsInteractor(val context: Context,
     fun shareStory() = navigator.goToShareLink(title, link)
 
     fun goToLink() = navigator.goToLink(link)
+}
+
+class NewsThreadHeaderLoader(context: Context, val threadId: Long) : TypedCursorLoader<NewsThreadUiData>(context) {
+    override fun query(resolver: ContentResolver, signal: CancellationSignal?): TypedCursor<NewsThreadUiData> {
+        val query = NewsContentProvider.threadHeaderQuery(threadId)
+        val rawCursor = resolver.query(
+                query.url,
+                query.projection,
+                query.selection,
+                query.selectionArgs,
+                query.sorting,
+                signal
+        )
+        return PostTable.PostTableCursor(rawCursor)
+    }
+}
+
+class NewsThreadCommentsLoader(context: Context, val threadId: Long) : TypedCursorLoader<CommentUiData>(context) {
+    override fun query(resolver: ContentResolver, signal: CancellationSignal?): TypedCursor<CommentUiData> {
+        val query = NewsContentProvider.threadCommentsQuery(threadId)
+        val rawCursor = resolver.query(
+                query.url,
+                query.projection,
+                query.selection,
+                query.selectionArgs,
+                query.sorting,
+                signal
+        )
+        return CommentsTable.CommentsTableCursor(rawCursor)
+    }
 
 }

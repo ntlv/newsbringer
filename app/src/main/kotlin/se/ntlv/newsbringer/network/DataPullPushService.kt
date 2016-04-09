@@ -5,25 +5,23 @@ import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
-import android.database.Cursor
-import android.util.Log
+import android.widget.Toast
 import com.google.gson.Gson
-import com.google.gson.JsonParseException
-import com.google.gson.JsonSyntaxException
 import com.google.gson.reflect.TypeToken
 import okhttp3.Cache
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.ResponseBody
 import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.bundleOf
+import org.jetbrains.anko.info
 import org.jetbrains.anko.verbose
 import se.ntlv.newsbringer.database.*
 import se.ntlv.newsbringer.database.NewsContentProvider.Companion.CONTENT_URI_COMMENTS
 import se.ntlv.newsbringer.database.NewsContentProvider.Companion.CONTENT_URI_POSTS
-import java.io.BufferedReader
 import java.io.File
 import java.io.IOException
-import java.io.InputStreamReader
-import java.util.*
+import java.io.Reader
 
 /**
  * An {@link IntentService} subclass for handling asynchronous task requests in
@@ -31,7 +29,7 @@ import java.util.*
  * <p>
  * helper methods.
  */
-class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
+class DataPullPushService : IntentService(DataPullPushService.TAG) {
 
     companion object {
 
@@ -42,8 +40,7 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
 
         private val EXTRA_NEWSTHREAD_ID: String = "${TAG}extra_newsthread_id"
         private val EXTRA_ALLOW_FETCH_SKIP: String = "${TAG}extra_disallow_fetch_skip"
-        private val EXTRA_FETCH_RANGE_START: String = "${TAG}extra_fetch_range_start"
-        private val EXTRA_FETCH_RANGE_END: String = "${TAG}extra_fetch_range_end"
+        private val EXTRA_CURRENT_MAX: String = "${TAG}extra_current_max"
         private val EXTRA_DO_FULL_WIPE: String = "${TAG}extra_do_full_wipe"
 
         private val ACTION_FETCH_COMMENTS: String = "${TAG}_action_fetch_comments"
@@ -61,11 +58,10 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
          *
          * @see IntentService
          */
-        fun startActionFetchThreads(context: Context, start: Int = 0, end: Int = 9, doFullWipe: Boolean) {
+        fun startActionFetchThreads(context: Context, currentMax: Int = 0, doFullWipe: Boolean) {
             val intent = Intent(context, DataPullPushService::class.java)
             intent.action = ACTION_FETCH_THREADS
-            intent.putExtra(EXTRA_FETCH_RANGE_START, start)
-            intent.putExtra(EXTRA_FETCH_RANGE_END, end)
+            intent.putExtra(EXTRA_CURRENT_MAX, currentMax)
             intent.putExtra(EXTRA_DO_FULL_WIPE, doFullWipe)
             if (context.startService(intent) == null) {
                 throw IllegalStateException("Unable to start data service")
@@ -73,12 +69,12 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
         }
 
         fun startActionFetchComments(context: Context, id: Long, allowFetchSkip: Boolean) {
-
-            Log.d(TAG, "Starting action fetch comments for $id")
             val intent = Intent(context, DataPullPushService::class.java)
-            intent.action = ACTION_FETCH_COMMENTS
-            intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
-            intent.putExtra(EXTRA_ALLOW_FETCH_SKIP, allowFetchSkip)
+                    .setAction(ACTION_FETCH_COMMENTS)
+                    .putExtras(bundleOf(
+                            Pair(EXTRA_NEWSTHREAD_ID, id),
+                            Pair(EXTRA_ALLOW_FETCH_SKIP, allowFetchSkip))
+                    )
             if (context.startService(intent) == null) {
                 throw IllegalStateException("Unable to start data service")
             }
@@ -86,8 +82,8 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
 
         fun startActionToggleStarred(context: Context, id: Long): Boolean {
             val intent = Intent(context, DataPullPushService::class.java)
-            intent.action = ACTION_TOGGLE_STARRED
-            intent.putExtra(EXTRA_NEWSTHREAD_ID, id)
+                    .setAction(ACTION_TOGGLE_STARRED)
+                    .putExtra(EXTRA_NEWSTHREAD_ID, id)
             return context.startService(intent) != null
         }
     }
@@ -109,11 +105,9 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
         if (this == null) {
             return
         }
-        verbose("Service handling ${this.action}")
         when (this.action) {
             ACTION_FETCH_THREADS -> handleFetchThreads(
-                    this.getIntExtra(EXTRA_FETCH_RANGE_START, -1),
-                    this.getIntExtra(EXTRA_FETCH_RANGE_END, -1),
+                    this.getIntExtra(EXTRA_CURRENT_MAX, -1),
                     this.getBooleanExtra(EXTRA_DO_FULL_WIPE, false)
             )
             ACTION_FETCH_COMMENTS -> handleFetchComments(
@@ -130,17 +124,13 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
 
     private fun toggleStarred(id: Long) {
         val projection = arrayOf(PostTable.COLUMN_ID, PostTable.COLUMN_STARRED)
-        val selection = "${PostTable.COLUMN_ID}=?"
-        val selectionArgs = arrayOf("$id")
-        val result = resolver.query(CONTENT_URI_POSTS, projection, selection, selectionArgs)
-        if (!result.moveToFirst()) {
-            return
-        }
-        val currentStarredStatus = result.getIntByName(PostTable.COLUMN_STARRED).equals(1)
-        val newStatus = if (currentStarredStatus) 0 else 1
+        val starred = resolver.getRowById(CONTENT_URI_POSTS, projection, id, { it.getIntByName(PostTable.COLUMN_STARRED) })
+
+        val newStatus = (starred + 1) % 2
         val cv = ContentValues(1)
         cv.put(PostTable.COLUMN_STARRED, newStatus)
-        resolver.update(CONTENT_URI_POSTS, cv, selection, selectionArgs)
+
+        resolver.updateRowById(CONTENT_URI_POSTS, id, cv)
     }
 
     fun handleFetchComments(newsthreadId: Long, allowFetchSkip: Boolean) {
@@ -193,61 +183,75 @@ class DataPullPushService : IntentService(DataPullPushService.TAG), AnkoLogger {
 
 
     inline fun <reified T> String.blockingGetRequestToModel(client: OkHttpClient, gson: Gson): T? {
-        return Request.Builder().url(this).get().build().blockingCallToModel(client, gson)
-    }
-
-    inline fun <reified T> Request.blockingCallToModel(client: OkHttpClient, gson: Gson): T? {
+        var reader: Reader? = null
+        var body: ResponseBody? = null
         try {
-            val body = client.newCall(this).execute().body()
-            val bytes = BufferedReader(InputStreamReader(body.byteStream()))
-            return gson.fromJson<T>(bytes, object : TypeToken<T>() {}.type)
-        } catch(ex: IOException) {
-            return null
-        } catch(ex: IllegalStateException) {
-            return null
-        } catch(ex: JsonParseException) {
-            return null
-        } catch(ex: JsonSyntaxException) {
-            return null
+            val request = Request.Builder().url(this).get().build()
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful.not()) throw IOException("Unexpected response { $response }")
+            body = response.body()
+            reader = body.charStream()
+
+            return gson.fromJson<T>(reader, object : TypeToken<T>() {}.type)
+        } finally {
+            reader?.close()
+            body?.close()
         }
     }
 
-    fun handleFetchThreads(start: Int, end: Int, doFullWipe : Boolean) {
-        if (start == -1 || end == -1) {
-            throw IllegalArgumentException("Invalid fetch range")
+    fun handleFetchThreads(currentMax: Int, doFullWipe: Boolean) {
+        if ((currentMax !in 0..490) and !doFullWipe) {
+            throw IllegalArgumentException("Invalid range of current max")
         }
-        val sel : String
-        val selArgs : Array<out String>
         if (doFullWipe) {
-            sel = PostTable.STARRED_SELECTION
-            selArgs = arrayOf(PostTable.UNSTARRED_SELECTION_ARGS)
-        } else {
-            sel = PostTable.STARRED_SELECTION_W_RANGE
-            selArgs = arrayOf(PostTable.UNSTARRED_SELECTION_ARGS, start.toString(), end.toString())
+            val starredProjection = PostTable.getOrdinalAndStarredProjection()
+            val sel = PostTable.STARRED_SELECTION
+            val starredSelArgs = arrayOf(PostTable.STARRED_SELECTION_ARGS)
+
+            val starredThreads = resolver.query(CONTENT_URI_POSTS, starredProjection, sel, starredSelArgs)
+            val starredAndOrdinalIds = starredThreads.toList({
+                Pair(it.getLongByName(PostTable.COLUMN_ID), it.getIntByName(PostTable.COLUMN_ORDINAL))
+            })
+            val starredIds = starredAndOrdinalIds.map { it.first }
+            starredThreads.close()
+
+            resolver.delete(CONTENT_URI_POSTS, null, null)
+
+            val ids = TOP_FIFTY_URI.blockingGetRequestToModel<Array<Long>>(okHttp, gson)
+            val emptyNewsThreads = ids?.withIndex()
+                    ?.filter { it.value !in starredIds }
+                    ?.map { NewsThread(it.value).toContentValues(it.index) }
+
+            val starredItems = starredAndOrdinalIds.map {
+                val item = "$ITEM_URI${it.first}$URI_SUFFIX".blockingGetRequestToModel<NewsThread>(okHttp, gson)
+                val ordinal = it.second
+                item?.toContentValues(ordinal, true)
+            }
+
+            val compound = starredItems + (emptyNewsThreads ?: emptyList<ContentValues>())
+
+            if (compound.isNotEmpty()) {
+                resolver.bulkInsert(CONTENT_URI_POSTS, compound.toTypedArray())
+            } else {
+                Toast.makeText(baseContext, "Unable to prepare data load", Toast.LENGTH_SHORT).show()
+            }
         }
-        resolver.delete(CONTENT_URI_POSTS, sel, selArgs)
 
-        val starredProjection = arrayOf(PostTable.COLUMN_ID, PostTable.COLUMN_STARRED)
-        val starredSel = PostTable.STARRED_SELECTION
-        val starredSelArgs = arrayOf(PostTable.STARRED_SELECTION_ARGS)
-
-        val starredThreads = resolver.query(CONTENT_URI_POSTS, starredProjection, starredSel, starredSelArgs)
-        val starredIds = starredThreads.toList({it.getLongByName(PostTable.COLUMN_ID)})
-        starredThreads.close()
-
-        val ids = TOP_FIFTY_URI.blockingGetRequestToModel<Array<Long>>(okHttp, gson)
-        val batch = ids
-                ?.mapIndexed { idx, itemId -> Pair(idx, itemId) }
-                ?.filter { it.first in start..end && it.second !in starredIds}
-                ?.map {
-                    val item = "$ITEM_URI${it.second}$URI_SUFFIX".blockingGetRequestToModel<NewsThread>(okHttp, gson)
-                    item?.toContentValues(it.first)
-                }
-                ?.filterNotNull()
-                ?.toTypedArray()
-        if (batch != null) {
-            resolver.bulkInsert(CONTENT_URI_POSTS, batch)
+        val proj = PostTable.getFrontPageProjection()
+        val sel = "${PostTable.COLUMN_TITLE} is null or ${PostTable.COLUMN_TITLE} = ''"
+        val orderBy = " ${PostTable.COLUMN_ORDINAL} ASC "
+        val limit = (if (doFullWipe) 10 else currentMax) + 10
+        val emptyThreadsCursor = resolver.query(NewsContentProvider.CONTENT_URI_POSTS_W_LIMIT(limit), proj, sel, null, orderBy)
+        emptyThreadsCursor.toList {
+            Pair(it.getLongByName(PostTable.COLUMN_ID), it.getIntByName(PostTable.COLUMN_ORDINAL))
+        }.forEach {
+            val item = "$ITEM_URI${it.first}$URI_SUFFIX".blockingGetRequestToModel<NewsThread>(okHttp, gson)
+            val cv = item?.toContentValues(it.second)
+            cv?.let {
+                resolver.insert(CONTENT_URI_POSTS, it)
+            }
         }
+        emptyThreadsCursor.close()
     }
 
     /**

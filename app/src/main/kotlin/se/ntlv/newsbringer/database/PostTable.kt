@@ -1,10 +1,14 @@
 package se.ntlv.newsbringer.database
 
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
-import android.util.Log
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.debug
+import org.jetbrains.anko.warn
+import se.ntlv.newsbringer.network.NewsThreadUiData
 
 class PostTable {
-    companion object {
+   companion object : AnkoLogger {
 
         // Database table
         val TABLE_NAME: String = "posts"
@@ -24,39 +28,34 @@ class PostTable {
 
         val STARRED_SELECTION: String = "$COLUMN_STARRED=?"
         val STARRED_SELECTION_ARGS: String = "1"
-        val UNSTARRED_SELECTION_ARGS: String = "0"
-
-        val STARRED_SELECTION_W_RANGE = "$COLUMN_STARRED=? AND $COLUMN_ORDINAL>=? AND $COLUMN_ORDINAL<=?"
 
 
         //Database creation SQL statement
         private val DATABASE_CREATE: String
-            get() = createTable(TABLE_NAME,
+            get() = createTable(
+                    TABLE_NAME,
                     COLUMN_ID int primaryKey,
-                    COLUMN_SCORE int notNull,
-                    COLUMN_TIMESTAMP int notNull,
-                    COLUMN_BY text notNull,
-                    COLUMN_CHILDREN text notNull,
-                    COLUMN_TEXT text notNull,
-                    COLUMN_TITLE text notNull,
-                    COLUMN_TYPE text notNull,
-                    COLUMN_URL text notNull,
-                    COLUMN_ORDINAL real notNull,
+                    COLUMN_SCORE int nullAllowed,
+                    COLUMN_TIMESTAMP int nullAllowed,
+                    COLUMN_BY text nullAllowed,
+                    COLUMN_CHILDREN text nullAllowed,
+                    COLUMN_TEXT text nullAllowed,
+                    COLUMN_TITLE text nullAllowed,
+                    COLUMN_TYPE text nullAllowed,
+                    COLUMN_URL text nullAllowed,
+                    COLUMN_ORDINAL real nullAllowed,
                     COLUMN_STARRED int defaultZero,
                     COLUMN_DESCENDANTS int defaultZero
             )
 
-
-        private val LOG_TAG = "PostTable"
-
         fun onCreate(database: SQLiteDatabase) {
-            Log.d(LOG_TAG, "creating database")
+            debug("creating database")
             database.execSQL(DATABASE_CREATE)
 
         }
 
         fun onUpgrade(database: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-            Log.w(LOG_TAG, "Upgrading database from version $oldVersion to $newVersion, which will destroy all old data")
+            warn("Upgrading database from version $oldVersion to $newVersion, which will destroy all old data")
             database.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
             onCreate(database)
         }
@@ -72,6 +71,7 @@ class PostTable {
                 PostTable.COLUMN_TIMESTAMP,
                 PostTable.COLUMN_BY,
                 PostTable.COLUMN_TITLE,
+                PostTable.COLUMN_TEXT,
                 PostTable.COLUMN_URL,
                 PostTable.COLUMN_ORDINAL,
                 PostTable.COLUMN_ID,
@@ -80,21 +80,26 @@ class PostTable {
                 PostTable.COLUMN_DESCENDANTS
         )
 
-        fun getCommentsProjection() = arrayOf(PostTable.COLUMN_ID,
-                PostTable.COLUMN_TITLE,
-                PostTable.COLUMN_TEXT,
-                PostTable.COLUMN_BY,
-                PostTable.COLUMN_TIMESTAMP,
-                PostTable.COLUMN_SCORE,
-                PostTable.COLUMN_URL,
-                PostTable.COLUMN_STARRED,
-                PostTable.COLUMN_DESCENDANTS
-        )
-
         fun getOrdinalSortingString() = PostTable.COLUMN_ORDINAL + " ASC"
     }
+
+    class PostTableCursor(rawCursor: Cursor) : TypedCursor<NewsThreadUiData>(rawCursor) {
+        override fun extract(raw: TypedCursor<NewsThreadUiData>): NewsThreadUiData {
+
+            val id = getLongByName(PostTable.COLUMN_ID)
+            val score = getIntByName(PostTable.COLUMN_SCORE)
+            val by = getStringByName(PostTable.COLUMN_BY)
+            val children = getStringByName(PostTable.COLUMN_CHILDREN)
+            val text = getStringByName(PostTable.COLUMN_TEXT)
+            val title = getStringByName(PostTable.COLUMN_TITLE)
+            val url = getStringByName(PostTable.COLUMN_URL)
+            val ordinal = getIntByName(PostTable.COLUMN_ORDINAL)
+            val starred = getIntByName(PostTable.COLUMN_STARRED)
+            val descendants = getLongByName(PostTable.COLUMN_DESCENDANTS)
+            val time = getLongByName(PostTable.COLUMN_TIMESTAMP)
+
+            return NewsThreadUiData(starred, title, by, time, score, url, id, children, descendants, ordinal, text)
+        }
+    }
 }
-
-
-
 

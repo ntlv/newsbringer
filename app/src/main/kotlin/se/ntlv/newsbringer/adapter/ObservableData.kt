@@ -1,10 +1,8 @@
 package se.ntlv.newsbringer.adapter
 
-import android.database.Cursor
 import android.database.DataSetObserver
-import se.ntlv.newsbringer.database.*
-import se.ntlv.newsbringer.network.CommentUiData
-import se.ntlv.newsbringer.network.NewsThreadUiData
+import se.ntlv.newsbringer.database.TypedCursor
+import se.ntlv.newsbringer.database.moveToPositionOrThrow
 import java.io.Closeable
 
 
@@ -21,7 +19,7 @@ interface ObservableData<T> : Closeable {
     fun hasContent() : Boolean
 }
 
-abstract class ObservableCursorData<T>(val data: Cursor) : ObservableData<T> {
+class ObservableCursorData<T>(val data: TypedCursor<T>) : ObservableData<T> {
 
     private val internalObserver = NotifyingDataSetObserver()
     private var internalIsValid = true
@@ -48,12 +46,7 @@ abstract class ObservableCursorData<T>(val data: Cursor) : ObservableData<T> {
 
     override fun hasContent(): Boolean = data.count > 0
 
-    abstract fun getItem() : T
-
-    override fun getItem(position: Int): T {
-        data.moveToPositionOrThrow(position)
-        return getItem()
-    }
+    override fun getItem(position: Int): T = data.getRow(position)
 
     private inner class NotifyingDataSetObserver : DataSetObserver() {
         override fun onChanged() {
@@ -68,36 +61,6 @@ abstract class ObservableCursorData<T>(val data: Cursor) : ObservableData<T> {
             observer?.onInvalidated()
         }
     }
-}
 
-class NewsThreadData(data: Cursor) : ObservableCursorData<NewsThreadUiData>(data) {
-    override fun getItem(): NewsThreadUiData {
-        val isStarred = data.getIntByName(PostTable.COLUMN_STARRED)
-        val title = data.getStringByName(PostTable.COLUMN_TITLE)
-        val by = data.getStringByName(PostTable.COLUMN_BY)
-        val time = data.getStringByName(PostTable.COLUMN_TIMESTAMP)
-        val score = data.getStringByName(PostTable.COLUMN_SCORE)
-        val url = data.getStringByName(PostTable.COLUMN_URL)
-        val id = data.getLongByName(PostTable.COLUMN_ID)
-        val children = data.getStringByName(PostTable.COLUMN_CHILDREN)
-        val descendants = data.getLongByName(PostTable.COLUMN_DESCENDANTS)
-        val ordinal = data.getStringByName(PostTable.COLUMN_ORDINAL)
-
-        return NewsThreadUiData(isStarred, title, by, time, score, url, id, children, descendants, ordinal)
-    }
-}
-
-class CommentsData(data: Cursor) : ObservableCursorData<CommentUiData>(data) {
-
-    override fun getItem(): CommentUiData {
-        val pos = data.position
-        val time = data.getLongByName(CommentsTable.COLUMN_TIME)
-        val text = data.getStringByName(CommentsTable.COLUMN_TEXT)
-        val id = data.getLongByName(CommentsTable.COLUMN_ID)
-        val kids = data.getStringByName(CommentsTable.COLUMN_KIDS)
-        val by = data.getStringByName(CommentsTable.COLUMN_BY)
-        val ancestorCount = data.getIntByName(CommentsTable.COLUMN_ANCESTOR_COUNT)
-
-        return CommentUiData(pos, time, id, by, kids, text, ancestorCount)
-    }
+    override fun toString() = "${javaClass.simpleName}@${hashCode()} wrapping {${data.toString()}}"
 }

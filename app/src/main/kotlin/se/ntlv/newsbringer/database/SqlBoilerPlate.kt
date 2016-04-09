@@ -1,6 +1,7 @@
 package se.ntlv.newsbringer.database
 
 import android.content.ContentResolver
+import android.content.ContentValues
 import android.database.Cursor
 import android.net.Uri
 
@@ -12,6 +13,7 @@ infix fun String.real(qualifiers : String) = "$this real $qualifiers"
 
 fun cascadeDelete(table : String, column : String) = "REFERENCES $table($column) ON DELETE CASCADE"
 
+val nullAllowed = ""
 val notNull = "not null"
 val defaultZero = "default 0"
 val primaryKey = "primary key"
@@ -20,18 +22,30 @@ fun ContentResolver.query(uri : Uri, projection : Array<out String>, selection :
     return this.query(uri, projection, selection, selArgs, null)
 }
 
-fun ContentResolver.query(uri : Uri, projection : Array<out String>, selection : String) : Cursor {
-    return this.query(uri, projection, selection, null, null)
-}
+fun ContentResolver.query(uri : Uri, projection : Array<out String>, selection : String) : Cursor =
+        query(uri, projection, selection, null, null)
 
 fun Cursor.getStringByName(columnName: String): String = getString(getColumnIndexOrThrow(columnName))
 fun Cursor.getLongByName(columnName: String): Long = getLong(getColumnIndexOrThrow(columnName))
 fun Cursor.getIntByName(columnName: String): Int = getInt(getColumnIndexOrThrow(columnName))
 
-fun Cursor?.hasContent() : Boolean = (this?.count ?: 0) > 0
+val Cursor?.hasContent : Boolean
+    get() = (this?.count ?: 0) > 0
+
+fun <T> ContentResolver.getRowById(uri: Uri, projection: Array<String>, id: Long, f: (Cursor) -> T): T {
+    val cursor = query(uri, projection, "_id=$id")
+    cursor.moveToPositionOrThrow(0)
+    val ret = f(cursor)
+    cursor.close()
+    return ret
+}
+
+fun ContentResolver.updateRowById(uri : Uri, id : Long, cv : ContentValues) {
+    update(uri, cv, "_id=?", arrayOf(id.toString()))
+}
 
 fun <T> Cursor?.toList(extractor : ((Cursor) -> T)) : List<T> {
-    if (this == null || hasContent().not()) return emptyList()
+    if (this == null || hasContent.not()) return emptyList()
     moveToPositionOrThrow(0)
     val listInProgress = mutableListOf<T>()
     do {
