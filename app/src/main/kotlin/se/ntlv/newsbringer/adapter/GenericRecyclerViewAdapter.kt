@@ -1,7 +1,6 @@
 package se.ntlv.newsbringer.adapter
 
 import android.support.v7.widget.RecyclerView
-import java.util.*
 
 interface DataLoadingFacilitator {
     fun onMoreDataNeeded(currentMaxItem: Int): Unit
@@ -12,7 +11,7 @@ abstract class GenericRecyclerViewAdapter<T, VH : RecyclerView.ViewHolder>(
 
     abstract val actualItemCount: Int
 
-    abstract protected val deltaUpdatingEnabled : Boolean
+    abstract protected val deltaUpdatingEnabled: Boolean
 
     var shouldLoadDataDynamic = facilitator != null
 
@@ -34,7 +33,7 @@ abstract class GenericRecyclerViewAdapter<T, VH : RecyclerView.ViewHolder>(
         onBindViewHolder(viewHolder, item)
     }
 
-    fun updateContent(new : ObservableData<T>?) {
+    fun updateContent(new: ObservableData<T>?) {
         if (new === data) {
             return
         }
@@ -51,55 +50,42 @@ abstract class GenericRecyclerViewAdapter<T, VH : RecyclerView.ViewHolder>(
     }
 
     private fun applyDeltaUpdate(new: ObservableData<T>?, old: ObservableData<T>?) {
-        val changedItems = ArrayList<Int>()
-        if (new == null) {
-            notifyItemRangeRemoved(0, old?.count ?: 0)
-        } else if (old == null) {
-            val count = new.count
-            notifyItemRangeInserted(0, count)
-        } else if (new.count == old.count) {
-            for (i in 0..old.count - 1) {
-                val newItem = new.getItem(i)
-                val oldItem = old.getItem(i)
-                if (!Objects.equals(newItem, oldItem)) {
-                    changedItems.add(i)
-                }
+        val end: Int
+        val deltaUpdate: () -> Unit = when {
+            new == null -> {
+                end = 0
+                { notifyItemRangeRemoved(0, old?.count ?: 0) }
             }
-            for (item in changedItems) {
-                notifyItemChanged(item)
+            old == null -> {
+                end = 0
+                val count = new.count
+                { notifyItemRangeInserted(0, count) }
             }
-        } else if (new.count > old.count) {
-            for (i in 0..old.count - 1) {
-                val newItem = new.getItem(i)
-                val oldItem = old.getItem(i)
-                if (!Objects.equals(newItem, oldItem)) {
-                    changedItems.add(i)
-                }
+            new.count == old.count -> {
+                end = old.count - 1
+                {}
             }
-            for (item in changedItems) {
-                notifyItemChanged(item)
-            }
-            val newRangeStart = old.count
-            val newRangeCount = new.count - old.count
-            notifyItemRangeInserted(newRangeStart, newRangeCount)
+            new.count != old.count -> {
+                end = Math.min(new.count, old.count) - 1
+                val rangeStart = end + 1
+                val rangeCount = Math.max(new.count, old.count) - Math.min(new.count, old.count);
 
-        } else if (new.count < old.count) {
-            for (i in 0..new.count - 1) {
-                val newItem = new.getItem(i)
-                val oldItem = old.getItem(i)
-                if (!Objects.equals(newItem, oldItem)) {
-                    changedItems.add(i)
-                }
+                { notifyItemRangeInserted(rangeStart, rangeCount) }
             }
-            for (item in changedItems) {
-                notifyItemChanged(item)
+            else -> {
+                throw IllegalArgumentException("Something is terribly wrong with input $new and $old")
             }
-            val removalStart = new.count
-            val removalCount = old.count - new.count
-            notifyItemRangeRemoved(removalStart, removalCount)
         }
-    }
+        for (position in 0..end) {
+            val newItem = new?.getItem(position)
+            val oldItem = old?.getItem(position)
 
+            if (newItem != oldItem) {
+                notifyItemChanged(position)
+            }
+        }
+        deltaUpdate()
+    }
 
     var data: ObservableData<T>? = null
         private set
