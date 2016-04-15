@@ -22,5 +22,7 @@ class Navigator(val context: Context) {
         val args = bundleOf(Pair(Intent.EXTRA_SUBJECT, title), Pair(Intent.EXTRA_TEXT, link))
         i.putExtras(args)
         context.startActivity(Intent.createChooser(i, "Share URL"))
+
+
     }
 }

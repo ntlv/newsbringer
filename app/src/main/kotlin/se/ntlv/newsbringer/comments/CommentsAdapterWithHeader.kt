@@ -13,12 +13,12 @@ import se.ntlv.newsbringer.adapter.GenericWithHeaderRecyclerViewAdapter
 import se.ntlv.newsbringer.customviews.DateView
 import se.ntlv.newsbringer.network.CommentUiData
 
-class CommentsAdapterWithHeader(val commentNestingPaddingIncrement : Int) : GenericWithHeaderRecyclerViewAdapter<
+class CommentsAdapterWithHeader(val commentNestingPaddingIncrement: Int) : GenericWithHeaderRecyclerViewAdapter<
         CommentUiData,
         CommentsAdapterWithHeader.HeaderHolder,
         CommentsAdapterWithHeader.RowHolder>(HeaderHolder::class.java, RowHolder::class.java) {
 
-    override val deltaUpdatingEnabled = false
+    override val deltaUpdatingEnabled = true
 
     override fun onCreateHeaderViewHolder(parent: ViewGroup?): RecyclerView.ViewHolder =
             HeaderHolder(LayoutInflater.from(parent?.context).inflate(R.layout.list_header_newsthread, parent, false))
@@ -26,7 +26,10 @@ class CommentsAdapterWithHeader(val commentNestingPaddingIncrement : Int) : Gene
     override fun onCreateRowViewHolder(parent: ViewGroup?): RecyclerView.ViewHolder =
             RowHolder(LayoutInflater.from(parent?.context).inflate(R.layout.list_item_comment, parent, false))
 
+    private var headerActive: Boolean = false
+
     override fun onBindHeaderViewHolder(viewHolder: HeaderHolder) {
+        headerActive = true
         viewHolder.title.text = mTitle
         viewHolder.by.text = mBy
         viewHolder.time.text = mTime
@@ -42,7 +45,6 @@ class CommentsAdapterWithHeader(val commentNestingPaddingIncrement : Int) : Gene
     }
 
     override fun onBindRowViewHolder(viewHolder: RowHolder, data: CommentUiData) {
-
         val ancestorCount = data.ancestorCount
         val padding = commentNestingPaddingIncrement * ancestorCount
         viewHolder.self.setPadding(padding, viewHolder.self.paddingTop, viewHolder.self.paddingRight, viewHolder.self.paddingBottom)
@@ -71,17 +73,8 @@ class CommentsAdapterWithHeader(val commentNestingPaddingIncrement : Int) : Gene
 
     override fun getItemCount(): Int {
         val count = super.getItemCount()
-        val countLocal = when {
-            count > 0 -> count + 1
-            mTitle.isNotBlank()
-                    || mText.isNotBlank()
-                    || mBy.isNotBlank()
-                    || mTime.isNotBlank()
-                    || mScore.isNotBlank()
-                    || mDescendantsCount.isNotBlank() -> 1
-            else -> 0
-        }
-        return countLocal
+        val headerCount = if (headerActive) 1 else 0
+        return count + headerCount
     }
 
     override fun getItemViewType(position: Int) = if (position == 0) HEADER_VIEW else COMMENTS_VIEW
@@ -116,7 +109,6 @@ class CommentsAdapterWithHeader(val commentNestingPaddingIncrement : Int) : Gene
         var id: Long? = null
         val kids = root.find<TextView>(R.id.kids)
         val colorView = root.find<View>(R.id.color_band)
-
     }
 
     class HeaderHolder(root: View) : RecyclerView.ViewHolder(root) {
@@ -127,7 +119,6 @@ class CommentsAdapterWithHeader(val commentNestingPaddingIncrement : Int) : Gene
         val score = root.find<TextView>(R.id.score)
         val commentCount = root.find<TextView>(R.id.comment_count)
         val text = root.find<TextView>(R.id.text)
-
     }
 
     fun updateHeader(postTitle: String, text: String, by: String, time: String, score: String, descendantsCount: String) {

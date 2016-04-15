@@ -41,8 +41,9 @@ abstract class GenericWithHeaderRecyclerViewAdapter<T, HVH : ViewHolder, VH : Vi
         else -> COMMENTS_VIEW
     }
 
-    override val actualItemCount: Int
-        get() = data!!.count
+    override fun actualItemCount(): Int {
+        return data!!.count
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup?, viewType: Int): ViewHolder {
         return when (viewType) {
@@ -52,8 +53,8 @@ abstract class GenericWithHeaderRecyclerViewAdapter<T, HVH : ViewHolder, VH : Vi
         }
     }
 
-    fun viewToDataPosition(viewPosition: Int) = viewPosition - 1
-    fun dataToViewPosition(dataPosition: Int) = dataPosition + 1
+    override fun viewToDataPosition(viewPosition: Int) = viewPosition - 1
+    override fun dataToViewPosition(dataPosition: Int) = dataPosition + 1
 
     fun findInDataSet(startDataPosition: Int,
                       predicate: (T?) -> Boolean,

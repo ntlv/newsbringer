@@ -3,61 +3,64 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="se.ntlv.newsbringer">
 
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".YcReaderApplication"
         android:allowBackup="true"
+        android:fullBackupContent="false"
         android:icon="@drawable/ic_action_"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme"
         android:supportsRtl="false"
-        android:fullBackupContent="false"
-        >
+        android:theme="@style/AppTheme">
         <activity
             android:name=".newsthreads.NewsThreadsActivity"
             android:label="@string/app_name">
             <intent-filter tools:ignore="GoogleAppIndexingWarning">
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
-                <action android:name="android.intent.action.VIEW"/>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+
+                <action android:name="android.intent.action.VIEW" />
             </intent-filter>
         </activity>
-
         <activity
             android:name=".comments.CommentsActivity"
             android:label="@string/activity_comments_label"
             android:parentActivityName=".newsthreads.NewsThreadsActivity"
-            tools:ignore="UnusedAttribute"
-            android:uiOptions="splitActionBarWhenNarrow">
-            <meta-data android:name="android.support.UI_OPTIONS"
-                android:value="splitActionBarWhenNarrow"
-                />
+            android:uiOptions="splitActionBarWhenNarrow"
+            tools:ignore="UnusedAttribute">
+            <meta-data
+                android:name="android.support.UI_OPTIONS"
+                android:value="splitActionBarWhenNarrow" />
 
             <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
+                <action android:name="android.intent.action.VIEW" />
 
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
 
                 <data
                     android:host="news.ycombinator.com"
-                    android:scheme="https"
-                    />
+                    android:scheme="https" />
                 <data
                     android:host="news.ycombinator.com"
-                    android:scheme="http"
-                    />
+                    android:scheme="http" />
             </intent-filter>
         </activity>
 
         <service
             android:name=".network.DataPullPushService"
-            android:exported="false">
-        </service>
+            android:exported="false"/>
+
         <provider
-            android:authorities="se.ntlv.newsbringer.database.NewsContentProvider"
             android:name=".database.NewsContentProvider"
+            android:authorities="se.ntlv.newsbringer.database.NewsContentProvider"
             android:enabled="true"
+            android:exported="false" />
+
+        <service
+            android:name="se.ntlv.newsbringer.UiControlServiceImpl"
             android:exported="false"/>
     </application>
 

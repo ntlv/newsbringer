@@ -82,16 +82,10 @@ class NewsContentProvider : ContentProvider(), AnkoLogger {
                 limit = uri.lastPathSegment
             }
         }
-
         val db = database.readableDatabase
         val cursor = queryBuilder.query(db, projection, selection, selectionArguments, null, null, sortOrder, limit, signal)
-
         cursor.setNotificationUri(context.contentResolver, uri)
-
-
-
         info("Query for {$selection} resulted in ${cursor?.count} rows")
-
         return cursor
     }
 

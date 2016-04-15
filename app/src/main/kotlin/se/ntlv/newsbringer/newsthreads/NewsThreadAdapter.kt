@@ -15,11 +15,16 @@ import se.ntlv.newsbringer.customviews.DateView
 import se.ntlv.newsbringer.network.NewsThreadUiData
 
 open class NewsThreadAdapter(val layout: Int, f: DataLoadingFacilitator) : GenericRecyclerViewAdapter<NewsThreadUiData, NewsThreadAdapter.ViewHolder>(f) {
+    override fun viewToDataPosition(viewPosition: Int) = viewPosition
 
-    override val deltaUpdatingEnabled = false
+    override fun dataToViewPosition(dataPosition: Int) = dataPosition
 
-    override val actualItemCount: Int
-        get() = data?.count ?: 0
+    override val deltaUpdatingEnabled = true
+
+    override fun actualItemCount(): Int {
+        val count = data?.count ?: 0
+        return count
+    }
 
     var clickListener: (ViewHolder?) -> Unit? = {}
     var longClickListener: (ViewHolder?) -> Boolean = { false }
@@ -58,6 +63,12 @@ open class NewsThreadAdapter(val layout: Int, f: DataLoadingFacilitator) : Gener
             view.onClick { onClick(this) }
             view.onLongClick { onLongClick(this) }
         }
+
+        override fun toString(): String {
+            return "ViewHolder(view=$view, title=${title.text}, by=${by.text}, time=${time.text}, score=${score.text}, link=$link, id=$id, commentCount=${commentCount.text}, ordinal=${ordinal.text})"
+        }
+
+
     }
 }
 

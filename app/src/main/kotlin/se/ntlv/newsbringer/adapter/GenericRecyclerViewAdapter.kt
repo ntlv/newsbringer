@@ -9,15 +9,24 @@ interface DataLoadingFacilitator {
 abstract class GenericRecyclerViewAdapter<T, VH : RecyclerView.ViewHolder>(
         val facilitator: DataLoadingFacilitator?) : RecyclerView.Adapter<VH>() {
 
-    abstract val actualItemCount: Int
+    abstract fun actualItemCount(): Int
 
     abstract protected val deltaUpdatingEnabled: Boolean
 
+    abstract fun viewToDataPosition(viewPosition: Int): Int
+    abstract fun dataToViewPosition(dataPosition: Int): Int
+
     var shouldLoadDataDynamic = facilitator != null
 
-    override fun getItemCount() = when {
-        data != null && data!!.isValid -> actualItemCount
-        else -> 0
+    override fun getItemCount(): Int {
+        val local = data
+        val dataValid = local != null && local.isValid
+        val count = if (dataValid) {
+            actualItemCount()
+        } else {
+            0
+        }
+        return count
     }
 
     override fun getItemId(position: Int): Long = data?.getItemId(position) ?: -1
@@ -26,7 +35,7 @@ abstract class GenericRecyclerViewAdapter<T, VH : RecyclerView.ViewHolder>(
 
     override fun onBindViewHolder(viewHolder: VH, position: Int): Unit {
         val item: T = data?.getItem(position) ?: throw IllegalStateException()
-        val max = actualItemCount
+        val max = actualItemCount()
         if (shouldLoadDataDynamic && itemCount > 9 && position >= max - 1) {
             facilitator?.onMoreDataNeeded(max)
         }
@@ -49,43 +58,53 @@ abstract class GenericRecyclerViewAdapter<T, VH : RecyclerView.ViewHolder>(
         old?.close()
     }
 
-    private fun applyDeltaUpdate(new: ObservableData<T>?, old: ObservableData<T>?) {
-        val end: Int
-        val deltaUpdate: () -> Unit = when {
-            new == null -> {
-                end = 0
-                { notifyItemRangeRemoved(0, old?.count ?: 0) }
-            }
-            old == null -> {
-                end = 0
-                val count = new.count
-                { notifyItemRangeInserted(0, count) }
-            }
-            new.count == old.count -> {
-                end = old.count - 1
-                {}
-            }
-            new.count != old.count -> {
-                end = Math.min(new.count, old.count) - 1
-                val rangeStart = end + 1
-                val rangeCount = Math.max(new.count, old.count) - Math.min(new.count, old.count);
-
-                { notifyItemRangeInserted(rangeStart, rangeCount) }
-            }
-            else -> {
-                throw IllegalArgumentException("Something is terribly wrong with input $new and $old")
-            }
+    private fun applyDeltaUpdate(new: ObservableData<T>?, old: ObservableData<T>?) = when {
+        new == null -> {
+            val start = dataToViewPosition(0);
+            val count = old?.count ?: 0
+            notifyItemRangeRemoved(start, count)
         }
+        old == null -> {
+            val rangeStart = dataToViewPosition(0);
+            val rangeCount = new.count
+            notifyItemRangeInserted(rangeStart, rangeCount)
+        }
+        new.count == old.count -> {
+            val end = old.count - 1
+            notifyChangedInRange(end, new, old)
+        }
+        new.count > old.count -> {
+            val end = old.count - 1
+            notifyChangedInRange(end, new, old)
+            val rangeStart = dataToViewPosition(end + 1)
+            val rangeCount = new.count - old.count;
+            notifyItemRangeInserted(rangeStart, rangeCount)
+        }
+        new.count < old.count -> {
+            val end = new.count - 1
+            notifyChangedInRange(end, new, old)
+            val rangeStart = dataToViewPosition(end + 1)
+            val rangeCount = old.count - new.count;
+            notifyItemRangeRemoved(rangeStart, rangeCount)
+        }
+        else -> {
+            throw IllegalArgumentException("Something is terribly wrong with input $new and $old")
+        }
+    }
+
+    private fun notifyChangedInRange(end :Int = -1,new: ObservableData<T>?, old: ObservableData<T>?) {
         for (position in 0..end) {
             val newItem = new?.getItem(position)
             val oldItem = old?.getItem(position)
 
             if (newItem != oldItem) {
-                notifyItemChanged(position)
+                val translated = dataToViewPosition(position)
+                notifyItemChanged(translated)
             }
         }
-        deltaUpdate()
     }
+
+    data class DeltaUpdate(val checkRangeEnd: Int = -1, val rangeStart: Int, val rangeCount: Int, val apply: () -> Unit)
 
     var data: ObservableData<T>? = null
         private set

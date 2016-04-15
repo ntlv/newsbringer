@@ -2,13 +2,21 @@ package se.ntlv.newsbringer.comments
 
 import se.ntlv.newsbringer.adapter.ObservableData
 import se.ntlv.newsbringer.network.CommentUiData
+import se.ntlv.newsbringer.network.NewsThreadUiData
 
 class CommentsPresenter
 (val viewBinder: CommentsViewBinder,
  val interactor: CommentsInteractor) {
 
-    fun onHeaderLoaded(postTitle: String, text: String, by: String, time: String, score: String, link: String, descendantsCount: String) {
-        viewBinder.updateHeader(postTitle, text, by, time, score, link, descendantsCount)
+    fun onHeaderLoaded(model: NewsThreadUiData?) {
+        val time = model?.time.toString()
+        val score = model?.score.toString()
+        val descendantCount = model?.descendants.toString()
+        val title = model?.title ?: ""
+        val text = model?.text ?: ""
+        val by = model?.by ?: ""
+        val url = model?.url ?: ""
+        viewBinder.updateHeader(title, text, by, time, score, url, descendantCount)
         viewBinder.indicateDataLoading(false)
     }
 
@@ -21,19 +29,8 @@ class CommentsPresenter
 
     fun onViewReady() {
         viewBinder.indicateDataLoading(true)
-        interactor.loadData(
-                { model ->
-                    if (model == null) {
-                        onHeaderLoaded("", "", "", "", "", "", "")
-                    } else {
-                        val time = model.time.toString()
-                        val score = model.score.toString()
-                        val descendantCount = model.descendants.toString()
-                        onHeaderLoaded(model.title, model.text, model.by, time, score, model.url, descendantCount)
-                    }
-                },
-                { onCommentsLoaded(it) }
-        )
+        interactor.attach({ onHeaderLoaded(it) }, { onCommentsLoaded(it) })
+        interactor.loadData()
     }
 
     fun refreshData(needToIndicateLoading: Boolean, allowFetchSkip: Boolean) {
@@ -44,8 +41,6 @@ class CommentsPresenter
     }
 
     fun onHeaderClick() = interactor.goToLink()
-
-    //    fun onCommentLongClick(commentId: Long?) = interactor.onCommentLongClick(commentId)
 
     fun destroy() = interactor.destroy()
 

@@ -1,6 +1,5 @@
 package se.ntlv.newsbringer.newsthreads
 
-import android.animation.Animator
 import android.os.Bundle
 import android.support.annotation.StringRes
 import android.support.design.widget.AppBarLayout
@@ -13,12 +12,12 @@ import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.animation.Animation
 import android.widget.ImageView
 import org.jetbrains.anko.*
 import se.ntlv.newsbringer.BuildConfig
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
+import se.ntlv.newsbringer.UiControlClient
 import se.ntlv.newsbringer.adapter.DataLoadingFacilitator
 import se.ntlv.newsbringer.adapter.ObservableData
 import se.ntlv.newsbringer.network.NewsThreadUiData
@@ -54,6 +53,10 @@ class NewsThreadsActivity : AppCompatActivity(),
         NewsThreadsPresenter(this, Navigator(this), NewsThreadsInteractor(this, loaderManager))
     }
 
+    private val mService by lazy(NONE) {
+        UiControlClient(this)
+    }
+
     //ANDROID ACTIVITY CALLBACKS
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -75,6 +78,10 @@ class NewsThreadsActivity : AppCompatActivity(),
         mAdapter.longClickListener = { mPresenter.onItemLongClick(it?.id) }
 
         find<FloatingActionButton>(R.id.fab).visibility = View.GONE
+
+
+        mService.ping()
+        mService.connect()
 
         mPresenter.onViewReady()
     }
@@ -99,6 +106,7 @@ class NewsThreadsActivity : AppCompatActivity(),
 
     override fun onDestroy() {
         super.onStop()
+        mService.disconnect()
         mPresenter.destroy()
     }
 

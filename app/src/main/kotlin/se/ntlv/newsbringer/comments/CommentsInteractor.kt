@@ -49,7 +49,6 @@ class CommentsInteractor(val context: Context,
         override fun onLoaderReset(loader: Loader<TypedCursor<NewsThreadUiData>>?) {
             onHeaderLoadCompletion(null)
         }
-
     }
 
     inner class CommentsCallbacks : LoaderManager.LoaderCallbacks<TypedCursor<CommentUiData>> {
@@ -80,10 +79,8 @@ class CommentsInteractor(val context: Context,
 
     var title: String = ""
     var link: String = ""
-    val commentsLink: String
-        get() {
-            return "https://news.ycombinator.com/item?id=$newsThreadId"
-        }
+    val commentsLink = "https://news.ycombinator.com/item?id=$newsThreadId"
+
     var onHeaderLoadCompletion: ((NewsThreadUiData?) -> Unit) = { model -> }
 
     var onCommentsLoadCompletion: ((ObservableData<CommentUiData>?) -> Unit) = {}
@@ -94,10 +91,7 @@ class CommentsInteractor(val context: Context,
 
     private var shouldRequestDataIfLoaderFails = AtomicBoolean(true)
 
-    fun loadData(headerCompletion: ((NewsThreadUiData?) -> Unit),
-                 commentsCompletion: ((ObservableData<CommentUiData>?) -> Unit)) {
-        onHeaderLoadCompletion = headerCompletion
-        onCommentsLoadCompletion = commentsCompletion
+    fun loadData() {
         val loaderArgs = Bundle()
         loaderArgs.putLong(LOADER_ARGS_ID, newsThreadId)
         loaderManager.initLoader(R.id.loader_comments_comments, loaderArgs, CommentsCallbacks())
@@ -118,6 +112,11 @@ class CommentsInteractor(val context: Context,
     fun shareStory() = navigator.goToShareLink(title, link)
 
     fun goToLink() = navigator.goToLink(link)
+
+    fun attach(onHeaderLoaded: (NewsThreadUiData?) -> Unit, onCommentsLoaded: (ObservableData<CommentUiData>?) -> Unit) {
+        onHeaderLoadCompletion = onHeaderLoaded
+        onCommentsLoadCompletion = onCommentsLoaded
+    }
 }
 
 class NewsThreadHeaderLoader(context: Context, val threadId: Long) : TypedCursorLoader<NewsThreadUiData>(context) {
@@ -148,5 +147,4 @@ class NewsThreadCommentsLoader(context: Context, val threadId: Long) : TypedCurs
         )
         return CommentsTable.CommentsTableCursor(rawCursor)
     }
-
 }
