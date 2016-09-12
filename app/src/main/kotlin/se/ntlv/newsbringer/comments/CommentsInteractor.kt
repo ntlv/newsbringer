@@ -6,145 +6,100 @@ import android.content.Context
 import android.content.Loader
 import android.os.Bundle
 import android.os.CancellationSignal
+import android.support.v7.util.DiffUtil
+import org.jetbrains.anko.bundleOf
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
-import se.ntlv.newsbringer.adapter.ObservableCursorData
-import se.ntlv.newsbringer.adapter.ObservableData
+import se.ntlv.newsbringer.adapter.GenericRecyclerViewAdapter
 import se.ntlv.newsbringer.database.*
-import se.ntlv.newsbringer.network.CommentUiData
-import se.ntlv.newsbringer.network.DataPullPushService
-import se.ntlv.newsbringer.network.NewsThreadUiData
-import java.util.concurrent.atomic.AtomicBoolean
+import se.ntlv.newsbringer.network.AsyncDataService
+import se.ntlv.newsbringer.network.RowItem
 
 class CommentsInteractor(val context: Context,
                          val loaderManager: LoaderManager,
                          val newsThreadId: Long,
-                         val navigator: Navigator) {
+                         val navigator: Navigator) : LoaderManager.LoaderCallbacks<TypedCursor<RowItem>> {
 
-    inner class HeaderCallbacks : LoaderManager.LoaderCallbacks<TypedCursor<NewsThreadUiData>> {
-        override fun onLoadFinished(loader: Loader<TypedCursor<NewsThreadUiData>>?, data: TypedCursor<NewsThreadUiData>?) {
-            if (data?.hasContent?.not() ?: false) {
-                if (shouldRequestDataIfLoaderFails.getAndSet(false)) {
-                    refreshComments(true)
-                } else {
-                    onLoaderReset(loader)
-                }
-            } else {
-                val model = data!!.getRow(0)
-                title = model.title
-                link = model.url
+    private val LOADER_ARGS_ID: String = "${CommentsInteractor::class.java.simpleName}:loader_args_id"
 
-                onHeaderLoadCompletion(model)
-            }
-        }
+    private lateinit var onContentLoadCompletion: ((TypedCursor<RowItem>?) -> Unit)
+    private var shareCommentsInternal: (() -> Unit) = { throw IllegalStateException("Attempting to share comments before initialization") }
+    private var shareStoryInternal: (() -> Unit) = { throw IllegalStateException("Attempting to share story before initialization") }
+    private var goToLinkInternal: (() -> Unit) = { throw IllegalStateException("Attempting to open link before initialization") }
 
-        override fun onCreateLoader(id: Int, args: Bundle?): Loader<TypedCursor<NewsThreadUiData>>? {
-            if (args == null || args.getLong(LOADER_ARGS_ID, -1L) == -1L) {
-                throw IllegalArgumentException("Cannot instantiate loader will null arguments or missing arguments")
-            }
-            val threadId = args.getLong(LOADER_ARGS_ID)
-            return NewsThreadHeaderLoader(context, threadId)
-        }
-
-        override fun onLoaderReset(loader: Loader<TypedCursor<NewsThreadUiData>>?) {
-            onHeaderLoadCompletion(null)
-        }
+    override fun onLoaderReset(p0: Loader<TypedCursor<RowItem>>?) {
+        onContentLoadCompletion(null)
     }
 
-    inner class CommentsCallbacks : LoaderManager.LoaderCallbacks<TypedCursor<CommentUiData>> {
-        override fun onCreateLoader(id: Int, args: Bundle?): Loader<TypedCursor<CommentUiData>>? {
-            if (args == null || args.getLong(LOADER_ARGS_ID, -1L) == -1L) {
-                throw IllegalArgumentException("Cannot instantiate loader will null arguments or missing arguments")
-            }
-            val threadId = args.getLong(LOADER_ARGS_ID)
-            return NewsThreadCommentsLoader(context, threadId)
-        }
+    override fun onLoadFinished(p0: Loader<TypedCursor<RowItem>>?,
+                                data: TypedCursor<RowItem>?) {
 
-        override fun onLoadFinished(loader: Loader<TypedCursor<CommentUiData>>?, data: TypedCursor<CommentUiData>?) {
-            if (data?.hasContent?.not() ?: false) {
-                if (shouldRequestDataIfLoaderFails.getAndSet(false)) {
-                    refreshComments(true)
-                } else {
-                    onLoaderReset(loader)
-                }
-            } else {
-                onCommentsLoadCompletion(ObservableCursorData(data!!))
-            }
-        }
+        val model = data!![0] as RowItem.NewsThreadUiData
 
-        override fun onLoaderReset(loader: Loader<TypedCursor<CommentUiData>>?) {
-            onCommentsLoadCompletion(null)
-        }
+        shareCommentsInternal = { navigator.goToShareLink(model.title, "https://news.ycombinator.com/item?id=$newsThreadId") }
+        shareStoryInternal = { navigator.goToShareLink(model.title, model.url) }
+        goToLinkInternal = { navigator.goToLink(model.url) }
+
+        onContentLoadCompletion(data)
     }
 
-    var title: String = ""
-    var link: String = ""
-    val commentsLink = "https://news.ycombinator.com/item?id=$newsThreadId"
+    override fun onCreateLoader(id: Int, args: Bundle): Loader<TypedCursor<RowItem>> {
+        if (args.getLong(LOADER_ARGS_ID, -1L) == -1L) {
+            throw IllegalArgumentException("Cannot instantiate loader will null arguments or missing arguments")
+        }
+        val threadId = args.getLong(LOADER_ARGS_ID)
 
-    var onHeaderLoadCompletion: ((NewsThreadUiData?) -> Unit) = { model -> }
+        val f = { previous : TypedCursor<RowItem>?, resolver: ContentResolver, signal: CancellationSignal ->
+            val headerQuery = NewsContentProvider.threadHeaderQuery(threadId)
+            val headerRawCursor = resolver.query(
+                    headerQuery.url,
+                    headerQuery.projection,
+                    headerQuery.selection,
+                    headerQuery.selectionArgs,
+                    headerQuery.sorting,
+                    signal
+            )
+            val headerCursor = PostTable.PostTableCursor(headerRawCursor)
 
-    var onCommentsLoadCompletion: ((ObservableData<CommentUiData>?) -> Unit) = {}
+            val header: RowItem.NewsThreadUiData = headerCursor[0]
+            headerCursor.close()
 
-    private val TAG: String = CommentsInteractor::class.java.simpleName
 
-    private val LOADER_ARGS_ID: String = "$TAG:loader_args_id"
-
-    private var shouldRequestDataIfLoaderFails = AtomicBoolean(true)
+            val commentsQuery = NewsContentProvider.threadCommentsQuery(threadId)
+            val commentsRawCursor = resolver.query(
+                    commentsQuery.url,
+                    commentsQuery.projection,
+                    commentsQuery.selection,
+                    commentsQuery.selectionArgs,
+                    commentsQuery.sorting,
+                    signal
+            )
+            val commentsCursor = CommentsTable.CommentsTableCursor(commentsRawCursor)
+            val retVal = CompositeCursor(header, commentsCursor)
+            val diff = DiffUtil.calculateDiff(GenericRecyclerViewAdapter.DataDiffCallback(previous, retVal))
+            retVal.diff = diff
+            retVal
+        }
+        return TypedCursorLoader(context, f)
+    }
 
     fun loadData() {
-        val loaderArgs = Bundle()
-        loaderArgs.putLong(LOADER_ARGS_ID, newsThreadId)
-        loaderManager.initLoader(R.id.loader_comments_comments, loaderArgs, CommentsCallbacks())
-        loaderManager.initLoader(R.id.loader_comments_header, loaderArgs, HeaderCallbacks())
+        val loaderArgs = bundleOf(Pair(LOADER_ARGS_ID, newsThreadId))
+        loaderManager.initLoader(R.id.loader_combined_comments_header, loaderArgs, this)
     }
 
-    fun refreshComments(allowFetchSkip: Boolean) {
-        DataPullPushService.startActionFetchComments(context, newsThreadId, allowFetchSkip)
+    fun refreshComments() = AsyncDataService.Action.FETCH_COMMENTS.asyncExecute(context, id = newsThreadId)
+
+
+    fun goToLink() = goToLinkInternal()
+    fun shareComments() = shareCommentsInternal()
+    fun shareStory() = shareStoryInternal()
+
+    fun attach(onContentLoaded: (TypedCursor<RowItem>?) -> Unit) {
+        onContentLoadCompletion = onContentLoaded
     }
 
-    fun destroy(): Unit {
-        loaderManager.destroyLoader(R.id.loader_comments_comments)
-        loaderManager.destroyLoader(R.id.loader_comments_header)
-    }
-
-    fun shareComments() = navigator.goToShareLink(title, commentsLink)
-
-    fun shareStory() = navigator.goToShareLink(title, link)
-
-    fun goToLink() = navigator.goToLink(link)
-
-    fun attach(onHeaderLoaded: (NewsThreadUiData?) -> Unit, onCommentsLoaded: (ObservableData<CommentUiData>?) -> Unit) {
-        onHeaderLoadCompletion = onHeaderLoaded
-        onCommentsLoadCompletion = onCommentsLoaded
-    }
-}
-
-class NewsThreadHeaderLoader(context: Context, val threadId: Long) : TypedCursorLoader<NewsThreadUiData>(context) {
-    override fun query(resolver: ContentResolver, signal: CancellationSignal?): TypedCursor<NewsThreadUiData> {
-        val query = NewsContentProvider.threadHeaderQuery(threadId)
-        val rawCursor = resolver.query(
-                query.url,
-                query.projection,
-                query.selection,
-                query.selectionArgs,
-                query.sorting,
-                signal
-        )
-        return PostTable.PostTableCursor(rawCursor)
-    }
-}
-
-class NewsThreadCommentsLoader(context: Context, val threadId: Long) : TypedCursorLoader<CommentUiData>(context) {
-    override fun query(resolver: ContentResolver, signal: CancellationSignal?): TypedCursor<CommentUiData> {
-        val query = NewsContentProvider.threadCommentsQuery(threadId)
-        val rawCursor = resolver.query(
-                query.url,
-                query.projection,
-                query.selection,
-                query.selectionArgs,
-                query.sorting,
-                signal
-        )
-        return CommentsTable.CommentsTableCursor(rawCursor)
+    fun addToStarred(): Unit {
+        AsyncDataService.Action.TOGGLE_STARRED.asyncExecute(context, newsThreadId)
     }
 }

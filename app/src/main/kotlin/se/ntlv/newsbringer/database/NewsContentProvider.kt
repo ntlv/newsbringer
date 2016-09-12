@@ -1,27 +1,30 @@
 package se.ntlv.newsbringer.database
 
 import android.content.ContentProvider
+import android.content.ContentUris
 import android.content.ContentValues
 import android.content.UriMatcher
 import android.database.Cursor
 import android.database.SQLException
-import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteQueryBuilder
 import android.net.Uri
 import android.os.CancellationSignal
-import android.text.TextUtils
 import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.info
+import org.jetbrains.anko.verbose
+import se.ntlv.newsbringer.database.PostTable.Companion.COLUMN_BY
+import se.ntlv.newsbringer.database.PostTable.Companion.COLUMN_STARRED
+import se.ntlv.newsbringer.database.PostTable.Companion.COLUMN_TEXT
+import se.ntlv.newsbringer.database.PostTable.Companion.COLUMN_TITLE
+import se.ntlv.newsbringer.database.PostTable.Companion.COLUMN_URL
+
 
 class NewsContentProvider : ContentProvider(), AnkoLogger {
+
     override fun query(uri: Uri?, projection: Array<out String>?, selection: String?, selectionArgs: Array<out String>?, sortOrder: String?): Cursor? {
         throw UnsupportedOperationException()
     }
 
-    override fun bulkInsert(uri: Uri?, values: Array<out ContentValues>?): Int {
-        if (values == null) {
-            return 0
-        }
+    override fun bulkInsert(uri: Uri?, values: Array<out ContentValues>): Int {
         val uriType = sUriMatcher.match(uri)
         val sqlDB = database.writableDatabase
 
@@ -33,20 +36,13 @@ class NewsContentProvider : ContentProvider(), AnkoLogger {
 
         sqlDB.beginTransaction()
         try {
-            var insertions = 0
-            for (cv in values) {
-                val result = sqlDB.replace(tableName, null, cv)
-                if (result > 0) {
-                    insertions += 1
-                }
+            values.forEach {
+                val result = sqlDB.replace(tableName, null, it)
+                if (result < 0) throw SQLException("Unable to insert all rows")
             }
-            if (insertions != values.size) {
-                throw SQLException("Unable to insert all rows")
-            } else {
-                info("Successfully inserted $insertions rows.")
-                sqlDB.setTransactionSuccessful()
-            }
-            return insertions
+            verbose { "Successfully inserted ${values.size} rows." }
+            sqlDB.setTransactionSuccessful()
+            return values.size
         } finally {
             sqlDB.endTransaction()
             context.contentResolver.notifyChange(uri, null)
@@ -54,7 +50,7 @@ class NewsContentProvider : ContentProvider(), AnkoLogger {
     }
 
     override fun onCreate(): Boolean {
-        info("Content provider created")
+        verbose { "Content provider created" }
         database = DatabaseHelper(context)
         return true
     }
@@ -85,7 +81,7 @@ class NewsContentProvider : ContentProvider(), AnkoLogger {
         val db = database.readableDatabase
         val cursor = queryBuilder.query(db, projection, selection, selectionArguments, null, null, sortOrder, limit, signal)
         cursor.setNotificationUri(context.contentResolver, uri)
-        info("Query for {$selection} resulted in ${cursor?.count} rows")
+        verbose { "Query for {$selection} resulted in ${cursor?.count} rows" }
         return cursor
     }
 
@@ -94,81 +90,73 @@ class NewsContentProvider : ContentProvider(), AnkoLogger {
     }
 
     override fun insert(uri: Uri, contentValues: ContentValues): Uri {
-        info("Inserting ${contentValues.valueSet().toString().substring(0..115)}")
+        verbose { "Inserting ${contentValues.valueSet().toString().substring(0..115)}" }
 
         val uriType = sUriMatcher.match(uri)
         val sqlDB = database.writableDatabase
 
-        when (uriType) {
-            POSTS -> {
-                var id = sqlDB.replace(PostTable.TABLE_NAME, null, contentValues)
-                context.contentResolver.notifyChange(uri, null)
-                return Uri.parse(CONTENT_POSTS + "/" + id)
-            }
-            COMMENTS -> {
-                val id = sqlDB.replace(CommentsTable.TABLE_NAME, null, contentValues)
-                context.contentResolver.notifyChange(uri, null)
-                return Uri.parse(CONTENT_COMMENTS + "/" + id)
-            }
+        val rowId = when (uriType) {
+            POSTS -> sqlDB.replace(PostTable.TABLE_NAME, null, contentValues)
+            COMMENTS -> sqlDB.replace(CommentsTable.TABLE_NAME, null, contentValues)
             else -> throw IllegalArgumentException("Unknown URI: " + uri)
         }
+        if (rowId == -1L) throw IllegalArgumentException("Unable to insert $contentValues into $uri")
+
+        val id = ContentUris.withAppendedId(CONTENT_URI_POSTS, rowId)
+        context.contentResolver.notifyChange(uri, null)
+        return id
     }
 
     override fun delete(uri: Uri, selection: String?, selectionArguments: Array<String>?): Int {
         val uriType = sUriMatcher.match(uri)
         val sqlDB = database.writableDatabase
-
+        val id = uri.lastPathSegment
 
         val rowsDeleted = when (uriType) {
             POSTS -> sqlDB.delete(PostTable.TABLE_NAME, selection, selectionArguments)
-            POST_ID -> {
-                val id = uri.lastPathSegment
-                if (TextUtils.isEmpty(selection)) {
-                    sqlDB.delete(PostTable.TABLE_NAME, PostTable.COLUMN_ID + "=" + id, null)
-                } else {
-                    sqlDB.delete(PostTable.TABLE_NAME, PostTable.COLUMN_ID + "=" + id + " and " + selection, selectionArguments)
-                }
-            }
+            POST_ID -> handleItemDelete(PostTable.TABLE_NAME, PostTable.COLUMN_ID, id, selection, selectionArguments)
             COMMENTS -> sqlDB.delete(CommentsTable.TABLE_NAME, selection, selectionArguments)
-            POST_ID -> {
-                val id = uri.lastPathSegment
-                if (TextUtils.isEmpty(selection)) {
-                    sqlDB.delete(CommentsTable.TABLE_NAME, CommentsTable.COLUMN_ID + "=" + id, null)
-                } else {
-                    sqlDB.delete(CommentsTable.TABLE_NAME, CommentsTable.COLUMN_ID + "=" + id + " and " + selection, selectionArguments)
-                }
-            }
+            POST_ID -> handleItemDelete(CommentsTable.TABLE_NAME, CommentsTable.COLUMN_ID, id, selection, selectionArguments)
+
             else -> throw IllegalArgumentException("Unknown URI: " + uri)
         }
         context.contentResolver.notifyChange(uri, null)
         return rowsDeleted
     }
 
+    private fun handleItemDelete(tableName: String,
+                                 idColumn: String,
+                                 id: String,
+                                 selection: String?,
+                                 selectionArgs: Array<String>?): Int {
+        val sqlDb = database.writableDatabase
+        val where = idColumn + "=" + id + (if (selection.isNullOrEmpty()) " and " + selection else "")
+        return sqlDb.delete(tableName, where, selectionArgs)
+    }
+
     override fun update(uri: Uri, values: ContentValues, selection: String, selectionArgs: Array<String>?): Int {
         val uriType = sUriMatcher.match(uri)
         val sqlDB = database.writableDatabase
-        val rowsUpdated = when (uriType) {
+        val rowsUpdated: Int = when (uriType) {
             POSTS -> sqlDB.update(PostTable.TABLE_NAME, values, selection, selectionArgs)
             COMMENTS -> sqlDB.update(CommentsTable.TABLE_NAME, values, selection, selectionArgs)
-            POST_ID -> handleItemUpdate(selection, selectionArgs, sqlDB, values, PostTable.TABLE_NAME, PostTable.COLUMN_ID, uri.lastPathSegment)
-            COMMENTS_ID -> handleItemUpdate(selection, selectionArgs, sqlDB, values, CommentsTable.TABLE_NAME, CommentsTable.COLUMN_ID, uri.lastPathSegment)
+            POST_ID -> handleItemUpdate(selection, selectionArgs, values, PostTable.TABLE_NAME, PostTable.COLUMN_ID, uri.lastPathSegment)
+            COMMENTS_ID -> handleItemUpdate(selection, selectionArgs, values, CommentsTable.TABLE_NAME, CommentsTable.COLUMN_ID, uri.lastPathSegment)
             else -> throw IllegalArgumentException("Unknown URI: " + uri)
         }
         context.contentResolver.notifyChange(uri, null)
-        return rowsUpdated ?: 0
+        return rowsUpdated
     }
 
     private fun handleItemUpdate(selection: String,
                                  selectionArgs: Array<String>?,
-                                 sqlDB: SQLiteDatabase?,
                                  values: ContentValues,
                                  tableName: String,
                                  idColumn: String,
-                                 itemId: String): Int? {
-        return when {
-            TextUtils.isEmpty(selection) -> sqlDB?.update(tableName, values, "$idColumn=$itemId", null)
-            else -> sqlDB?.update(tableName, values, "$idColumn=$itemId and $selection", selectionArgs)
-        }
+                                 itemId: String): Int {
+        val sqlDb = database.writableDatabase
+        val where = "$idColumn=$itemId" + if (selection.isNotBlank()) " and $selection" else ""
+        return sqlDb.update(tableName, values, where, selectionArgs)
     }
 
     companion object {
@@ -183,10 +171,10 @@ class NewsContentProvider : ContentProvider(), AnkoLogger {
         private val AUTHORITY = "se.ntlv.newsbringer.database.NewsContentProvider"
 
         private val CONTENT_POSTS = "posts"
-        val CONTENT_URI_POSTS = Uri.parse("content://$AUTHORITY/$CONTENT_POSTS")
+        val CONTENT_URI_POSTS: Uri = Uri.parse("content://$AUTHORITY/$CONTENT_POSTS")
 
         private val CONTENT_POSTS_LIMIT = "$CONTENT_POSTS/limit"
-        fun CONTENT_URI_POSTS_W_LIMIT(limit: Int) = Uri.parse("content://$AUTHORITY/$CONTENT_POSTS_LIMIT/$limit")
+        fun CONTENT_URI_POSTS_W_LIMIT(limit: Int): Uri = Uri.parse("content://$AUTHORITY/$CONTENT_POSTS_LIMIT/$limit")
 
         private val CONTENT_COMMENTS = "comments"
 
@@ -203,13 +191,24 @@ class NewsContentProvider : ContentProvider(), AnkoLogger {
             sUriMatcher.addURI(AUTHORITY, "$CONTENT_COMMENTS/#", COMMENTS_ID)
         }
 
-        fun frontPageQuery(starredOnly: Boolean): Query {
+        fun frontPageQuery(starredOnly: Boolean, textMatch: String): Query {
             val projection = PostTable.getFrontPageProjection()
-            val selection = if (starredOnly) PostTable.STARRED_SELECTION else "${PostTable.COLUMN_TITLE} is not null AND ${PostTable.COLUMN_TITLE} != ''"
-            val selectionArgs = if (starredOnly) arrayOf(PostTable.STARRED_SELECTION_ARGS) else null
+
+            val shouldMatchText = textMatch.isNotBlank()
+
+            val likeMatcher = "(" + arrayOf(COLUMN_TITLE, COLUMN_BY, COLUMN_TEXT, COLUMN_URL).joinToString(" like '%$textMatch%' or ") + " like '%$textMatch%')"
+
+            val selection = when {
+                starredOnly && shouldMatchText -> "$COLUMN_STARRED=1 and $likeMatcher"
+                !starredOnly && shouldMatchText -> likeMatcher
+                !starredOnly && !shouldMatchText -> "$COLUMN_TITLE is not null AND $COLUMN_TITLE != ''"
+                starredOnly && !shouldMatchText -> "$COLUMN_STARRED=1"
+
+                else -> throw IllegalArgumentException()
+            }
             val sorting = PostTable.getOrdinalSortingString()
 
-            return Query(CONTENT_URI_POSTS, projection, selection, selectionArgs, sorting)
+            return Query(CONTENT_URI_POSTS, projection, selection, null, sorting)
         }
 
         fun threadHeaderQuery(id: Long): Query {
@@ -231,5 +230,13 @@ class NewsContentProvider : ContentProvider(), AnkoLogger {
     }
 }
 
+data class Query(val url: Uri, val projection: Array<String>, val selection: String, val selectionArgs: Array<String>?, val sorting: String?) {
 
-data class Query(val url: Uri, val projection: Array<String>, val selection: String, val selectionArgs: Array<String>?, val sorting: String?)
+    override fun hashCode(): Int {
+        throw NotImplementedError()
+    }
+
+    override fun equals(other: Any?): Boolean {
+        throw NotImplementedError()
+    }
+}

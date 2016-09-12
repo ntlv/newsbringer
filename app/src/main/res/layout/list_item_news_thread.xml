@@ -39,14 +39,15 @@
         android:layout_marginBottom="16dp"
         >
 
+        <!-- Ignore use compound warning because there is no way to constraint drawable size
+        when using compound drawables. -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            >
+            tools:ignore="UseCompoundDrawables">
 
             <ImageView
-                android:id="@+id/score_icon"
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:src="@drawable/ic_insert_chart_grey600"
@@ -61,14 +62,15 @@
                 />
         </LinearLayout>
 
+        <!-- Ignore use compound warning because there is no way to constraint drawable size
+        when using compound drawables. -->
         <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            >
+            tools:ignore="UseCompoundDrawables">
 
             <ImageView
-                android:id="@+id/comment_icon"
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:src="@drawable/ic_mode_comment_grey600"
@@ -91,6 +93,7 @@
         android:textSize="16sp"
         android:layout_alignParentTop="true"
         android:layout_toLeftOf="@id/linearLayout"
+        android:layout_toStartOf="@id/linearLayout"
         android:layout_marginBottom="8dp"
         android:layout_toRightOf="@+id/ordinal"
         android:layout_toEndOf="@+id/ordinal" />

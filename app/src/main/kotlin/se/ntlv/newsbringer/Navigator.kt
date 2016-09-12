@@ -1,28 +1,17 @@
 package se.ntlv.newsbringer
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import org.jetbrains.anko.bundleOf
-import se.ntlv.newsbringer.comments.CommentsActivity
+import org.jetbrains.anko.browse
+import org.jetbrains.anko.share
 
 class Navigator(val context: Context) {
 
-    fun navigateToItemComments(id: Long?) {
-        if (id != null) {
-            context.startActivity(CommentsActivity.getIntent(context, id))
-        }
+    fun navigateToItemComments(id: Long) {
+        val res = goToLink("https://news.ycombinator.com/item?id=$id")
+        if (res == false) throw IllegalArgumentException()
     }
 
-    fun goToLink(link: String) = context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)))
+    fun goToLink(link: String) = context.browse(link)
 
-    fun goToShareLink(title: String, link: String) {
-        val i = Intent(Intent.ACTION_SEND);
-        i.type = "text/plain";
-        val args = bundleOf(Pair(Intent.EXTRA_SUBJECT, title), Pair(Intent.EXTRA_TEXT, link))
-        i.putExtras(args)
-        context.startActivity(Intent.createChooser(i, "Share URL"))
-
-
-    }
+    fun goToShareLink(title: String, link: String) = context.share(link, title)
 }

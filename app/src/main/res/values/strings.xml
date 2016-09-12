@@ -28,5 +28,7 @@
     <string name="share_story">Share story</string>
     <string name="status_loading_more_data">Loading more data…</string>
     <string name="toggle_show_starred_only">Starred</string>
+    <string name="search_title">Search</string>
+    <string name="toggle_starred">Toggle starred</string>
 
 </resources>

@@ -8,12 +8,18 @@ import android.database.ContentObserver
 import android.os.CancellationSignal
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.debug
-import org.jetbrains.anko.error
+import org.jetbrains.anko.info
 
 
-abstract class TypedCursorLoader<T>(ctx: Context) : AsyncTaskLoader<TypedCursor<T>>(ctx), AnkoLogger {
+class TypedCursorLoader<T : Identifiable>(
+        ctx: Context,
+        private val load: (TypedCursor<T>?, ContentResolver, CancellationSignal) -> TypedCursor<T>) :
+        AsyncTaskLoader<TypedCursor<T>>(ctx),
+        AnkoLogger {
 
-    abstract fun query(resolver: ContentResolver, signal: CancellationSignal?): TypedCursor<T>?
+    init {
+        info { "$loggerTag initialized" }
+    }
 
     private var cancelSignal: CancellationSignal? = null
 
@@ -21,101 +27,91 @@ abstract class TypedCursorLoader<T>(ctx: Context) : AsyncTaskLoader<TypedCursor<
 
     private var cursor: TypedCursor<T>? = null
 
+
+    fun unsafeGetCursor() = cursor
+
     override fun loadInBackground(): TypedCursor<T>? {
-        debug("loadInBackground()")
         synchronized(this) {
-            debug("doing synchronized cancel check")
             if (isLoadInBackgroundCanceled) {
-                debug("isLoadingInBackgroundCancel == true, throwing")
                 throw OperationCanceledException()
             }
             cancelSignal = CancellationSignal()
         }
         try {
-            debug("Attempting to load ...")
-            val cursor = query(context.contentResolver, cancelSignal)
-            debug("got cursor { $cursor }")
-            if (cursor != null) {
-                try {
-                    val count = cursor.count
-                    debug("Cursor count {$count}, registering observer")
-                    cursor.registerContentObserver(observer)
-                } catch (ex: RuntimeException) {
-                    cursor.close()
-                    throw ex
-                }
+            val cursor = load(cursor, context.contentResolver, cancelSignal!!)
+            debug { "Creating cursor  $cursor" }
+            try {
+                // according to regular CursorLoader, invoke get count to make sure window is filled
+                val count = cursor.count
+                debug { "Cursor with $count rows created" }
+                cursor.registerContentObserver(observer)
+                debug { "Registering observer $observer" }
+            } catch (ex: RuntimeException) {
+                cursor.close()
+                throw ex
             }
-            debug("Returning cursor {$cursor} from background load")
             return cursor
-        } catch (ex : Exception) {
-            error("Error while loading cursor", ex)
-            throw ex
         } finally {
-            debug("Attempting synchronized background cancel signal release")
             synchronized(this) {
                 cancelSignal = null
-                debug("Successfully release cancel signal")
+                debug { "Cancellation signal cleared" }
             }
         }
     }
 
     override fun cancelLoadInBackground() {
-        debug("cancelLoadInBackground()")
+        debug { "Cancelling load" }
         super.cancelLoadInBackground()
         synchronized(this) {
-            debug("cancelLoadInBackground, sending cancel signal to cursor")
             cancelSignal?.cancel()
         }
     }
 
     override fun deliverResult(data: TypedCursor<T>?) {
-        debug("deliverResult(data = $data)")
-        if (isReset) {
+        debug { "Delivering result $data" }
+        if (isReset) { //|| data?.isClosed ?: false) {
             cursor?.close()
-            debug("Was reset, closing cursor and bailing.")
+            debug { "Deliverable was closed or loader reset, bailing early from delivering." }
             return
         }
         val old = cursor
         cursor = data
 
         if (isStarted) {
+            debug { "Delivering results by invoking super method." }
             super.deliverResult(data)
         }
 
         if (old != null && old !== cursor && !old.isClosed) {
+            debug { "Closing old deliverable" }
             old.close()
         }
     }
 
     override fun onStartLoading() {
-        debug("onStartLoading()")
-
+        debug { "Beginning to load data." }
         cursor?.let {
             deliverResult(it)
         }
-        if (takeContentChanged() || cursor == null) {
+        if (takeContentChanged() || cursor === null) {
             forceLoad()
         }
     }
 
     override fun onStopLoading() {
+        debug { "Stopping data loading." }
         cancelLoad()
     }
 
     override fun onCanceled(data: TypedCursor<T>?) {
-        debug("onCanceled(data = $data)")
-
-        if (data != null && !data.isClosed) {
+        debug { "$data was cancelled" }
+        if (data !== null && !data.isClosed) {
             data.close()
         }
     }
 
-    private val TAG = javaClass.simpleName
-
     override fun onReset() {
-
-        debug("onReset()")
-
+        debug { "Resetting" }
         super.onReset()
         onStopLoading()
         val local = cursor

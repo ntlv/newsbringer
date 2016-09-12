@@ -1,16 +1,33 @@
 package se.ntlv.newsbringer.database
 
+import android.database.ContentObserver
 import android.database.Cursor
+import android.support.v7.util.DiffUtil
+import org.jetbrains.anko.AnkoLogger
 
-abstract class TypedCursor<T>(val delegate: Cursor) : Cursor by delegate {
 
-    abstract fun extract(raw: TypedCursor<T>): T
+interface ContentObservable {
+    fun registerContentObserver(var1: ContentObserver)
 
-    fun getRow(pos: Int): T {
-        moveToPositionOrThrow(pos)
-        return extract(this)
+    fun unregisterContentObserver(var1: ContentObserver)
+}
+
+interface IndexAccessible<out T> {
+    operator fun get(position : Int) : T
+}
+
+interface Identifiable {
+    val id: Long
+}
+
+interface TypedCursor<out T : Identifiable> : IndexAccessible<T>, ContentObservable, Cursor, AnkoLogger {
+
+    fun synthesizeModel(): T
+
+    override operator fun get(position: Int) : T {
+        moveToPositionOrThrow(position)
+        return synthesizeModel()
     }
 
-    override fun toString() = "${javaClass.simpleName}@${hashCode()} wrapping {${delegate.toString()}}"
-
+    var diff: DiffUtil.DiffResult?
 }

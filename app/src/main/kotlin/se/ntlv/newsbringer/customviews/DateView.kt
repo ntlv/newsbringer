@@ -29,7 +29,7 @@ class DateView: TextView {
                 else -> formatTime(diff, TimeUnit.DAY)
             }
         } catch (formatException: NumberFormatException) {
-            return this;
+            return this
         }
     }
 

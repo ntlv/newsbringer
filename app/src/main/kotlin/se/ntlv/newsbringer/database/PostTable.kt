@@ -2,13 +2,13 @@ package se.ntlv.newsbringer.database
 
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
+import android.support.v7.util.DiffUtil
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.debug
-import org.jetbrains.anko.warn
-import se.ntlv.newsbringer.network.NewsThreadUiData
+import se.ntlv.newsbringer.network.RowItem.NewsThreadUiData
 
 class PostTable {
-   companion object : AnkoLogger {
+    companion object : AnkoLogger {
 
         // Database table
         val TABLE_NAME: String = "posts"
@@ -49,13 +49,13 @@ class PostTable {
             )
 
         fun onCreate(database: SQLiteDatabase) {
-            debug("creating database")
+            debug { "creating database" }
             database.execSQL(DATABASE_CREATE)
 
         }
 
         fun onUpgrade(database: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-            warn("Upgrading database from version $oldVersion to $newVersion, which will destroy all old data")
+            debug { "Upgrading database from version $oldVersion to $newVersion, which will destroy all old data" }
             database.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
             onCreate(database)
         }
@@ -83,8 +83,10 @@ class PostTable {
         fun getOrdinalSortingString() = PostTable.COLUMN_ORDINAL + " ASC"
     }
 
-    class PostTableCursor(rawCursor: Cursor) : TypedCursor<NewsThreadUiData>(rawCursor) {
-        override fun extract(raw: TypedCursor<NewsThreadUiData>): NewsThreadUiData {
+    class PostTableCursor(rawCursor: Cursor) : TypedCursor<NewsThreadUiData>, Cursor by rawCursor {
+        override var diff: DiffUtil.DiffResult? = null
+
+        override fun synthesizeModel(): NewsThreadUiData {
 
             val id = getLongByName(PostTable.COLUMN_ID)
             val score = getIntByName(PostTable.COLUMN_SCORE)

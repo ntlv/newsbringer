@@ -1,77 +1,63 @@
 package se.ntlv.newsbringer.adapter
 
+import android.os.Trace
 import android.support.v7.widget.RecyclerView.ViewHolder
 import android.view.ViewGroup
+import se.ntlv.newsbringer.adapter.GenericWithHeaderRecyclerViewAdapter.Type.HEADER
+import se.ntlv.newsbringer.adapter.GenericWithHeaderRecyclerViewAdapter.Type.ROW
+import se.ntlv.newsbringer.database.Identifiable
 
 
-abstract class GenericWithHeaderRecyclerViewAdapter<T, HVH : ViewHolder, VH : ViewHolder>(
+abstract class GenericWithHeaderRecyclerViewAdapter<S : Identifiable, A : S, B : S, HVH : ViewHolder, VH : ViewHolder>(
+        val headerItemClass: Class<A>,
+        val rowItemClass: Class<B>,
         val headerClass: Class<HVH>,
-        val rowClass: Class<VH>) : GenericRecyclerViewAdapter<T, ViewHolder>(null) {
+        val rowClass: Class<VH>) : GenericRecyclerViewAdapter<S, ViewHolder>() {
 
-    private val HEADER_VIEW = 0
-    private val COMMENTS_VIEW = 1
+    enum class Type {
+        HEADER, ROW;
+    }
 
     abstract fun onCreateHeaderViewHolder(parent: ViewGroup?): ViewHolder
     abstract fun onCreateRowViewHolder(parent: ViewGroup?): ViewHolder
 
-    abstract fun onBindHeaderViewHolder(viewHolder: HVH)
-    abstract fun onBindRowViewHolder(viewHolder: VH, data: T)
+    abstract fun onBindHeaderViewHolder(viewHolder: HVH, data: A)
+    abstract fun onBindRowViewHolder(viewHolder: VH, data: B)
 
-    final override fun onBindViewHolder(viewHolder: ViewHolder, position: Int) {
-        if (position == 0 && headerClass.isInstance(viewHolder)) {
-            val castedHolder = headerClass.cast(viewHolder)
-            onBindHeaderViewHolder(castedHolder)
-            return
+    override fun onBindViewHolder(viewHolder: ViewHolder, item: S) {
+        Trace.beginSection("on_bind_view_holder_with_header")
+         when {
+            headerItemClass.isInstance(item) -> onBindHeaderViewHolder(headerClass.cast(viewHolder), headerItemClass.cast(item))
+            rowItemClass.isInstance(item) -> onBindRowViewHolder(rowClass.cast(viewHolder), rowItemClass.cast(item))
+            else -> throw IllegalArgumentException("Object $item outside of type bounds.")
         }
-        val translatedPosition = position - 1
-        return super.onBindViewHolder(viewHolder, translatedPosition)
+        Trace.endSection()
     }
 
-    final override fun onBindViewHolder(viewHolder: ViewHolder, item: T) {
-        if (rowClass.isInstance(viewHolder)) {
-            val holder = rowClass.cast(viewHolder)
-            onBindRowViewHolder(holder, item)
-        } else {
-            throw IllegalArgumentException("Cannot bind row with regular recycler view holder.")
-        }
-    }
+    override fun getItemViewType(position: Int): Int = (if (position == 0) HEADER else ROW).ordinal
 
-    override fun getItemViewType(position: Int) = when (position) {
-        0 -> HEADER_VIEW
-        else -> COMMENTS_VIEW
-    }
 
-    override fun actualItemCount(): Int {
-        return data!!.count
+    override fun onCreateViewHolder(parent: ViewGroup?, viewType: Int) = when (Type.values()[viewType]) {
+        HEADER -> onCreateHeaderViewHolder(parent)
+        ROW -> onCreateRowViewHolder(parent)
     }
-
-    override fun onCreateViewHolder(parent: ViewGroup?, viewType: Int): ViewHolder {
-        return when (viewType) {
-            HEADER_VIEW -> onCreateHeaderViewHolder(parent)
-            COMMENTS_VIEW -> onCreateRowViewHolder(parent)
-            else -> throw IllegalArgumentException("Viewtype $viewType not supported")
-        }
-    }
-
-    override fun viewToDataPosition(viewPosition: Int) = viewPosition - 1
-    override fun dataToViewPosition(dataPosition: Int) = dataPosition + 1
 
     fun findInDataSet(startDataPosition: Int,
-                      predicate: (T?) -> Boolean,
+                      predicate: (S) -> Boolean,
                       movementMethod: (Int) -> Int): Int? {
 
         val localDataRef = data ?: return null
 
-        val startPos = viewToDataPosition(startDataPosition)
-        var pos: Int = movementMethod(startPos)
+        val startPos = startDataPosition - 1
+        var pos = movementMethod(startPos)
 
         while (pos in 0..localDataRef.count - 1) {
 
-            val item = localDataRef.getItem(pos)
+            val item = localDataRef[pos]
             val targetFound = predicate(item)
 
             if (targetFound) {
-                return dataToViewPosition(pos)
+                return pos + 1
             } else {
                 pos = movementMethod(pos)
             }

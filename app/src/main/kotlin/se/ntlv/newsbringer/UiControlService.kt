@@ -7,8 +7,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.Binder
 import android.os.IBinder
-import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.info
+import android.util.Log
 import java.util.*
 
 interface UiControlService {
@@ -16,19 +15,9 @@ interface UiControlService {
 }
 
 
-class UiControlServiceImpl : Service(), AnkoLogger, UiControlService {
+class UiControlServiceImpl : Service(), UiControlService {
 
     val binder: LocalBinder by lazy { LocalBinder(this) }
-
-    override fun onCreate() {
-        super.onCreate()
-        info("Service created")
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        info("Service destroyed")
-    }
 
     override fun onBind(intent: Intent): IBinder? = binder
 
@@ -39,12 +28,16 @@ class UiControlServiceImpl : Service(), AnkoLogger, UiControlService {
         }
     }
 
+    private val TAG = UiControlServiceImpl::class.java.simpleName
+
     override fun ping() {
-        info("Pinged by client")
+        Log.i(TAG, "Pinged by client")
     }
 }
 
-class UiControlClient(context: Context):  AnkoLogger {
+class UiControlClient(context: Context) {
+
+    private val TAG = UiControlClient::class.java.simpleName
 
     private var service: UiControlService? = null
     private val context = context.applicationContext
@@ -56,7 +49,7 @@ class UiControlClient(context: Context):  AnkoLogger {
             while (iter.hasNext()) {
                 val call = iter.next()
                 iter.remove()
-                info("Invoking enqueued call $call")
+                Log.i(TAG, "Invoking enqueued call $call")
                 call()
             }
         }

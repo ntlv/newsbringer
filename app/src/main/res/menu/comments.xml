@@ -29,4 +29,9 @@
         android:orderInCategory="4"
         app:showAsAction="never"
         />
+    <item
+        android:id="@+id/add_to_starred"
+        android:title="@string/toggle_starred"
+        android:orderInCategory="5"
+        app:showAsAction="never"/>
 </menu>

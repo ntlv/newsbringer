@@ -1,24 +1,38 @@
 package se.ntlv.newsbringer.comments
 
+import android.os.Build
+import android.os.Trace
 import android.support.v7.widget.RecyclerView
 import android.text.Html
+import android.text.SpannableStringBuilder
 import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
+import android.text.style.URLSpan
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.browse
 import org.jetbrains.anko.find
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.GenericWithHeaderRecyclerViewAdapter
 import se.ntlv.newsbringer.customviews.DateView
-import se.ntlv.newsbringer.network.CommentUiData
+import se.ntlv.newsbringer.network.RowItem
 
-class CommentsAdapterWithHeader(val commentNestingPaddingIncrement: Int) : GenericWithHeaderRecyclerViewAdapter<
-        CommentUiData,
-        CommentsAdapterWithHeader.HeaderHolder,
-        CommentsAdapterWithHeader.RowHolder>(HeaderHolder::class.java, RowHolder::class.java) {
-
-    override val deltaUpdatingEnabled = true
+class CommentsAdapterWithHeader(val commentNestingPaddingIncrement: Int, val headerClickListener: ((View?) -> Unit)?) :
+        GenericWithHeaderRecyclerViewAdapter<
+                RowItem,
+                RowItem.NewsThreadUiData,
+                RowItem.CommentUiData,
+                CommentsAdapterWithHeader.HeaderHolder,
+                CommentsAdapterWithHeader.RowHolder>(
+                RowItem.NewsThreadUiData::class.java,
+                RowItem.CommentUiData::class.java,
+                HeaderHolder::class.java,
+                RowHolder::class.java
+        ),
+        AnkoLogger {
 
     override fun onCreateHeaderViewHolder(parent: ViewGroup?): RecyclerView.ViewHolder =
             HeaderHolder(LayoutInflater.from(parent?.context).inflate(R.layout.list_header_newsthread, parent, false))
@@ -26,25 +40,26 @@ class CommentsAdapterWithHeader(val commentNestingPaddingIncrement: Int) : Gener
     override fun onCreateRowViewHolder(parent: ViewGroup?): RecyclerView.ViewHolder =
             RowHolder(LayoutInflater.from(parent?.context).inflate(R.layout.list_item_comment, parent, false))
 
-    private var headerActive: Boolean = false
-
-    override fun onBindHeaderViewHolder(viewHolder: HeaderHolder) {
-        headerActive = true
-        viewHolder.title.text = mTitle
-        viewHolder.by.text = mBy
-        viewHolder.time.text = mTime
-        if (mText.isNullOrEmpty()) {
+    override fun onBindHeaderViewHolder(viewHolder: HeaderHolder, data: RowItem.NewsThreadUiData) {
+        Trace.beginSection("on_bind_header_view_holder")
+        val titlePrefix = if (data.isStarred == 1) "\u2605" else ""
+        viewHolder.title.text = titlePrefix + data.title
+        viewHolder.by.text = data.by
+        viewHolder.time.text = data.time.toString()
+        if (data.text.isNullOrEmpty()) {
             viewHolder.text.visibility = View.GONE
         } else {
             viewHolder.text.visibility = View.VISIBLE
-            viewHolder.text.htmlText = mText
+            viewHolder.text.html = data.text
         }
-        viewHolder.score.text = mScore
-        viewHolder.commentCount.text = mDescendantsCount
+        viewHolder.score.text = data.score.toString()
+        viewHolder.commentCount.text = data.descendants.toString()
         viewHolder.self.setOnClickListener(headerClickListener)
+        Trace.endSection()
     }
 
-    override fun onBindRowViewHolder(viewHolder: RowHolder, data: CommentUiData) {
+    override fun onBindRowViewHolder(viewHolder: RowHolder, data: RowItem.CommentUiData) {
+        Trace.beginSection("on_bind_row_view_holder")
         val ancestorCount = data.ancestorCount
         val padding = commentNestingPaddingIncrement * ancestorCount
         viewHolder.self.setPadding(padding, viewHolder.self.paddingTop, viewHolder.self.paddingRight, viewHolder.self.paddingBottom)
@@ -53,33 +68,14 @@ class CommentsAdapterWithHeader(val commentNestingPaddingIncrement: Int) : Gener
 
         viewHolder.by.text = "${data.position} - ${data.by}"
         viewHolder.time.text = data.time.toString()
-        viewHolder.text.htmlText = data.text
+        viewHolder.text.html = data.text
         viewHolder.id = data.id
 
         val kidsString = data.kids
         val count = if (kidsString.isNullOrBlank()) 0 else kidsString.split(',').size
         viewHolder.kids.text = count.toString()
+        Trace.endSection()
     }
-
-    private var mTitle: String = ""
-    private var mText: String = ""
-    private var mBy: String = ""
-    private var mTime: String = ""
-    private var mScore: String = ""
-    private var mDescendantsCount = ""
-
-    private val HEADER_VIEW = 0
-    private val COMMENTS_VIEW = 1
-
-    override fun getItemCount(): Int {
-        val count = super.getItemCount()
-        val headerCount = if (headerActive) 1 else 0
-        return count + headerCount
-    }
-
-    override fun getItemViewType(position: Int) = if (position == 0) HEADER_VIEW else COMMENTS_VIEW
-
-    var headerClickListener: ((View?) -> Unit)? = null
 
     val color = arrayOf(
             R.color.cyan,
@@ -92,12 +88,33 @@ class CommentsAdapterWithHeader(val commentNestingPaddingIncrement: Int) : Gener
             R.color.yellow
     )
 
-    var TextView.htmlText: String
-        get() {
-            return text as String
-        }
-        set(source: String) {
-            text = Html.fromHtml(source)
+    var TextView.html: String
+        get() = throw IllegalAccessError("Getter not implemented")
+        set(html: String) {
+            val sequence: CharSequence
+
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                sequence = Html.fromHtml(html)
+            } else {
+                sequence = Html.fromHtml(html, Html.FROM_HTML_MODE_LEGACY)
+            }
+
+            val spanBuilder = SpannableStringBuilder(sequence)
+            val urls = spanBuilder.getSpans(0, sequence.length, URLSpan::class.java)
+            for (span in urls) {
+                val start = spanBuilder.getSpanStart(span)
+                val end = spanBuilder.getSpanEnd(span)
+                val flags = spanBuilder.getSpanFlags(span)
+                val clickable = object : ClickableSpan() {
+                    override fun onClick(p0: View?) {
+                        context.browse(span.url)
+                    }
+
+                }
+                spanBuilder.setSpan(clickable, start, end, flags)
+                spanBuilder.removeSpan(span)
+            }
+            text = spanBuilder
             movementMethod = LinkMovementMethod.getInstance()
         }
 
@@ -119,16 +136,6 @@ class CommentsAdapterWithHeader(val commentNestingPaddingIncrement: Int) : Gener
         val score = root.find<TextView>(R.id.score)
         val commentCount = root.find<TextView>(R.id.comment_count)
         val text = root.find<TextView>(R.id.text)
-    }
-
-    fun updateHeader(postTitle: String, text: String, by: String, time: String, score: String, descendantsCount: String) {
-        mTitle = postTitle
-        mText = text
-        mBy = by
-        mTime = time
-        mScore = score
-        mDescendantsCount = descendantsCount
-        notifyItemChanged(0)
     }
 }
 

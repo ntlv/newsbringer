@@ -14,63 +14,50 @@ import android.util.TypedValue.COMPLEX_UNIT_DIP
 import android.util.TypedValue.applyDimension
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.ImageView
 import android.widget.Toast
-import org.jetbrains.anko.displayMetrics
-import org.jetbrains.anko.find
-import org.jetbrains.anko.onClick
-import org.jetbrains.anko.onLongClick
+import org.jetbrains.anko.*
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
-import se.ntlv.newsbringer.adapter.ObservableData
 import se.ntlv.newsbringer.applyAppBarLayoutDependency
-import se.ntlv.newsbringer.network.CommentUiData
+import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
+import se.ntlv.newsbringer.database.TypedCursor
+import se.ntlv.newsbringer.network.RowItem
 import se.ntlv.newsbringer.newsthreads.NewsThreadsActivity
 import kotlin.LazyThreadSafetyMode.NONE
+import kotlin.reflect.KFunction1
 
 
 interface CommentsViewBinder {
     fun indicateDataLoading(isLoading: Boolean): Unit
 
-    fun updateHeader(postTitle: String, text: String, by: String, time: String, score: String, link: String, descendantsCount: String)
-
-    fun updateComments(data: ObservableData<CommentUiData>?)
+    fun updateContent(data: TypedCursor<RowItem>?)
 
     val context: Context
 }
 
+fun predicate(item: RowItem) = item is RowItem.CommentUiData && item.ancestorCount == 0
+
 class CommentsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedListener, CommentsViewBinder {
 
-    companion object {
-        private val TAG: String = CommentsActivity::class.java.simpleName
-
-        val EXTRA_NEWSTHREAD_ID: String = "${TAG}extra_news_thread_id"
-
-        fun getIntent(ctx: Context, id: Long): Intent {
-            return Intent(ctx, CommentsActivity::class.java).putExtra(EXTRA_NEWSTHREAD_ID, id)
+    private fun generalNav(starter: KFunction1<LinearLayoutManager, Int>, mover: KFunction1<Int, Int>) {
+        val start = starter(mManager)
+        val predicate: (RowItem) -> Boolean = ::predicate
+        val target = mAdapter.findInDataSet(start, predicate, mover)
+        if (target != null) {
+            mManager.scrollToPositionWithOffset(target, 0)
         }
     }
 
-    private val mNavigateUp = {
-        val start = mManager.findFirstVisibleItemPosition()
-        val previous = mAdapter.findInDataSet(start, { it?.ancestorCount == 0 }, Int::dec)
-        if (previous != null ) {
-            mManager.scrollToPositionWithOffset(previous, 0)
-        }
-    }
+    private val mNavigateUp = { generalNav(LinearLayoutManager::findFirstVisibleItemPosition, Int::dec) }
 
-    private val mNavigateDown = {
-        val start = mManager.findLastVisibleItemPosition()
-        val next = mAdapter.findInDataSet(start, { it?.ancestorCount == 0 }, Int::inc)
-        if (next != null ) {
-            mManager.scrollToPositionWithOffset(next, 0)
-        }
-    }
+    private val mNavigateDown = { generalNav(LinearLayoutManager::findLastVisibleItemPosition, Int::inc) }
 
     private val mManager: LinearLayoutManager by lazy(NONE) { LinearLayoutManager(this) }
 
     private val mAdapter: CommentsAdapterWithHeader by lazy(NONE) {
         val padding = applyDimension(COMPLEX_UNIT_DIP, 4f, displayMetrics).toInt()
-        CommentsAdapterWithHeader(padding)
+        CommentsAdapterWithHeader(padding, { presenter.onHeaderClick() })
     }
 
     private val mSwipeView: SwipeRefreshLayout by lazy(NONE) { find<SwipeRefreshLayout>(R.id.swipe_view) }
@@ -79,11 +66,7 @@ class CommentsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedListen
 
     private val mAppBar: AppBarLayout by lazy(NONE) { find<AppBarLayout>(R.id.appbar) }
 
-    val mItemId by lazy(NONE) {
-        val idFromUri: Long? = intent.data?.getQueryParameter("id")?.toLong()
-        val idFromExtras: Long? = intent.extras?.getLong(EXTRA_NEWSTHREAD_ID)
-        idFromUri ?: (idFromExtras ?: -1L)
-    }
+    private val mItemId by lazy(NONE) { intent.data?.getQueryParameter("id")!!.toLong() }
 
     val presenter: CommentsPresenter by lazy(NONE) {
         val interactor = CommentsInteractor(this, loaderManager, mItemId, Navigator(this))
@@ -91,24 +74,24 @@ class CommentsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedListen
     }
 
     val fab: FloatingActionButton by lazy(NONE) {
-        find<FloatingActionButton>(R.id.fab)
+        findViewById(R.id.fab) as FloatingActionButton
     }
 
     //VIEW BINDER IMPLEMENTATION
+    override val context: Context = this
+
     override fun indicateDataLoading(isLoading: Boolean) {
-        mSwipeView.isRefreshing = isLoading
+        if (mSwipeView.isRefreshing != isLoading) {
+            mSwipeView.isRefreshing = isLoading
+        }
+        refreshButtonManager.indicateLoading(isLoading)
     }
 
-    override fun updateHeader(postTitle: String, text: String, by: String, time: String, score: String, link: String, descendantsCount: String) {
-        title = postTitle
-        mAdapter.headerClickListener = { presenter.onHeaderClick() }
-        mAdapter.updateHeader(postTitle, text, by, time, score, descendantsCount)
-    }
-
-    override val context: Context
-        get() = this
-
-    override fun updateComments(data: ObservableData<CommentUiData>?) {
+    override fun updateContent(data: TypedCursor<RowItem>?) {
+        val maybeHeader = data?.get(0)
+        if (maybeHeader is RowItem.NewsThreadUiData) {
+            title = maybeHeader.title
+        }
         mAdapter.updateContent(data)
     }
 
@@ -130,47 +113,47 @@ class CommentsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedListen
         }
 
         setContentView(R.layout.activity_linear_vertical_content)
-        val toolbar = findViewById(R.id.toolbar) as Toolbar
+        val toolbar = find<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
-        supportActionBar!!.setDisplayHomeAsUpEnabled(true);
+        supportActionBar!!.setDisplayHomeAsUpEnabled(true)
 
-        mSwipeView.setOnRefreshListener { presenter.refreshData(false, false) }
+        mSwipeView.setOnRefreshListener { presenter.refreshData() }
         mSwipeView.setColorSchemeResources(R.color.accent_color)
 
         mRecyclerView.layoutManager = mManager
         mRecyclerView.adapter = mAdapter
 
         fab.applyAppBarLayoutDependency()
-        fab.onClick { mNavigateDown() }
-        fab.onLongClick { mNavigateUp(); true }
-
-        presenter.onViewReady()
+        fab.setOnClickListener { mNavigateDown() }
+        fab.setOnLongClickListener { mNavigateUp(); true }
     }
 
-    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+    private lateinit var refreshButtonManager: RefreshButtonAnimator
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.comments, menu)
+        val refreshImage = ImageView(this)
+        refreshImage.padding = dip(8)
+        refreshImage.imageResource = R.drawable.ic_action_refresh
+        refreshButtonManager = RefreshButtonAnimator(menu.findItem(R.id.refresh), refreshImage)
+        presenter.onViewReady()
         return true
     }
 
     override fun onStart() {
         super.onStart()
-        mAppBar.addOnOffsetChangedListener(this);
+        mAppBar.addOnOffsetChangedListener(this)
     }
 
     override fun onStop() {
-        super.onStop();
-        mAppBar.removeOnOffsetChangedListener(this);
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        presenter.destroy()
+        super.onStop()
+        mAppBar.removeOnOffsetChangedListener(this)
     }
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item?.itemId) {
             R.id.refresh -> {
-                presenter.refreshData(true, false); true
+                presenter.refreshData(); true
             }
             R.id.share_story -> {
                 presenter.onShareStoryClicked(); true
@@ -180,6 +163,9 @@ class CommentsActivity : AppCompatActivity(), AppBarLayout.OnOffsetChangedListen
             }
             R.id.open_link -> {
                 presenter.onHeaderClick(); true
+            }
+            R.id.add_to_starred -> {
+                presenter.addToStarred(); true
             }
             else -> super.onOptionsItemSelected(item)
         }

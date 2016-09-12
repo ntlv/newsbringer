@@ -2,31 +2,29 @@ package se.ntlv.newsbringer.newsthreads
 
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
-import se.ntlv.newsbringer.adapter.ObservableData
-import se.ntlv.newsbringer.network.NewsThreadUiData
+import se.ntlv.newsbringer.adapter.DataLoadingFacilitator
+import se.ntlv.newsbringer.adapter.orCompute
+import se.ntlv.newsbringer.database.TypedCursor
+import se.ntlv.newsbringer.network.RowItem.NewsThreadUiData
 
 
 class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
                            val navigator: Navigator,
-                           val interactor: NewsThreadsInteractor) {
+                           val interactor: NewsThreadsInteractor) : DataLoadingFacilitator {
 
     fun onViewReady() {
         viewBinder.indicateDataLoading(true)
-        interactor.loadData({ onDataLoaded(it)}, {viewBinder.showLongStatusMessage(it)})
+        interactor.loadData({ onDataLoaded(it)})
     }
 
-    private fun onDataLoaded(data: ObservableData<NewsThreadUiData>?) {
+    private fun onDataLoaded(data: TypedCursor<NewsThreadUiData>?) {
         viewBinder.presentData(data)
-        if (data?.hasContent() ?: false) {
-            viewBinder.indicateDataLoading(false)
-        }
+        viewBinder.indicateDataLoading(false)
     }
 
-    fun refreshData(needToIndicateLoading: Boolean) {
-        if (needToIndicateLoading) {
-            viewBinder.indicateDataLoading(true)
-        }
-        interactor.refreshData()
+    fun refreshData() {
+        viewBinder.indicateDataLoading(true)
+        interactor.downloadData()
     }
 
     fun toggleShowOnlyStarred() {
@@ -35,20 +33,20 @@ class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
         interactor.showOnlyStarred = !interactor.showOnlyStarred
     }
 
-    fun onItemClick(itemId: Long?) = navigator.navigateToItemComments(itemId)
+    fun onItemClick(itemId: Long) : Unit = navigator.navigateToItemComments(itemId)
 
-    fun onItemLongClick(itemId: Long?): Boolean = when {
-        itemId != null -> interactor.toggleItemStarredState(itemId)
-        else -> false
-    }
+    fun onItemLongClick(itemId: Long) = interactor.toggleItemStarredState(itemId)
 
-    fun destroy() = interactor.destroy()
-
-    fun onMoreDataNeeded(currentMaxItem: Int) {
-        if (interactor.loadMoreData(currentMaxItem)){
+    override fun onMoreDataNeeded(currentMaxItem: Int) {
+        if (interactor.downloadMoreData(currentMaxItem)){
             viewBinder.showStatusMessage(R.string.status_loading_more_data)
             viewBinder.indicateDataLoading(true)
         }
+    }
+
+    fun filter(newText: String?) {
+        viewBinder.indicateDataLoading(true)
+        interactor.filter = newText.orCompute { "" }
     }
 }
 

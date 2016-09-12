@@ -2,10 +2,10 @@ package se.ntlv.newsbringer.database
 
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
+import android.support.v7.util.DiffUtil
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.debug
-import org.jetbrains.anko.warn
-import se.ntlv.newsbringer.network.CommentUiData
+import se.ntlv.newsbringer.network.RowItem.CommentUiData
 
 class CommentsTable {
     companion object : AnkoLogger {
@@ -42,12 +42,12 @@ class CommentsTable {
                 )
 
         fun onCreate(database: SQLiteDatabase) {
-            debug("creating database")
+            debug { "Creating database" }
             database.execSQL(DATABASE_CREATE)
         }
 
         fun onUpgrade(database: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-            warn("Upgrading database from version $oldVersion to $newVersion, which will destroy all old data")
+            debug { "Upgrading database $oldVersion -> $newVersion, all existing data will be destroyed." }
             database.execSQL("DROP TABLE IF EXISTS $TABLE_NAME")
             onCreate(database)
         }
@@ -64,16 +64,20 @@ class CommentsTable {
 
     }
 
-    class CommentsTableCursor(base: Cursor) : TypedCursor<CommentUiData>(base) {
-        override fun extract(raw: TypedCursor<CommentUiData>): CommentUiData {
+    class CommentsTableCursor(base: Cursor) : TypedCursor<CommentUiData>, Cursor by base {
+        override var diff: DiffUtil.DiffResult?
+            get() = throw UnsupportedOperationException()
+            set(value) = throw UnsupportedOperationException()
 
-            val pos = raw.position
-            val time = raw.getLongByName(COLUMN_TIME)
-            val text = raw.getStringByName(COLUMN_TEXT)
-            val id = raw.getLongByName(COLUMN_ID)
-            val kids = raw.getStringByName(COLUMN_KIDS)
-            val by = raw.getStringByName(COLUMN_BY)
-            val ancestorCount = raw.getIntByName(COLUMN_ANCESTOR_COUNT)
+
+        override fun synthesizeModel(): CommentUiData {
+            val pos = position
+            val time = getLongByName(COLUMN_TIME)
+            val text = getStringByName(COLUMN_TEXT)
+            val id = getLongByName(COLUMN_ID)
+            val kids = getStringByName(COLUMN_KIDS)
+            val by = getStringByName(COLUMN_BY)
+            val ancestorCount = getIntByName(COLUMN_ANCESTOR_COUNT)
 
             return CommentUiData(pos, time, id, by, kids, text, ancestorCount)
         }

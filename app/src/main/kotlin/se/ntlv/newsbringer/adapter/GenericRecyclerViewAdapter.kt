@@ -1,116 +1,86 @@
 package se.ntlv.newsbringer.adapter
 
+import android.os.Trace
+import android.support.v7.util.DiffUtil
 import android.support.v7.widget.RecyclerView
+import org.jetbrains.anko.AnkoLogger
+import se.ntlv.newsbringer.database.Identifiable
+import se.ntlv.newsbringer.database.TypedCursor
 
 interface DataLoadingFacilitator {
     fun onMoreDataNeeded(currentMaxItem: Int): Unit
 }
 
-abstract class GenericRecyclerViewAdapter<T, VH : RecyclerView.ViewHolder>(
-        val facilitator: DataLoadingFacilitator?) : RecyclerView.Adapter<VH>() {
+abstract class GenericRecyclerViewAdapter<T : Identifiable, VH : RecyclerView.ViewHolder>() : RecyclerView.Adapter<VH>(), AnkoLogger {
 
-    abstract fun actualItemCount(): Int
-
-    abstract protected val deltaUpdatingEnabled: Boolean
-
-    abstract fun viewToDataPosition(viewPosition: Int): Int
-    abstract fun dataToViewPosition(dataPosition: Int): Int
-
-    var shouldLoadDataDynamic = facilitator != null
-
-    override fun getItemCount(): Int {
-        val local = data
-        val dataValid = local != null && local.isValid
-        val count = if (dataValid) {
-            actualItemCount()
-        } else {
-            0
+    var shouldLoadDataDynamic = false
+    var facilitator: DataLoadingFacilitator? = null
+        set(value) {
+            field = value
+            shouldLoadDataDynamic = true
         }
-        return count
-    }
 
-    override fun getItemId(position: Int): Long = data?.getItemId(position) ?: -1
+    protected var data: TypedCursor<T>? = null
+
+    override fun getItemCount(): Int = data?.count ?: 0 //todo potentially add isValid (datasetobserver)
+
+    override fun getItemId(position: Int): Long = data!![position].id
 
     abstract fun onBindViewHolder(viewHolder: VH, item: T)
 
-    override fun onBindViewHolder(viewHolder: VH, position: Int): Unit {
-        val item: T = data?.getItem(position) ?: throw IllegalStateException()
-        val max = actualItemCount()
-        if (shouldLoadDataDynamic && itemCount > 9 && position >= max - 1) {
-            facilitator?.onMoreDataNeeded(max)
+    override fun onBindViewHolder(viewHolder: VH, position: Int) {
+        Trace.beginSection("on_bind_view_holder_origin")
+        val item: T = data!![position]
+        val localCount = itemCount
+        if (shouldLoadDataDynamic && localCount > 9 && position >= localCount - 1) {
+            facilitator?.onMoreDataNeeded(localCount)
         }
         onBindViewHolder(viewHolder, item)
+        Trace.endSection()
     }
 
-    fun updateContent(new: ObservableData<T>?) {
+    fun updateContent(new: TypedCursor<T>?) {
         if (new === data) {
             return
         }
         val old = data
-        data = new
-
-        if (deltaUpdatingEnabled) {
-            applyDeltaUpdate(new, old)
+        Trace.beginSection("calculate_diff")
+        val res : DiffUtil.DiffResult
+        if (new != null) {
+            res = new.diff!!
         } else {
-            notifyDataSetChanged()
+            res = DiffUtil.calculateDiff(DataDiffCallback(old, null))
         }
-
+        Trace.endSection()
+        data = new
+        Trace.beginSection("dispatch_updates")
+        res.dispatchUpdatesTo(this)
+        Trace.endSection()
         old?.close()
     }
 
-    private fun applyDeltaUpdate(new: ObservableData<T>?, old: ObservableData<T>?) = when {
-        new == null -> {
-            val start = dataToViewPosition(0);
-            val count = old?.count ?: 0
-            notifyItemRangeRemoved(start, count)
-        }
-        old == null -> {
-            val rangeStart = dataToViewPosition(0);
-            val rangeCount = new.count
-            notifyItemRangeInserted(rangeStart, rangeCount)
-        }
-        new.count == old.count -> {
-            val end = old.count - 1
-            notifyChangedInRange(end, new, old)
-        }
-        new.count > old.count -> {
-            val end = old.count - 1
-            notifyChangedInRange(end, new, old)
-            val rangeStart = dataToViewPosition(end + 1)
-            val rangeCount = new.count - old.count;
-            notifyItemRangeInserted(rangeStart, rangeCount)
-        }
-        new.count < old.count -> {
-            val end = new.count - 1
-            notifyChangedInRange(end, new, old)
-            val rangeStart = dataToViewPosition(end + 1)
-            val rangeCount = old.count - new.count;
-            notifyItemRangeRemoved(rangeStart, rangeCount)
-        }
-        else -> {
-            throw IllegalArgumentException("Something is terribly wrong with input $new and $old")
-        }
-    }
+    class DataDiffCallback<out T : Identifiable>(val mOld: TypedCursor<T>?,
+                                                 val mNew: TypedCursor<T>?) : DiffUtil.Callback() {
 
-    private fun notifyChangedInRange(end :Int = -1,new: ObservableData<T>?, old: ObservableData<T>?) {
-        for (position in 0..end) {
-            val newItem = new?.getItem(position)
-            val oldItem = old?.getItem(position)
+        override fun getOldListSize(): Int = mOld?.count ?: 0
+        override fun getNewListSize(): Int = mNew?.count ?: 0
 
-            if (newItem != oldItem) {
-                val translated = dataToViewPosition(position)
-                notifyItemChanged(translated)
-            }
+        override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            Trace.beginSection("are_items_the_same")
+            val oldId = mOld!![oldItemPosition].id
+            val newId = mNew!![newItemPosition].id
+            Trace.endSection()
+            return oldId.equals(newId)
         }
-    }
 
-    data class DeltaUpdate(val checkRangeEnd: Int = -1, val rangeStart: Int, val rangeCount: Int, val apply: () -> Unit)
-
-    var data: ObservableData<T>? = null
-        private set
-
-    fun toggleDynamicLoading() {
-        if (facilitator == null) return
-        shouldLoadDataDynamic = shouldLoadDataDynamic.not()
+        override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+            Trace.beginSection("are_contents_the_same")
+            val old = mOld!![oldItemPosition]
+            val new = mNew!![newItemPosition]
+            Trace.endSection()
+            return old.equals(new)
+        }
     }
 }
+
+inline fun <T> T?.orCompute(f :() -> T) : T = this ?: f()
