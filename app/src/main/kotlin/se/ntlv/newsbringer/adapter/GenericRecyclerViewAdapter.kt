@@ -52,8 +52,9 @@ abstract class GenericRecyclerViewAdapter<T : ParcelableIdentifiable, VH : Recyc
         val localDataRef = data ?: return start
 
         var currentPosition = movementMethod(start)
+        val dataRange = 0..localDataRef.count - 1
 
-        while (currentPosition in 0..localDataRef.count) {
+        while (currentPosition in dataRange) {
 
             if (predicate(localDataRef[currentPosition])) {
                 return currentPosition
