@@ -1,37 +1,41 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    tools:context=".CommentsActivity">
+      xmlns:tools="http://schemas.android.com/tools"
+      xmlns:app="http://schemas.android.com/apk/res-auto"
+      tools:context=".CommentsActivity">
 
     <item
-        android:id="@+id/refresh"
-        android:title="@string/actionbar_item_title_refresh"
-        android:icon="@drawable/ic_action_refresh"
-        android:orderInCategory="1"
-        app:showAsAction="ifRoom"/>
+            android:id="@+id/refresh"
+            android:title="@string/actionbar_item_title_refresh"
+            android:icon="@drawable/ic_refresh_24dp"
+            android:orderInCategory="1"
+            app:showAsAction="ifRoom"/>
 
     <item
-        android:id="@+id/share_story"
-        android:title="@string/share_story"
-        android:orderInCategory="2"
-        app:showAsAction="never"
-        />
+            android:id="@+id/open_link"
+            android:title="@string/open_link"
+            android:icon="@drawable/ic_browse_24dp"
+            android:orderInCategory="2"
+            app:showAsAction="ifRoom"
+            />
     <item
-        android:id="@+id/share_comments"
-        android:title="@string/share_comments"
-        android:orderInCategory="3"
-        app:showAsAction="never"
-        />
+            android:id="@+id/add_to_starred"
+            android:icon="@drawable/ic_star_24dp"
+            android:title="@string/toggle_starred"
+            android:orderInCategory="3"
+            app:showAsAction="ifRoom"/>
 
     <item
-        android:id="@+id/open_link"
-        android:title="@string/open_link"
-        android:orderInCategory="4"
-        app:showAsAction="never"
-        />
+            android:id="@+id/share_story"
+            android:title="@string/share_story"
+            android:icon="@drawable/ic_share_24dp"
+            android:orderInCategory="4"
+            app:showAsAction="ifRoom|withText"
+            />
     <item
-        android:id="@+id/add_to_starred"
-        android:title="@string/toggle_starred"
-        android:orderInCategory="5"
-        app:showAsAction="never"/>
+            android:id="@+id/share_comments"
+            android:title="@string/share_comments"
+            android:icon="@drawable/ic_share_24dp"
+            android:orderInCategory="5"
+            app:showAsAction="ifRoom|withText"
+            />
 </menu>

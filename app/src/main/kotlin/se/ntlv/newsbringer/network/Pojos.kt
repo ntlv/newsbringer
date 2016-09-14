@@ -1,14 +1,16 @@
 package se.ntlv.newsbringer.network
 
 import android.content.ContentValues
-import se.ntlv.newsbringer.database.CommentsTable
-import se.ntlv.newsbringer.database.Identifiable
-import se.ntlv.newsbringer.database.PostTable
-import se.ntlv.newsbringer.database.contentValuesOf
+import android.database.Cursor
+import android.os.Parcel
+import android.os.Parcelable
+import se.ntlv.newsbringer.database.*
+import se.ntlv.newsbringer.database.Database.CommentsTable
+import se.ntlv.newsbringer.database.Database.PostTable
 import java.util.*
 
 
-sealed class RowItem : Identifiable {
+sealed class RowItem : ParcelableIdentifiable {
 
     class NewsThreadUiData(val isStarred: Int,
                            val title: String,
@@ -22,6 +24,67 @@ sealed class RowItem : Identifiable {
                            val ordinal: Int,
                            val text: String
     ) : RowItem() {
+
+        companion object {
+            @Suppress("unused")
+            @JvmField
+            val CREATOR: Parcelable.Creator<NewsThreadUiData> = object : Parcelable.Creator<NewsThreadUiData> {
+                override fun newArray(size: Int): Array<out NewsThreadUiData?> {
+                    return arrayOfNulls(size)
+                }
+
+                override fun createFromParcel(source: Parcel): NewsThreadUiData {
+                    return NewsThreadUiData(source)
+                }
+            }
+        }
+
+        constructor(source: Parcel) : this(
+                source.readInt(),
+                source.readString(),
+                source.readString(),
+                source.readLong(),
+                source.readInt(),
+                source.readString(),
+                source.readLong(),
+                source.readString(),
+                source.readLong(),
+                source.readInt(),
+                source.readString()
+        )
+
+        override fun writeToParcel(dest: Parcel, flags: Int) {
+            dest.writeInt(isStarred)
+            dest.writeString(title)
+            dest.writeString(by)
+            dest.writeLong(time)
+            dest.writeInt(score)
+            dest.writeString(url)
+            dest.writeLong(id)
+            dest.writeString(children)
+            dest.writeLong(descendants)
+            dest.writeInt(ordinal)
+            dest.writeString(text)
+        }
+
+        override fun describeContents(): Int {
+            return 0
+        }
+
+        constructor(cursor: Cursor) : this(
+                cursor.getIntByName(PostTable.COLUMN_STARRED),
+                cursor.getStringByName(PostTable.COLUMN_TITLE),
+                cursor.getStringByName(PostTable.COLUMN_BY),
+                cursor.getLongByName(PostTable.COLUMN_TIMESTAMP),
+                cursor.getIntByName(PostTable.COLUMN_SCORE),
+                cursor.getStringByName(PostTable.COLUMN_URL),
+                cursor.getLongByName(PostTable.COLUMN_ID),
+                cursor.getStringByName(PostTable.COLUMN_CHILDREN),
+                cursor.getLongByName(PostTable.COLUMN_DESCENDANTS),
+                cursor.getIntByName(PostTable.COLUMN_ORDINAL),
+                cursor.getStringByName(PostTable.COLUMN_TEXT))
+
+
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other?.javaClass != javaClass) return false
@@ -68,6 +131,50 @@ sealed class RowItem : Identifiable {
                         val text: String,
                         val ancestorCount: Int
     ) : RowItem() {
+
+        companion object {
+            @Suppress("unused")
+            @JvmField
+            val CREATOR = object : Parcelable.Creator<CommentUiData> {
+                override fun newArray(size: Int): Array<out CommentUiData?> = arrayOfNulls(size)
+
+                override fun createFromParcel(source: Parcel): CommentUiData = CommentUiData(source)
+
+            }
+        }
+
+        override fun writeToParcel(dest: Parcel, flags: Int) {
+            dest.writeInt(position)
+            dest.writeLong(time)
+            dest.writeLong(id)
+            dest.writeString(by)
+            dest.writeString(kids)
+            dest.writeString(text)
+            dest.writeInt(ancestorCount)
+
+        }
+
+        override fun describeContents() = 0
+
+        constructor(source: Parcel) : this(
+                source.readInt(),
+                source.readLong(),
+                source.readLong(),
+                source.readString(),
+                source.readString(),
+                source.readString(),
+                source.readInt()
+        )
+
+        constructor(cursor: Cursor) : this(
+                cursor.position,
+                cursor.getLongByName(CommentsTable.COLUMN_TIME),
+                cursor.getLongByName(CommentsTable.COLUMN_ID),
+                cursor.getStringByName(CommentsTable.COLUMN_BY),
+                cursor.getStringByName(CommentsTable.COLUMN_KIDS),
+                cursor.getStringByName(CommentsTable.COLUMN_TEXT),
+                cursor.getIntByName(CommentsTable.COLUMN_ANCESTOR_COUNT))
+
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
             if (other?.javaClass != javaClass) return false
@@ -105,18 +212,37 @@ class NewsThread {
         id = itemId
     }
 
+    constructor(newTitle: String, newStatus: Int, row: RowItem.NewsThreadUiData) {
+        id = row.id
+        ordinal = row.ordinal
+        score = row.score
+        time = row.time
+        by = row.by
+        title = newTitle
+        kids = if (row.children.isNullOrBlank()) emptyArray() else row.children.split(',').map(String::toLong).toTypedArray()
+        text = row.text
+        type = ""
+        url = row.url
+        descendants = row.descendants
+        starred = newStatus
+    }
+
     var score: Int = 0
     var time: Long = 0
     var id: Long = 0
     var by: String? = null
     var title: String? = null
-    var kids: LongArray? = null
+    var kids: Array<Long>? = null
     var text: String? = null
     var type: String? = null
     var url: String? = null
     var descendants: Long = 0
 
-    fun toContentValues(ordinal: Int, isStarredOverride: Boolean = false): ContentValues {
+    var starred: Int = 0
+
+    var ordinal: Int = -1
+
+    fun toContentValues(): ContentValues {
         val cv = contentValuesOf(
                 PostTable.COLUMN_ID to id,
                 PostTable.COLUMN_SCORE to score,
@@ -131,7 +257,7 @@ class NewsThread {
 
                 PostTable.COLUMN_DESCENDANTS to descendants,
 
-                PostTable.COLUMN_STARRED to isStarredOverride.toInt(),
+                PostTable.COLUMN_STARRED to starred,
 
                 PostTable.COLUMN_ORDINAL to ordinal
         )

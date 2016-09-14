@@ -1,25 +1,24 @@
 package se.ntlv.newsbringer.comments
 
-import se.ntlv.newsbringer.database.TypedCursor
-import se.ntlv.newsbringer.network.RowItem
+import rx.Subscription
+import rx.android.schedulers.AndroidSchedulers.mainThread
 
 class CommentsPresenter(val viewBinder: CommentsViewBinder, val interactor: CommentsInteractor) {
 
-    var dataNeedsLoading = true
-
-    fun onContentLoaded(data: TypedCursor<RowItem>?) {
-        viewBinder.indicateDataLoading(false)
-        viewBinder.updateContent(data)
-        if (data?.count ?: 0 <= 1 && dataNeedsLoading) {
-            refreshData()
-        }
-        dataNeedsLoading = false
-    }
+    private var dataNeedsLoading = true
+    private var subscription: Subscription? = null
 
     fun onViewReady() {
         viewBinder.indicateDataLoading(true)
-        interactor.attach({ onContentLoaded(it) })
-        interactor.loadData()
+        subscription?.unsubscribe()
+        subscription = interactor.loadData().observeOn(mainThread()).subscribe {
+            viewBinder.indicateDataLoading(false)
+            viewBinder.updateContent(it)
+            if (it.count <= 1 && dataNeedsLoading) {
+                refreshData()
+            }
+            dataNeedsLoading = false
+        }
     }
 
     fun refreshData() {
@@ -34,4 +33,6 @@ class CommentsPresenter(val viewBinder: CommentsViewBinder, val interactor: Comm
     fun onShareCommentsClicked() = interactor.shareComments()
 
     fun addToStarred() = interactor.addToStarred()
+
+    fun destroy() = subscription?.unsubscribe()
 }

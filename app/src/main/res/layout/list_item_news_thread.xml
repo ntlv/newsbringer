@@ -10,148 +10,161 @@
                 android:paddingBottom="8dp"
                 android:layout_height="wrap_content"
                 android:background="?android:selectableItemBackground"
-    >
+        >
+
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Large Text"
-        android:id="@+id/ordinal"
-        android:layout_centerVertical="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginRight="8dp"
-        android:layout_marginEnd="8dp"
-        tools:text="500"
-        />
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?android:attr/textAppearanceLarge"
+            android:text="Large Text"
+            android:id="@+id/ordinal"
+            android:layout_centerVertical="true"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_marginRight="8dp"
+            android:layout_marginEnd="8dp"
+            tools:text="500"
+            />
 
 
     <LinearLayout
-        android:id="@+id/linearLayout"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentRight="true"
-        android:layout_centerVertical="true"
-        android:orientation="vertical"
-        android:layout_marginLeft="16dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginBottom="16dp"
-        >
+            android:id="@+id/linearLayout"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:orientation="vertical"
+            android:layout_marginLeft="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginBottom="16dp"
+            >
 
         <!-- Ignore use compound warning because there is no way to constraint drawable size
         when using compound drawables. -->
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            tools:ignore="UseCompoundDrawables">
-
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:src="@drawable/ic_insert_chart_grey600"
-                android:contentDescription="@string/comment_bubble_description"/>
-
-            <TextView
-                android:id="@+id/score"
-                android:minEms="2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                tools:text="score"
-                />
+                android:gravity="center_vertical"
+                tools:ignore="UseCompoundDrawables"
+                >
+
+            <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_score_24dp"
+                    android:contentDescription="@string/comment_bubble_description"
+                    />
+
+            <TextView
+                    android:id="@+id/score"
+                    android:minEms="2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="score"
+                    android:paddingStart="4dp"
+                    android:paddingLeft="4dp"
+                    />
         </LinearLayout>
 
         <!-- Ignore use compound warning because there is no way to constraint drawable size
         when using compound drawables. -->
         <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            tools:ignore="UseCompoundDrawables">
-
-            <ImageView
-                android:layout_width="16dp"
-                android:layout_height="16dp"
-                android:src="@drawable/ic_mode_comment_grey600"
-                android:contentDescription="@string/comment_bubble_description"/>
-
-            <TextView
-                android:id="@+id/comment_count"
-                android:minEms="2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                tools:text="count"/>
+                android:gravity="center_vertical"
+                tools:ignore="UseCompoundDrawables"
+                >
+
+            <ImageView
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:src="@drawable/ic_comment_24dp"
+                    android:contentDescription="@string/comment_bubble_description"
+                    />
+
+            <TextView
+                    android:id="@+id/comment_count"
+                    android:minEms="2"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    tools:text="count"
+                    android:paddingStart="4dp"
+                    android:paddingLeft="4dp"
+                    />
         </LinearLayout>
     </LinearLayout>
 
     <TextView
-        android:id="@+id/title"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        tools:text="Way looooong title that totally is going to need a line wrap"
-        android:textSize="16sp"
-        android:layout_alignParentTop="true"
-        android:layout_toLeftOf="@id/linearLayout"
-        android:layout_toStartOf="@id/linearLayout"
-        android:layout_marginBottom="8dp"
-        android:layout_toRightOf="@+id/ordinal"
-        android:layout_toEndOf="@+id/ordinal" />
+            android:id="@+id/title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            tools:text="Way looooong title that totally is going to need a line wrap"
+            android:textSize="16sp"
+            android:layout_alignParentTop="true"
+            android:layout_toLeftOf="@id/linearLayout"
+            android:layout_toStartOf="@id/linearLayout"
+            android:layout_marginBottom="8dp"
+            android:layout_toRightOf="@+id/ordinal"
+            android:layout_toEndOf="@+id/ordinal"
+            />
 
     <TextView
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        android:text="@string/by_prefix"
-        android:id="@+id/by_prefix"
-        android:layout_below="@+id/title"
-        android:layout_alignLeft="@+id/title"
-        android:layout_alignStart="@+id/title"/>
+            android:layout_height="wrap_content"
+            android:layout_width="wrap_content"
+            android:text="@string/by_prefix"
+            android:id="@+id/by_prefix"
+            android:layout_below="@+id/title"
+            android:layout_alignLeft="@+id/title"
+            android:layout_alignStart="@+id/title"
+            />
 
     <TextView
-        android:id="@+id/by"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textStyle="bold"
-        android:layout_alignBaseline="@id/by_prefix"
-        tools:text="Author Authorsson"
-        android:layout_below="@id/title"
-        android:layout_toEndOf="@id/by_prefix"
-        android:layout_toRightOf="@id/by_prefix"
-        />
+            android:id="@+id/by"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:layout_alignBaseline="@id/by_prefix"
+            tools:text="Author Authorsson"
+            android:layout_below="@id/title"
+            android:layout_toEndOf="@id/by_prefix"
+            android:layout_toRightOf="@id/by_prefix"
+            />
 
     <TextView
-        android:id="@+id/spacer"
-        android:layout_width="wrap_content"
-        android:layout_toEndOf="@id/by"
-        android:layout_toRightOf="@id/by"
-        android:text="@string/nbsp"
-        android:layout_alignBaseline="@id/by_prefix"
-        android:layout_height="wrap_content"
-        />
+            android:id="@+id/spacer"
+            android:layout_width="wrap_content"
+            android:layout_toEndOf="@id/by"
+            android:layout_toRightOf="@id/by"
+            android:text="@string/nbsp"
+            android:layout_alignBaseline="@id/by_prefix"
+            android:layout_height="wrap_content"
+            />
 
     <se.ntlv.newsbringer.customviews.DateView
-        android:id="@+id/time"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:singleLine="true"
-        android:layout_alignBaseline="@id/by"
-        android:layout_gravity="end"
-        android:textStyle="italic"
-        android:layout_below="@id/title"
-        android:layout_toEndOf="@id/spacer"
-        android:layout_toRightOf="@id/spacer"
-        tools:text="8 hours"/>
+            android:id="@+id/time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:singleLine="true"
+            android:layout_alignBaseline="@id/by"
+            android:layout_gravity="end"
+            android:textStyle="italic"
+            android:layout_below="@id/title"
+            android:layout_toEndOf="@id/spacer"
+            android:layout_toRightOf="@id/spacer"
+            tools:text="8 hours"
+            />
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_toEndOf="@id/time"
-        android:layout_toRightOf="@id/time"
-        android:text="@string/literal_ago"
-        android:textStyle="italic"
-        android:layout_alignBaseline="@id/by_prefix"
-        android:layout_height="wrap_content"
-        android:layout_toStartOf="@id/linearLayout"
-        android:layout_toLeftOf="@id/linearLayout"
-        />
+            android:layout_width="wrap_content"
+            android:layout_toEndOf="@id/time"
+            android:layout_toRightOf="@id/time"
+            android:text="@string/literal_ago"
+            android:textStyle="italic"
+            android:layout_alignBaseline="@id/by_prefix"
+            android:layout_height="wrap_content"
+            android:layout_toStartOf="@id/linearLayout"
+            android:layout_toLeftOf="@id/linearLayout"
+            />
 
 </RelativeLayout>

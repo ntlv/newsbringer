@@ -1,4 +1,4 @@
-package se.ntlv.newsbringer
+package se.ntlv.newsbringer.customviews
 
 import android.support.design.widget.CoordinatorLayout
 import android.support.design.widget.FloatingActionButton

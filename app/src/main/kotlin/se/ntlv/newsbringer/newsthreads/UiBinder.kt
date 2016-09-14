@@ -12,13 +12,13 @@ import org.jetbrains.anko.find
 import org.jetbrains.anko.toast
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
-import se.ntlv.newsbringer.database.TypedCursor
+import se.ntlv.newsbringer.database.Data
 import se.ntlv.newsbringer.network.RowItem.NewsThreadUiData
 
 interface NewsThreadsViewBinder {
     fun indicateDataLoading(isLoading: Boolean): Unit
 
-    fun presentData(data: TypedCursor<NewsThreadUiData>?)
+    fun presentData(data: Data<NewsThreadUiData>)
 
     fun showStatusMessage(@StringRes messageResource: Int)
 
@@ -46,7 +46,7 @@ class UiBinder(activity: NewsThreadsActivity,
         mRecyclerView.adapter = adapter
     }
 
-    override fun presentData(data: TypedCursor<NewsThreadUiData>?) = adapter.updateContent(data)
+    override fun presentData(data: Data<NewsThreadUiData>) = adapter.updateContent(data)
 
     override fun showStatusMessage(messageResource: Int) = mToaster.toast(messageResource)
 
@@ -72,7 +72,5 @@ class UiBinder(activity: NewsThreadsActivity,
             mSwipeView.isRefreshing = isLoading
         }
         refreshButtonManager.indicateLoading(isLoading)
-
     }
-
 }

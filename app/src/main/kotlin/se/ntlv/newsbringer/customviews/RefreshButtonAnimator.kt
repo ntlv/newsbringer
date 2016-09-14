@@ -9,10 +9,6 @@ class RefreshButtonAnimator(private val button: MenuItem, private val actionView
     private var mDeferredAnimation: () -> Unit = mDeferredAnimationDefault
     private var mIsRunningStartLoadingAnimation = false
 
-    init {
-        button.actionView = actionView
-    }
-
     private var mIsIndicatingLoading = false
 
     fun indicateLoading(isLoading: Boolean) {
