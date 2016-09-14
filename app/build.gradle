@@ -68,17 +68,11 @@ android {
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
-    signingConfigs {
-        releaseConfig {
-            keyAlias 'ycreader'
-            storeFile file('/Users/love/general-file-sync/jobbsaker_ekonomi/keys/ycreader.jks')
-        }
-    }
     compileSdkVersion 24
     buildToolsVersion '23.0.3'
     defaultConfig {
-        versionCode 10
-        versionName '0.10'
+        versionCode 11
+        versionName '0.11'
         minSdkVersion 18
         targetSdkVersion 24
     }

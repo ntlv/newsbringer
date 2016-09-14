@@ -53,11 +53,6 @@ class CommentsActivity : AppCompatActivity() {
         setSupportActionBar(find<Toolbar>(R.id.toolbar))
         supportActionBar!!.setDisplayHomeAsUpEnabled(true)
 
-        val unparceled = savedInstanceState?.getParcelableArray(dataTag)
-        if (Array<RowItem>::class.java.isInstance(unparceled)) {
-            Array<RowItem>::class.java.cast(unparceled)
-        }
-
         val target : Array<RowItem> = savedInstanceState.getParceledArray(dataTag)
 
         val base = target.asList()
