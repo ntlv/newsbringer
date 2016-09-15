@@ -12,13 +12,13 @@ import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.GenericRecyclerViewAdapter
 import se.ntlv.newsbringer.adapter.starify
 import se.ntlv.newsbringer.customviews.DateView
-import se.ntlv.newsbringer.database.Data
+import se.ntlv.newsbringer.database.DataFrontPage
 import se.ntlv.newsbringer.network.RowItem.NewsThreadUiData
 
 class NewsThreadAdapter(private val layout: Int,
                         private val clickListener: (ViewHolder) -> Unit,
                         private val longClickListener: (ViewHolder) -> Boolean,
-                        seed: Data<NewsThreadUiData>?) :
+                        seed: DataFrontPage?) :
         GenericRecyclerViewAdapter<NewsThreadUiData, NewsThreadAdapter.ViewHolder>(seed) {
 
     override fun onCreateViewHolder(parent: ViewGroup?, viewType: Int): ViewHolder? {
@@ -56,6 +56,10 @@ class NewsThreadAdapter(private val layout: Int,
             view.onClick { onClick(this) }
             view.onLongClick { onLongClick(this) }
         }
+    }
+
+    fun getConcreteData(): DataFrontPage? {
+        return data as? DataFrontPage
     }
 }
 

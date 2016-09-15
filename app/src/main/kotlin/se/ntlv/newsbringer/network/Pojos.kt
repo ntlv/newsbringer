@@ -4,6 +4,8 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.os.Parcel
 import android.os.Parcelable
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.info
 import se.ntlv.newsbringer.database.*
 import se.ntlv.newsbringer.database.Database.CommentsTable
 import se.ntlv.newsbringer.database.Database.PostTable
@@ -25,7 +27,7 @@ sealed class RowItem : ParcelableIdentifiable {
                            val text: String
     ) : RowItem() {
 
-        companion object {
+        companion object : AnkoLogger {
             @Suppress("unused")
             @JvmField
             val CREATOR: Parcelable.Creator<NewsThreadUiData> = object : Parcelable.Creator<NewsThreadUiData> {
@@ -34,6 +36,7 @@ sealed class RowItem : ParcelableIdentifiable {
                 }
 
                 override fun createFromParcel(source: Parcel): NewsThreadUiData {
+                    info("Creating from parcel")
                     return NewsThreadUiData(source)
                 }
             }
@@ -132,13 +135,16 @@ sealed class RowItem : ParcelableIdentifiable {
                         val ancestorCount: Int
     ) : RowItem() {
 
-        companion object {
+        companion object : AnkoLogger {
             @Suppress("unused")
             @JvmField
             val CREATOR = object : Parcelable.Creator<CommentUiData> {
                 override fun newArray(size: Int): Array<out CommentUiData?> = arrayOfNulls(size)
 
-                override fun createFromParcel(source: Parcel): CommentUiData = CommentUiData(source)
+                override fun createFromParcel(source: Parcel): CommentUiData {
+                    info("Creating from parcel")
+                    return CommentUiData(source)
+                }
 
             }
         }

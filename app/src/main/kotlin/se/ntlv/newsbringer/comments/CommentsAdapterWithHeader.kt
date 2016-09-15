@@ -20,6 +20,7 @@ import se.ntlv.newsbringer.adapter.GenericWithHeaderRecyclerViewAdapter
 import se.ntlv.newsbringer.adapter.starify
 import se.ntlv.newsbringer.customviews.DateView
 import se.ntlv.newsbringer.database.Data
+import se.ntlv.newsbringer.database.DataCommentsThread
 import se.ntlv.newsbringer.network.RowItem
 
 class CommentsAdapterWithHeader(seed: Data<RowItem>?, val commentNestingPaddingIncrement: Int, val headerClickListener: ((View?) -> Unit)?) :
@@ -136,6 +137,10 @@ class CommentsAdapterWithHeader(seed: Data<RowItem>?, val commentNestingPaddingI
         val score = root.find<TextView>(R.id.score)
         val commentCount = root.find<TextView>(R.id.comment_count)
         val text = root.find<TextView>(R.id.text)
+    }
+
+    fun getConcreteData(): DataCommentsThread? {
+        return data as? DataCommentsThread
     }
 }
 

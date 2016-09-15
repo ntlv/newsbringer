@@ -3,7 +3,6 @@ package se.ntlv.newsbringer.newsthreads
 import android.os.Bundle
 import android.support.v4.view.MenuItemCompat
 import android.support.v7.app.AppCompatActivity
-import android.support.v7.util.DiffUtil
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.SearchView
 import android.support.v7.widget.Toolbar
@@ -15,10 +14,8 @@ import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.application.YcReaderApplication
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
-import se.ntlv.newsbringer.database.Data
+import se.ntlv.newsbringer.database.DataFrontPage
 import se.ntlv.newsbringer.database.Database
-import se.ntlv.newsbringer.getParceledArray
-import se.ntlv.newsbringer.network.RowItem
 import javax.inject.Inject
 import kotlin.LazyThreadSafetyMode.NONE
 
@@ -43,14 +40,10 @@ class NewsThreadsActivity : AppCompatActivity(), AnkoLogger, SearchView.OnQueryT
         val onClick = { it: NewsThreadAdapter.ViewHolder -> mPresenter.onItemClick(it.id!!) }
         val onLongClick = { it: NewsThreadAdapter.ViewHolder -> mPresenter.onItemLongClick(it.id!!, it.isStarred!!); true }
 
-        val target : Array<RowItem.NewsThreadUiData> = savedInstanceState.getParceledArray(dataTag)
-
-        val base = target.asList()
-        val diff = DiffUtil.calculateDiff(DataDiffCallback(null, base))
-        val data = Data(base, diff)
+        val data: DataFrontPage? = savedInstanceState?.getParcelable<DataFrontPage>(dataTag)
 
         mAdapter = NewsThreadAdapter(R.layout.list_item_news_thread, onClick, onLongClick, data)
-        mPresenter = NewsThreadsPresenter(mUiBinder, Navigator(this), NewsThreadsInteractor(this, database, base))
+        mPresenter = NewsThreadsPresenter(mUiBinder, Navigator(this), NewsThreadsInteractor(this, database, data?.base))
         mAdapter.facilitator = mPresenter
 
         setSupportActionBar(find<Toolbar>(R.id.toolbar))
@@ -66,8 +59,8 @@ class NewsThreadsActivity : AppCompatActivity(), AnkoLogger, SearchView.OnQueryT
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        val data = mAdapter.data?.base
-        outState.putParcelableArray(dataTag, data?.toTypedArray())
+        val data = mAdapter.getConcreteData()
+        outState.putParcelable(dataTag, data)
     }
 
     override fun onStop() {

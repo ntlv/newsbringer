@@ -5,6 +5,7 @@ import android.support.v7.util.DiffUtil
 import rx.Observable
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.database.Data
+import se.ntlv.newsbringer.database.DataCommentsThread
 import se.ntlv.newsbringer.database.Database
 import se.ntlv.newsbringer.network.AsyncDataService
 import se.ntlv.newsbringer.network.RowItem
@@ -45,7 +46,7 @@ class CommentsInteractor(val context: Context,
 
             val diff = DiffUtil.calculateDiff(DataDiffCallback(old, new))
 
-            Data(new, diff)
+            DataCommentsThread(new, diff)
         })
     }
 

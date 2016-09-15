@@ -6,6 +6,7 @@ import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.info
 import rx.Observable
 import se.ntlv.newsbringer.database.Data
+import se.ntlv.newsbringer.database.DataFrontPage
 import se.ntlv.newsbringer.database.Database
 import se.ntlv.newsbringer.network.AsyncDataService
 import se.ntlv.newsbringer.network.RowItem
@@ -31,11 +32,11 @@ class NewsThreadsInteractor(val context: Context, val mDb: Database, seed: List<
                     val new = it
                     val diff = DiffUtil.calculateDiff(DataDiffCallback(old, new))
                     mPreviousData = new
-                    Data(it, diff)
+                    DataFrontPage(it, diff)
                 }
     }
 
-    fun toggleItemStarredState(itemId: Long, starredStatus : Int) = AsyncDataService.toggleStarred(context, itemId, starredStatus)
+    fun toggleItemStarredState(itemId: Long, starredStatus: Int) = AsyncDataService.toggleStarred(context, itemId, starredStatus)
 
     fun downloadMoreData(currentMaxItem: Int): Boolean {
         info("Download more data, $currentMaxItem")
