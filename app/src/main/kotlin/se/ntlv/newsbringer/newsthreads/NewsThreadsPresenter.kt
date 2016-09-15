@@ -1,24 +1,44 @@
 package se.ntlv.newsbringer.newsthreads
 
-import rx.Subscription
-import rx.android.schedulers.AndroidSchedulers.mainThread
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
-import se.ntlv.newsbringer.adapter.DataLoadingFacilitator
+import se.ntlv.newsbringer.thisShouldNeverHappen
 
 
 class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
                            val navigator: Navigator,
-                           val interactor: NewsThreadsInteractor) : DataLoadingFacilitator {
+                           val interactor: NewsThreadsInteractor) : AnkoLogger {
 
-    var subscription: Subscription? = null
-    var starredOnly = false
-    var filter = ""
+    private val nonChangingSubscriptions : CompositeSubscription
+
+    private var dataToBePresented: Subscription? = null
+    private var starredOnly = false
+    private var filter = ""
+
+    init {
+        val progress = viewBinder.observerPresentationProgress()
+                .filter { it.second > 0.9f }
+                .subscribe(
+                        {
+                            if (interactor.downloadMoreData(it.first)) {
+                                viewBinder.showStatusMessage(R.string.status_loading_more_data)
+                                viewBinder.indicateDataLoading(true)
+                            }
+                        },
+                        { thisShouldNeverHappen(it.message) },
+                        { info("OnComplete received") }
+                )
+
+        val refresh = viewBinder.observeRefreshEvents().subscribe {
+            refreshData()
+        }
+        nonChangingSubscriptions = CompositeSubscription(progress, refresh)
+    }
 
     fun onViewReady() {
         viewBinder.indicateDataLoading(true)
-        subscription?.unsubscribe()
-        subscription = interactor.loadData(starredOnly, filter).observeOn(mainThread()).subscribe {
+        dataToBePresented.unsubscribe()
+        dataToBePresented = interactor.loadData(starredOnly, filter).observeOn(mainThread()).subscribe {
             viewBinder.presentData(it)
             viewBinder.indicateDataLoading(false)
         }
@@ -30,27 +50,22 @@ class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
     }
 
     fun toggleShowOnlyStarred() {
-        viewBinder.toggleDynamicLoading()
         starredOnly = !starredOnly
         onViewReady()
     }
 
     fun onItemClick(itemId: Long): Unit = navigator.navigateToItemComments(itemId)
 
-    fun onItemLongClick(itemId: Long, starredStatus : Int) = interactor.toggleItemStarredState(itemId, starredStatus)
-
-    override fun onMoreDataNeeded(currentMaxItem: Int) {
-        if (interactor.downloadMoreData(currentMaxItem)) {
-            viewBinder.showStatusMessage(R.string.status_loading_more_data)
-            viewBinder.indicateDataLoading(true)
-        }
-    }
+    fun onItemLongClick(itemId: Long, starredStatus: Int) = interactor.toggleItemStarredState(itemId, starredStatus)
 
     fun filter(newText: String?) {
         filter = newText ?: ""
         onViewReady()
     }
 
-    fun destroy() = subscription?.unsubscribe()
+    fun destroy() {
+        dataToBePresented.unsubscribe()
+        nonChangingSubscriptions.unsubscribe()
+    }
 }
 

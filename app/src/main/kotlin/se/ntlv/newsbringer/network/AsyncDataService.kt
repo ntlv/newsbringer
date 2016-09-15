@@ -3,19 +3,10 @@ package se.ntlv.newsbringer.network
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import com.google.gson.Gson
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import okhttp3.ResponseBody
-import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.bundleOf
 import se.ntlv.newsbringer.application.YcReaderApplication
 import se.ntlv.newsbringer.database.Database
 import se.ntlv.newsbringer.thisShouldNeverHappen
-import java.io.IOException
 import java.io.Reader
-import javax.inject.Inject
 
 
 class AsyncDataService : MultithreadedIntentService(), AnkoLogger {
@@ -96,7 +87,7 @@ class AsyncDataService : MultithreadedIntentService(), AnkoLogger {
         database.insertNewsThreads(thread)
 
 
-        val work: MutableList<Pair<Long, Int>> = thread.kids?.map { it to 0 }?.toMutableList() ?: return
+        val work: MutableList<Pair<Long, Int>> = thread.kids?.map { it to 0 }.toMutableList()
 
         var commentOrdinal = 0
 
@@ -121,8 +112,8 @@ class AsyncDataService : MultithreadedIntentService(), AnkoLogger {
     }
 
     private fun handleFetchThreads(args: Bundle) {
-        val currentMax = args["max"] as Int
-        val doFullWipe = args["wipe"] as Boolean
+        val currentMax = args[ARG_MAX] as Int
+        val doFullWipe = args[ARG_WIPE] as Boolean
 
         if ((currentMax !in 0..490) and !doFullWipe) {
             throw IllegalArgumentException("Invalid range of current max")
@@ -182,9 +173,9 @@ class AsyncDataService : MultithreadedIntentService(), AnkoLogger {
             reader = body.charStream()
             return deserializer.fromJson<T>(reader, cls)
         } finally {
-            response?.close()
+            response.close()
             reader?.close()
-            body?.close()
+            body.close()
         }
     }
 }

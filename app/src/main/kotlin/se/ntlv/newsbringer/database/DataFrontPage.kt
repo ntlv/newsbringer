@@ -2,9 +2,6 @@ package se.ntlv.newsbringer.database
 
 import android.os.Parcel
 import android.os.Parcelable
-import android.support.v7.util.DiffUtil
-import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.info
 import se.ntlv.newsbringer.network.RowItem
 import se.ntlv.newsbringer.newsthreads.DataDiffCallback
 
@@ -13,7 +10,7 @@ class DataFrontPage(base: List<RowItem.NewsThreadUiData>, diff: DiffUtil.DiffRes
     companion object : AnkoLogger {
 
         @Suppress("unused")
-        @JvmStatic
+        @JvmField
         val CREATOR = object : Parcelable.Creator<DataFrontPage> {
             override fun newArray(size: Int): Array<DataFrontPage?> = arrayOfNulls(size)
 

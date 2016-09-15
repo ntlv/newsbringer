@@ -3,10 +3,6 @@ package se.ntlv.newsbringer.network
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
-import android.support.annotation.WorkerThread
-import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.debug
-import org.jetbrains.anko.info
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -25,7 +21,7 @@ abstract class MultithreadedIntentService() : Service(), AnkoLogger {
             pool.submit {
                 debug { "BEGINNING: ${intent.action}, ${intent.extras.get("id") ?: "No id"}" }
                 onBeginJob(intent)
-                info("DONE: ${intent.action}, ${intent.extras.get("id") ?: "No id"}")
+                debug {"DONE: ${intent.action}, ${intent.extras.get("id") ?: "No id"}"}
                 val localCount = count.decrementAndGet()
                 if (localCount == 0) {
                     debug { "STOPPING" }

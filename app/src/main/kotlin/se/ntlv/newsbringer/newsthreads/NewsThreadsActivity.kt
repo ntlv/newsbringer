@@ -1,35 +1,26 @@
 package se.ntlv.newsbringer.newsthreads
 
 import android.os.Bundle
-import android.support.v4.view.MenuItemCompat
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.SearchView
-import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.ImageView
-import org.jetbrains.anko.*
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.application.YcReaderApplication
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
 import se.ntlv.newsbringer.database.DataFrontPage
 import se.ntlv.newsbringer.database.Database
-import javax.inject.Inject
-import kotlin.LazyThreadSafetyMode.NONE
 
 
 class NewsThreadsActivity : AppCompatActivity(), AnkoLogger, SearchView.OnQueryTextListener {
 
+    val dataTag = "NewsThreadActivity.data"
+
     @Inject lateinit var database: Database
 
     private lateinit var mAdapter: NewsThreadAdapter
-    private lateinit var mPresenter : NewsThreadsPresenter
-
-    private val mUiBinder: UiBinder by lazy(NONE) {
-        UiBinder(this, { mPresenter.refreshData() }, LinearLayoutManager(this), mAdapter)
-    }
+    private lateinit var mPresenter: NewsThreadsPresenter
+    private lateinit var mUiBinder: UiBinder
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,9 +33,9 @@ class NewsThreadsActivity : AppCompatActivity(), AnkoLogger, SearchView.OnQueryT
 
         val data: DataFrontPage? = savedInstanceState?.getParcelable<DataFrontPage>(dataTag)
 
-        mAdapter = NewsThreadAdapter(R.layout.list_item_news_thread, onClick, onLongClick, data)
+        mAdapter = NewsThreadAdapter(onClick, onLongClick, data)
+        mUiBinder = UiBinder(this, LinearLayoutManager(this), mAdapter)
         mPresenter = NewsThreadsPresenter(mUiBinder, Navigator(this), NewsThreadsInteractor(this, database, data?.base))
-        mAdapter.facilitator = mPresenter
 
         setSupportActionBar(find<Toolbar>(R.id.toolbar))
         title = getString(R.string.frontpage)
@@ -54,8 +45,6 @@ class NewsThreadsActivity : AppCompatActivity(), AnkoLogger, SearchView.OnQueryT
         super.onStart()
         mUiBinder.start()
     }
-
-    val dataTag = "NewsThreadActivity.data"
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
@@ -70,6 +59,8 @@ class NewsThreadsActivity : AppCompatActivity(), AnkoLogger, SearchView.OnQueryT
 
     override fun onDestroy() {
         super.onDestroy()
+        mAdapter.destroy()
+        mUiBinder.destroy()
         mPresenter.destroy()
     }
 

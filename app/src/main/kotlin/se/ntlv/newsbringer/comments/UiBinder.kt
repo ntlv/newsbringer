@@ -1,58 +1,39 @@
 package se.ntlv.newsbringer.comments
 
-import android.app.Activity
-import android.support.design.widget.AppBarLayout
-import android.support.design.widget.FloatingActionButton
-import android.support.v4.widget.SwipeRefreshLayout
-import android.support.v7.widget.LinearLayoutManager
-import android.support.v7.widget.RecyclerView
-import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.find
-import org.jetbrains.anko.onClick
-import org.jetbrains.anko.onLongClick
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.starify
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
-import se.ntlv.newsbringer.customviews.applyAppBarLayoutDependency
 import se.ntlv.newsbringer.database.Data
 import se.ntlv.newsbringer.network.RowItem
+import se.ntlv.newsbringer.newsthreads.completeAllAndVerify
 
 interface CommentsViewBinder {
     fun indicateDataLoading(isLoading: Boolean): Unit
 
     fun updateContent(data: Data<RowItem>)
+
+    fun observeRefreshEvents(): Observable<Any>
 }
 
-class UiBinder : AppBarLayout.OnOffsetChangedListener, AnkoLogger, CommentsViewBinder {
+class UiBinder(private val mActivity: CommentsActivity,
+               private val mManager: LinearLayoutManager,
+               private val mAdapter: CommentsAdapterWithHeader) : AppBarLayout.OnOffsetChangedListener, AnkoLogger, CommentsViewBinder {
 
-    private val mHost: Activity
-    private val mAppBar: AppBarLayout
-    private val mSwipeView: SwipeRefreshLayout
-    private val mManager: LinearLayoutManager
-    private val mAdapter: CommentsAdapterWithHeader
+    private val mRefreshListeners: MutableList<Subscriber<in Any>> = mutableListOf()
+    private val mAppBar: AppBarLayout = mActivity.find<AppBarLayout>(R.id.appbar)
+    private val mSwipeView: SwipeRefreshLayout = mActivity.find<SwipeRefreshLayout>(R.id.swipe_view)
 
     lateinit var refreshButtonManager: RefreshButtonAnimator
 
-    constructor(activity: CommentsActivity,
-                refreshListener: () -> Unit,
-                manager: LinearLayoutManager,
-                adapter: CommentsAdapterWithHeader) {
-
-
-        mHost = activity
-        mAppBar = activity.find<AppBarLayout>(R.id.appbar)
-        mManager = manager
-        mAdapter = adapter
-
-        mSwipeView = activity.find<SwipeRefreshLayout>(R.id.swipe_view)
-        mSwipeView.setOnRefreshListener(refreshListener)
+    init {
+        mSwipeView.setOnRefreshListener { mRefreshListeners.forEach { it.onNext(0) } }
         mSwipeView.setColorSchemeResources(R.color.accent_color)
 
-        val recyclerView = activity.find<RecyclerView>(R.id.recycler_view)
-        recyclerView.layoutManager = manager
-        recyclerView.adapter = adapter
+        val recyclerView = mActivity.find<RecyclerView>(R.id.recycler_view)
+        recyclerView.layoutManager = mManager
+        recyclerView.adapter = mAdapter
 
-        val fab = activity.find<FloatingActionButton>(R.id.fab)
+        val fab = mActivity.find<FloatingActionButton>(R.id.fab)
         fab.applyAppBarLayoutDependency()
 
         fab.onClick { navigateByScrolling(Direction.DOWN) }
@@ -92,20 +73,20 @@ class UiBinder : AppBarLayout.OnOffsetChangedListener, AnkoLogger, CommentsViewB
         refreshButtonManager.indicateLoading(isLoading)
     }
 
+    override fun observeRefreshEvents(): Observable<Any> =
+            Observable.create<Any> { mRefreshListeners.add(it) }.onBackpressureLatest()
+
     override fun updateContent(data: Data<RowItem>) {
         val maybeHeader = data[0]
         if (maybeHeader is RowItem.NewsThreadUiData) {
-            mHost.title = maybeHeader.title.starify(maybeHeader.isStarred)
+            mActivity.title = maybeHeader.title.starify(maybeHeader.isStarred)
         }
         mAdapter.updateContent(data)
     }
 
-    fun start() {
-        mAppBar.addOnOffsetChangedListener(this)
-    }
+    fun start() = mAppBar.addOnOffsetChangedListener(this)
 
+    fun stop() = mAppBar.removeOnOffsetChangedListener(this)
 
-    fun stop() {
-        mAppBar.removeOnOffsetChangedListener(this)
-    }
+    fun destroy() = completeAllAndVerify(mRefreshListeners)
 }

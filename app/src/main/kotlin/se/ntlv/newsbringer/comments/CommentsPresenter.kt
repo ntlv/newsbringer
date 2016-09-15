@@ -1,16 +1,19 @@
 package se.ntlv.newsbringer.comments
 
-import rx.Subscription
-import rx.android.schedulers.AndroidSchedulers.mainThread
-
 class CommentsPresenter(val viewBinder: CommentsViewBinder, val interactor: CommentsInteractor) {
+
+    private val refreshObserver: Subscription
 
     private var dataNeedsLoading = true
     private var subscription: Subscription? = null
 
+    init {
+        refreshObserver = viewBinder.observeRefreshEvents().subscribe { refreshData() }
+    }
+
     fun onViewReady() {
         viewBinder.indicateDataLoading(true)
-        subscription?.unsubscribe()
+        subscription.unsubscribe()
         subscription = interactor.loadData().observeOn(mainThread()).subscribe {
             viewBinder.indicateDataLoading(false)
             viewBinder.updateContent(it)
@@ -34,5 +37,8 @@ class CommentsPresenter(val viewBinder: CommentsViewBinder, val interactor: Comm
 
     fun addToStarred() = interactor.addToStarred()
 
-    fun destroy() = subscription?.unsubscribe()
+    fun destroy() {
+        subscription.unsubscribe()
+        refreshObserver.unsubscribe()
+    }
 }
