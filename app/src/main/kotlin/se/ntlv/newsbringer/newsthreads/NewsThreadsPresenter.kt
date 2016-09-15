@@ -1,5 +1,10 @@
 package se.ntlv.newsbringer.newsthreads
 
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.info
+import rx.Subscription
+import rx.android.schedulers.AndroidSchedulers.mainThread
+import rx.subscriptions.CompositeSubscription
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.thisShouldNeverHappen
@@ -9,7 +14,7 @@ class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
                            val navigator: Navigator,
                            val interactor: NewsThreadsInteractor) : AnkoLogger {
 
-    private val nonChangingSubscriptions : CompositeSubscription
+    private val nonChangingSubscriptions: CompositeSubscription
 
     private var dataToBePresented: Subscription? = null
     private var starredOnly = false
@@ -37,7 +42,7 @@ class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
 
     fun onViewReady() {
         viewBinder.indicateDataLoading(true)
-        dataToBePresented.unsubscribe()
+        dataToBePresented?.unsubscribe()
         dataToBePresented = interactor.loadData(starredOnly, filter).observeOn(mainThread()).subscribe {
             viewBinder.presentData(it)
             viewBinder.indicateDataLoading(false)
@@ -64,7 +69,7 @@ class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
     }
 
     fun destroy() {
-        dataToBePresented.unsubscribe()
+        dataToBePresented?.unsubscribe()
         nonChangingSubscriptions.unsubscribe()
     }
 }

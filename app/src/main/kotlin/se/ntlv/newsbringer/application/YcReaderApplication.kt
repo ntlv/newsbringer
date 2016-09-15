@@ -4,6 +4,8 @@ import android.app.Application
 import android.content.pm.PackageManager.GET_META_DATA
 import android.os.Build
 import android.os.StrictMode
+import com.crashlytics.android.Crashlytics
+import io.fabric.sdk.android.Fabric
 import se.ntlv.newsbringer.BuildConfig
 import se.ntlv.newsbringer.comments.CommentsActivity
 

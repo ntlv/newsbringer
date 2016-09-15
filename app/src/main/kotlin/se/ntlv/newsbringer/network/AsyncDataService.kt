@@ -3,10 +3,19 @@ package se.ntlv.newsbringer.network
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import com.google.gson.Gson
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import okhttp3.ResponseBody
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.bundleOf
 import se.ntlv.newsbringer.application.YcReaderApplication
 import se.ntlv.newsbringer.database.Database
 import se.ntlv.newsbringer.thisShouldNeverHappen
+import java.io.IOException
 import java.io.Reader
+import javax.inject.Inject
 
 
 class AsyncDataService : MultithreadedIntentService(), AnkoLogger {
@@ -18,7 +27,7 @@ class AsyncDataService : MultithreadedIntentService(), AnkoLogger {
                 currentMax < 500 && startService(context, Action.FETCH_THREADS, ARG_MAX to currentMax, ARG_WIPE to doFullWipe)
 
 
-        fun toggleStarred(context: Context, id: Long, currentStarredStatus : Int) =
+        fun toggleStarred(context: Context, id: Long, currentStarredStatus: Int) =
                 startService(context, Action.TOGGLE_STARRED, ARG_ID to id, ARG_IS_STARRED to currentStarredStatus)
 
         private fun startService(context: Context, action: Action, vararg args: Pair<String, Any>): Boolean {
@@ -87,7 +96,7 @@ class AsyncDataService : MultithreadedIntentService(), AnkoLogger {
         database.insertNewsThreads(thread)
 
 
-        val work: MutableList<Pair<Long, Int>> = thread.kids?.map { it to 0 }.toMutableList()
+        val work: MutableList<Pair<Long, Int>> = thread.kids?.map { it to 0 }?.toMutableList() ?: mutableListOf()
 
         var commentOrdinal = 0
 
@@ -173,9 +182,9 @@ class AsyncDataService : MultithreadedIntentService(), AnkoLogger {
             reader = body.charStream()
             return deserializer.fromJson<T>(reader, cls)
         } finally {
-            response.close()
+            response?.close()
             reader?.close()
-            body.close()
+            body?.close()
         }
     }
 }

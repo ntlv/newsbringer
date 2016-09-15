@@ -1,6 +1,7 @@
 package se.ntlv.newsbringer.comments
 
 import android.os.Build
+import android.support.v7.widget.RecyclerView.ViewHolder
 import android.text.Html
 import android.text.SpannableStringBuilder
 import android.text.Spanned
@@ -11,6 +12,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.browse
+import org.jetbrains.anko.find
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.GenericRecyclerViewAdapter
 import se.ntlv.newsbringer.adapter.starify

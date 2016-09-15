@@ -3,6 +3,9 @@ package se.ntlv.newsbringer.network
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import android.support.annotation.WorkerThread
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.debug
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 

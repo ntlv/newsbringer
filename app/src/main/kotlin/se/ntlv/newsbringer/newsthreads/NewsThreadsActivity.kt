@@ -1,15 +1,22 @@
 package se.ntlv.newsbringer.newsthreads
 
 import android.os.Bundle
+import android.support.v4.view.MenuItemCompat
+import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.SearchView
+import android.support.v7.widget.Toolbar
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.ImageView
+import org.jetbrains.anko.*
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.application.YcReaderApplication
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
 import se.ntlv.newsbringer.database.DataFrontPage
 import se.ntlv.newsbringer.database.Database
+import javax.inject.Inject
 
 
 class NewsThreadsActivity : AppCompatActivity(), AnkoLogger, SearchView.OnQueryTextListener {

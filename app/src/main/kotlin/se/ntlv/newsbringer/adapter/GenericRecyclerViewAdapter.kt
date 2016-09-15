@@ -1,5 +1,7 @@
 package se.ntlv.newsbringer.adapter
 
+import android.support.v7.widget.RecyclerView
+import org.jetbrains.anko.AnkoLogger
 import se.ntlv.newsbringer.database.Data
 import se.ntlv.newsbringer.database.ParcelableIdentifiable
 

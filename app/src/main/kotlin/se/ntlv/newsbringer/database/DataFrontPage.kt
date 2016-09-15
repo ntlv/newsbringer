@@ -2,6 +2,9 @@ package se.ntlv.newsbringer.database
 
 import android.os.Parcel
 import android.os.Parcelable
+import android.support.v7.util.DiffUtil
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.info
 import se.ntlv.newsbringer.network.RowItem
 import se.ntlv.newsbringer.newsthreads.DataDiffCallback
 

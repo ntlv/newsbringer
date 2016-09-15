@@ -1,17 +1,23 @@
 package se.ntlv.newsbringer.comments
 
 import android.os.Bundle
+import android.support.v7.app.AppCompatActivity
+import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.Toolbar
 import android.util.TypedValue.COMPLEX_UNIT_DIP
 import android.util.TypedValue.applyDimension
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.ImageView
+import org.jetbrains.anko.*
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.application.YcReaderApplication
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
 import se.ntlv.newsbringer.database.DataCommentsThread
 import se.ntlv.newsbringer.database.Database
+import javax.inject.Inject
+import kotlin.LazyThreadSafetyMode.NONE
 
 class CommentsActivity : AppCompatActivity() {
 
@@ -19,7 +25,7 @@ class CommentsActivity : AppCompatActivity() {
 
     private lateinit var mAdapter: CommentsAdapterWithHeader
     private lateinit var mPresenter: CommentsPresenter
-    private lateinit var mUiBinder : UiBinder
+    private lateinit var mUiBinder: UiBinder
 
     val dataTag = "CommentsActivity.data"
 

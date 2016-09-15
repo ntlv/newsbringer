@@ -1,9 +1,15 @@
 package se.ntlv.newsbringer.newsthreads
 
+import android.support.v7.widget.RecyclerView
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import org.jetbrains.anko.find
+import org.jetbrains.anko.onClick
+import org.jetbrains.anko.onLongClick
+import rx.Observable
+import rx.Subscriber
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.GenericRecyclerViewAdapter
 import se.ntlv.newsbringer.adapter.starify

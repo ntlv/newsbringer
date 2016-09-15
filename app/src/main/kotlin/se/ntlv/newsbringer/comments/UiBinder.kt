@@ -1,8 +1,20 @@
 package se.ntlv.newsbringer.comments
 
+import android.support.design.widget.AppBarLayout
+import android.support.design.widget.FloatingActionButton
+import android.support.v4.widget.SwipeRefreshLayout
+import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.find
+import org.jetbrains.anko.onClick
+import org.jetbrains.anko.onLongClick
+import rx.Observable
+import rx.Subscriber
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.starify
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
+import se.ntlv.newsbringer.customviews.applyAppBarLayoutDependency
 import se.ntlv.newsbringer.database.Data
 import se.ntlv.newsbringer.network.RowItem
 import se.ntlv.newsbringer.newsthreads.completeAllAndVerify

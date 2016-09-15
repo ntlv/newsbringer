@@ -1,7 +1,17 @@
 package se.ntlv.newsbringer.newsthreads
 
 import android.content.Context
+import android.support.annotation.StringRes
+import android.support.design.widget.AppBarLayout
+import android.support.design.widget.FloatingActionButton
+import android.support.v4.widget.SwipeRefreshLayout
+import android.support.v7.widget.RecyclerView
 import android.view.View
+import org.jetbrains.anko.AnkoLogger
+import org.jetbrains.anko.find
+import org.jetbrains.anko.toast
+import rx.Observable
+import rx.Subscriber
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
 import se.ntlv.newsbringer.database.Data
