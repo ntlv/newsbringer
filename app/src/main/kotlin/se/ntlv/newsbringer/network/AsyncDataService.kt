@@ -10,6 +10,7 @@ import okhttp3.Response
 import okhttp3.ResponseBody
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.bundleOf
+import org.jetbrains.anko.info
 import se.ntlv.newsbringer.application.YcReaderApplication
 import se.ntlv.newsbringer.database.Database
 import se.ntlv.newsbringer.thisShouldNeverHappen
@@ -19,30 +20,35 @@ import javax.inject.Inject
 
 
 class AsyncDataService : MultithreadedIntentService(), AnkoLogger {
-    companion object {
+    companion object : AnkoLogger {
         fun fetchPostAndCommentsAsync(context: Context, id: Long) =
                 startService(context, Action.FETCH_COMMENTS, ARG_ID to id)
 
-        fun fetchThreads(context: Context, currentMax: Int, doFullWipe: Boolean): Boolean =
-                currentMax < 500 && startService(context, Action.FETCH_THREADS, ARG_MAX to currentMax, ARG_WIPE to doFullWipe)
+        fun requestFetchThread(context: Context, ordinalRange : IntRange) =
+                ordinalRange.last <= 500 &&
+                        ordinalRange.map {
+                            startService(context, Action.FETCH_THREADS, ARG_ORDINAL to it)
+                        }.any { it }
+
+        fun requestFullWipe(context: Context) = startService(context, Action.FULL_WIPE)
 
 
-        fun toggleStarred(context: Context, id: Long, currentStarredStatus: Int) =
+        fun requestToggleStarred(context: Context, id: Long, currentStarredStatus: Int) =
                 startService(context, Action.TOGGLE_STARRED, ARG_ID to id, ARG_IS_STARRED to currentStarredStatus)
 
         private fun startService(context: Context, action: Action, vararg args: Pair<String, Any>): Boolean {
+            info("Starting service for $action(${args.joinToString()})")
             val i = Intent(context, AsyncDataService::class.java).setAction(action.name).putExtras(bundleOf(*args))
             return null != context.startService(i)
         }
 
         private val ARG_ID = "id"
-        private val ARG_MAX = "max"
-        private val ARG_WIPE = "wipe"
+        private val ARG_ORDINAL = "ordinal"
         private val ARG_IS_STARRED = "is_starred"
     }
 
     private enum class Action {
-        FETCH_COMMENTS, TOGGLE_STARRED, FETCH_THREADS
+        FETCH_COMMENTS, TOGGLE_STARRED, FETCH_THREADS, FULL_WIPE
     }
 
     private fun String?.asAction(): Action? =
@@ -69,6 +75,7 @@ class AsyncDataService : MultithreadedIntentService(), AnkoLogger {
                 Action.FETCH_COMMENTS -> handleFetchComments(intent!!.extras)
                 Action.FETCH_THREADS -> handleFetchThreads(intent!!.extras)
                 Action.TOGGLE_STARRED -> handleToggleStarred(intent!!.extras)
+                Action.FULL_WIPE -> handleFullWipe()
                 else -> thisShouldNeverHappen()
             }
 
@@ -120,54 +127,49 @@ class AsyncDataService : MultithreadedIntentService(), AnkoLogger {
         }
     }
 
-    private fun handleFetchThreads(args: Bundle) {
-        val currentMax = args[ARG_MAX] as Int
-        val doFullWipe = args[ARG_WIPE] as Boolean
+    private fun handleFullWipe() {
+        val starredBeforeDelete = database.getFrontPage(starredOnly = true)
+                .mapToList { RowItem.NewsThreadUiData(it) }
+                .take(1)
+                .toBlocking()
+                .first()
 
-        if ((currentMax !in 0..490) and !doFullWipe) {
-            throw IllegalArgumentException("Invalid range of current max")
-        }
-        if (doFullWipe) {
+        val starredIds = starredBeforeDelete.map { it.id }
 
-            val starredBeforeDelete = database.getFrontPage(starredOnly = true)
-                    .mapToList { RowItem.NewsThreadUiData(it) }
-                    .take(1)
-                    .toBlocking()
-                    .first()
+        database.deleteFrontPage()
 
-            val starredIds = starredBeforeDelete.map { it.id }
+        val ids = okHttp.get(TOP_FIVE_HUNDRED, Array<Long>::class.java, gson)
+        val emptyNewsThreads = ids.withIndex()
+                .filter { it.value !in starredIds }
+                .map {
+                    val i = NewsThread(it.value)
+                    i.starred = 0
+                    i.ordinal = it.index
+                    i
+                }
 
-            database.deleteFrontPage()
-
-            val ids = okHttp.get(TOP_FIVE_HUNDRED, Array<Long>::class.java, gson)
-            val emptyNewsThreads = ids.withIndex()
-                    .filter { it.value !in starredIds }
-                    .map {
-                        val i = NewsThread(it.value)
-                        i.starred = 0
-                        i.ordinal = it.index
-                        i
-                    }
-
-            val starredItems = starredBeforeDelete.map {
-                val itemUrl = "$ITEM_URI${it.id}$URI_SUFFIX"
-                val item = okHttp.get(itemUrl, NewsThread::class.java, gson)
-                item.starred = 1
-                item.ordinal = it.ordinal
-                item
-            }
-            val insertThis = (starredItems + emptyNewsThreads).toTypedArray()
-
-            database.insertNewsThreads(*insertThis)
-        }
-
-        val empties = database.getEmptyThreads(10).mapToList { RowItem.NewsThreadUiData(it) }.toBlocking().first()
-        check(empties.size <= 10)
-        empties.forEach {
-            val item = okHttp.get("$ITEM_URI${it.id}$URI_SUFFIX", NewsThread::class.java, gson)
+        val starredItems = starredBeforeDelete.map {
+            val itemUrl = "$ITEM_URI${it.id}$URI_SUFFIX"
+            val item = okHttp.get(itemUrl, NewsThread::class.java, gson)
+            item.starred = 1
             item.ordinal = it.ordinal
-            database.insertNewsThreads(item)
+            item
         }
+        val insertThis = (starredItems + emptyNewsThreads).toTypedArray()
+
+        database.insertNewsThreads(*insertThis)
+
+        requestFetchThread(this, 0..0)
+    }
+
+    private fun handleFetchThreads(args: Bundle) {
+        val ordinal = args[ARG_ORDINAL] as Int
+
+        val id = database.getIdForOrdinalSync(ordinal)
+
+        val item = okHttp.get("$ITEM_URI$id$URI_SUFFIX", NewsThread::class.java, gson)
+        item.ordinal = ordinal
+        database.insertNewsThreads(item)
     }
 
     fun <T> OkHttpClient.get(url: String, cls: Class<T>, deserializer: Gson): T {

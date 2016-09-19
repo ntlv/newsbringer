@@ -1,13 +1,10 @@
 package se.ntlv.newsbringer.newsthreads
 
 import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.info
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers.mainThread
 import rx.subscriptions.CompositeSubscription
 import se.ntlv.newsbringer.Navigator
-import se.ntlv.newsbringer.R
-import se.ntlv.newsbringer.thisShouldNeverHappen
 
 
 class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
@@ -22,20 +19,16 @@ class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
 
     init {
         val progress = viewBinder.observerPresentationProgress()
-                .filter { it.second > 0.9f }
-                .subscribe(
-                        {
-                            if (interactor.downloadMoreData(it.first)) {
-                                viewBinder.showStatusMessage(R.string.status_loading_more_data)
-                                viewBinder.indicateDataLoading(true)
-                            }
-                        },
-                        { thisShouldNeverHappen(it.message) },
-                        { info("OnComplete received") }
-                )
+                .subscribe {
+                    val (willLoad, message) = interactor.downloadItemNumber(it.index)
+                    if (willLoad) {
+                        viewBinder.showStatusMessage("Loading rows $message")
+                        viewBinder.indicateDataLoading(true)
+                    }
+                }
 
         val refresh = viewBinder.observeRefreshEvents().subscribe {
-            refreshData()
+            refreshFrontPage()
         }
         nonChangingSubscriptions = CompositeSubscription(progress, refresh)
     }
@@ -49,9 +42,9 @@ class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
         }
     }
 
-    fun refreshData() {
+    fun refreshFrontPage() {
         viewBinder.indicateDataLoading(true)
-        interactor.downloadData()
+        interactor.refreshFrontPage()
     }
 
     fun toggleShowOnlyStarred() {

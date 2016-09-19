@@ -18,6 +18,7 @@ import se.ntlv.newsbringer.customviews.applyAppBarLayoutDependency
 import se.ntlv.newsbringer.database.Data
 import se.ntlv.newsbringer.network.RowItem
 import se.ntlv.newsbringer.newsthreads.completeAllAndVerify
+import java.nio.BufferOverflowException
 
 interface CommentsViewBinder {
     fun indicateDataLoading(isLoading: Boolean): Unit
@@ -86,7 +87,7 @@ class UiBinder(private val mActivity: CommentsActivity,
     }
 
     override fun observeRefreshEvents(): Observable<Any> =
-            Observable.create<Any> { mRefreshListeners.add(it) }.onBackpressureLatest()
+            Observable.create<Any> { mRefreshListeners.add(it) }.onBackpressureBuffer(10, { throw BufferOverflowException() })
 
     override fun updateContent(data: Data<RowItem>) {
         val maybeHeader = data[0]

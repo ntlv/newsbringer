@@ -91,7 +91,7 @@ class NewsThreadsActivity : AppCompatActivity(), AnkoLogger, SearchView.OnQueryT
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         when (item?.itemId) {
-            R.id.refresh -> mPresenter.refreshData()
+            R.id.refresh -> mPresenter.refreshFrontPage()
             R.id.toggle_show_starred_only -> mPresenter.toggleShowOnlyStarred()
             else -> return super.onOptionsItemSelected(item)
         }

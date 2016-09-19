@@ -38,8 +38,7 @@ class Database : AnkoLogger {
         val COLUMN_DESCENDANTS: String = "descendants"
 
         //Database creation SQL statement
-        val DATABASE_CREATE = createTable(
-                TABLE_NAME,
+        val DATABASE_CREATE = createTable(TABLE_NAME,
                 COLUMN_ID int primaryKey,
                 COLUMN_SCORE int nullAllowed,
                 COLUMN_TIMESTAMP int nullAllowed,
@@ -73,19 +72,18 @@ class Database : AnkoLogger {
         val COLUMN_PARENT_COMMENT: String = "parent_comment"
         val COLUMN_ANCESTOR_COUNT: String = "ancestor_count"
 
-        val DATABASE_CREATE =
-                createTable(TABLE_NAME,
-                        COLUMN_ID int primaryKey,
-                        COLUMN_TIME int notNull,
-                        COLUMN_BY text notNull,
-                        COLUMN_PARENT int cascadeDelete(PostTable.TABLE_NAME, PostTable.COLUMN_ID),
-                        COLUMN_PARENT_COMMENT int cascadeDelete(CommentsTable.TABLE_NAME, CommentsTable.COLUMN_ID),
-                        COLUMN_ANCESTOR_COUNT int defaultZero,
-                        COLUMN_KIDS text notNull,
-                        COLUMN_TEXT text notNull,
-                        COLUMN_TYPE text notNull,
-                        COLUMN_ORDINAL real notNull
-                )
+        val DATABASE_CREATE = createTable(TABLE_NAME,
+                COLUMN_ID int primaryKey,
+                COLUMN_TIME int notNull,
+                COLUMN_BY text notNull,
+                COLUMN_PARENT int cascadeDelete(PostTable.TABLE_NAME, PostTable.COLUMN_ID),
+                COLUMN_PARENT_COMMENT int cascadeDelete(CommentsTable.TABLE_NAME, CommentsTable.COLUMN_ID),
+                COLUMN_ANCESTOR_COUNT int defaultZero,
+                COLUMN_KIDS text notNull,
+                COLUMN_TEXT text notNull,
+                COLUMN_TYPE text notNull,
+                COLUMN_ORDINAL real notNull
+        )
     }
 
 
@@ -150,14 +148,6 @@ class Database : AnkoLogger {
         transaction.end()
     }
 
-    fun getEmptyThreads(maxRows: Int = -1): QueryObservable {
-        val select = "SELECT * FROM ${PostTable.TABLE_NAME}"
-        val where = "WHERE ${PostTable.COLUMN_TITLE} is null or ${PostTable.COLUMN_TITLE} = '' and ${PostTable.COLUMN_STARRED}=0"
-        val limit = if (maxRows > 0) "LIMIT $maxRows" else ""
-        val orderBy = "ORDER BY ${PostTable.COLUMN_ORDINAL} ASC"
-        return mDb.createQuery(PostTable.TABLE_NAME, "$select $where $orderBy $limit")
-    }
-
     fun getPostById(id: Long): QueryObservable {
         val select = "SELECT * FROM ${PostTable.TABLE_NAME}"
         val where = "WHERE ${PostTable.COLUMN_ID} = $id"
@@ -174,12 +164,11 @@ class Database : AnkoLogger {
     fun getPostByIdSync(id: Long): RowItem.NewsThreadUiData {
         val select = "SELECT * FROM ${PostTable.TABLE_NAME}"
         val where = "WHERE ${PostTable.COLUMN_ID} = $id"
-        val row = mDb.query("$select $where")
-        row.moveToPositionOrThrow(0)
-        check(row.count == 1)
-        val parsedRow = RowItem.NewsThreadUiData(row)
-        row.close()
-        return parsedRow
+        val cursor = mDb.query("$select $where")
+        val parsedRow = cursor.map { RowItem.NewsThreadUiData(cursor) }
+        check(parsedRow.size == 1)
+        cursor.close()
+        return parsedRow.first()
     }
 
     fun deleteFrontPage() {
@@ -197,6 +186,16 @@ class Database : AnkoLogger {
         if (updated != 1) {
             throw RuntimeException("Updated $updated rows ")
         }
+    }
+
+    fun getIdForOrdinalSync(ordinal: Int): Long {
+        val select = "SELECT ${PostTable.COLUMN_ID},${PostTable.COLUMN_ORDINAL} FROM ${PostTable.TABLE_NAME}"
+        val where = "WHERE ${PostTable.COLUMN_ORDINAL} = $ordinal"
+        val cursor = mDb.query("$select $where")
+        val parsedRow = cursor.map { it.getLong(0) }
+        check(parsedRow.size == 1)
+        cursor.close()
+        return parsedRow.first()
     }
 
 

@@ -31,7 +31,7 @@ class CommentsInteractor(val context: Context,
                     shareCommentsInternal = { navigator.goToShareLink(model.title, "https://news.ycombinator.com/item?id=$newsThreadId") }
                     shareStoryInternal = { navigator.goToShareLink(model.title, model.url) }
                     goToLinkInternal = { navigator.goToLink(model.url) }
-                    addToStarredInternal = { AsyncDataService.toggleStarred(context, model.id, model.isStarred)}
+                    addToStarredInternal = { AsyncDataService.requestToggleStarred(context, model.id, model.isStarred)}
                     model
                 }
         val comments = database.getCommentsForPost(newsThreadId)

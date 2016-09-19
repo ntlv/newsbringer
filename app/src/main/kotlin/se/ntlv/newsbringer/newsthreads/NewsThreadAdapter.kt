@@ -16,6 +16,9 @@ import se.ntlv.newsbringer.adapter.starify
 import se.ntlv.newsbringer.customviews.DateView
 import se.ntlv.newsbringer.database.DataFrontPage
 import se.ntlv.newsbringer.network.RowItem.NewsThreadUiData
+import java.nio.BufferOverflowException
+
+data class ProgressReport(val index: Int, val totalCount: Int)
 
 class NewsThreadAdapter : GenericRecyclerViewAdapter<NewsThreadUiData, NewsThreadAdapter.ViewHolder> {
 
@@ -23,7 +26,7 @@ class NewsThreadAdapter : GenericRecyclerViewAdapter<NewsThreadUiData, NewsThrea
     private val mClickListener: (ViewHolder) -> Unit
     private val mLongClickListener: (ViewHolder) -> Boolean
 
-    private val mObservers: MutableList<Subscriber<in Pair<Int, Float>>> = mutableListOf()
+    private val mObservers: MutableList<Subscriber<in ProgressReport>> = mutableListOf()
 
     constructor(clickListener: (ViewHolder) -> Unit,
                 longClickListener: (ViewHolder) -> Boolean,
@@ -41,18 +44,16 @@ class NewsThreadAdapter : GenericRecyclerViewAdapter<NewsThreadUiData, NewsThrea
 
     override fun onBindViewHolder(viewHolder: NewsThreadAdapter.ViewHolder, position: Int) {
         val item = data!![position]
-        val fraction = position.toFloat() / itemCount
-        mObservers.forEach {
-            if (!it.isUnsubscribed) {
-                it.onNext(itemCount to fraction)
-            } else {
-                mObservers.remove(it)
-            }
-        }
+        val progress = ProgressReport(position, itemCount)
+
+        mObservers.inPlaceFilteringForEach({ !it.isUnsubscribed }, { it.onNext(progress) })
+
         viewHolder.bind(item, mClickListener, mLongClickListener)
     }
 
-    fun observe(): Observable<Pair<Int, Float>> = Observable.create<Pair<Int, Float>> { mObservers.add(it) }.onBackpressureLatest()
+    fun observeRenderProgress(): Observable<ProgressReport> =
+            Observable.create<ProgressReport> { mObservers.add(it) }
+                    .onBackpressureBuffer(10, { throw BufferOverflowException() })
 
     fun getConcreteData(): DataFrontPage? = data as? DataFrontPage
 
@@ -87,4 +88,14 @@ class NewsThreadAdapter : GenericRecyclerViewAdapter<NewsThreadUiData, NewsThrea
     fun destroy() = completeAllAndVerify(mObservers)
 }
 
-
+inline fun <T> MutableList<T>.inPlaceFilteringForEach(crossinline predicate: (T) -> Boolean, crossinline apply: (T) -> Unit) {
+    val mutator = listIterator()
+    while (mutator.hasNext()) {
+        val item = mutator.next()
+        if (predicate(item)) {
+            apply(item)
+        } else {
+            mutator.remove()
+        }
+    }
+}

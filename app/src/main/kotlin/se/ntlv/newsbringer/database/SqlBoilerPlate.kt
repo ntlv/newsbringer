@@ -1,9 +1,7 @@
 package se.ntlv.newsbringer.database
 
-import android.content.ContentResolver
 import android.content.ContentValues
 import android.database.Cursor
-import android.net.Uri
 
 fun createTable(name: String, vararg fields: String) = "create table $name(${fields.joinToString()});"
 
@@ -18,48 +16,20 @@ val notNull = "not null"
 val defaultZero = "default 0"
 val primaryKey = "primary key"
 
-fun ContentResolver.query(uri: Uri, projection: Array<out String>, selection: String, selArgs: Array<out String>): Cursor {
-    return this.query(uri, projection, selection, selArgs, null)
-}
-
-fun ContentResolver.query(uri: Uri, projection: Array<out String>, selection: String): Cursor =
-        query(uri, projection, selection, null, null)
-
 fun Cursor.getStringByName(columnName: String): String = getString(getColumnIndexOrThrow(columnName)) ?: throw NullPointerException("$columnName on row $position was null")
 
 fun Cursor.getLongByName(columnName: String): Long = getLong(getColumnIndexOrThrow(columnName))
 fun Cursor.getIntByName(columnName: String): Int = getInt(getColumnIndexOrThrow(columnName))
 
-val Cursor?.hasContent: Boolean
-    get() = (this?.count ?: 0) > 0
-
-fun <T> ContentResolver.getRowById(uri: Uri, projection: Array<String>, id: Long, f: (Cursor) -> T): T {
-    val cursor = query(uri, projection, "_id=$id")
-    cursor.moveToPositionOrThrow(0)
-    val ret = f(cursor)
-    cursor.close()
-    return ret
-}
-
-fun ContentResolver.updateRowById(uri: Uri, id: Long, cv: ContentValues) {
-    update(uri, cv, "_id=?", arrayOf(id.toString()))
-}
-
-fun <T> Cursor?.toList(extractor: ((Cursor) -> T)): List<T> {
-    if (this == null || hasContent.not()) return emptyList()
-    moveToPositionOrThrow(0)
-    val listInProgress = mutableListOf<T>()
-    do {
-        val value = extractor(this)
-        listInProgress.add(value)
-    } while (moveToNext())
-    return emptyList<T>().plus(listInProgress)
-}
-
-fun Cursor.moveToPositionOrThrow(pos: Int) {
-    if (this.isClosed || moveToPosition(pos).not()) {
-        val extra = if (this.isClosed) ", probably because it is closed." else "."
-        throw IndexOutOfBoundsException("Can't move $this with ${this.count} elements to position $pos$extra")
+fun <T> Cursor.map(transform: (Cursor) -> T): List<T> {
+    if (isClosed) {
+        throw IllegalAccessException("Cannot map on closed cursor.")
+    }
+    return (0..count - 1).map {
+        if (!moveToPosition(it)) {
+            throw IndexOutOfBoundsException("Cannot move to $it with $count items.")
+        }
+        transform(this)
     }
 }
 

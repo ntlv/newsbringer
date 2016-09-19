@@ -1,15 +1,13 @@
 package se.ntlv.newsbringer.newsthreads
 
-import android.content.Context
-import android.support.annotation.StringRes
 import android.support.design.widget.AppBarLayout
 import android.support.design.widget.FloatingActionButton
+import android.support.design.widget.Snackbar
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.RecyclerView
 import android.view.View
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.find
-import org.jetbrains.anko.toast
 import rx.Observable
 import rx.Subscriber
 import se.ntlv.newsbringer.R
@@ -17,15 +15,16 @@ import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
 import se.ntlv.newsbringer.database.Data
 import se.ntlv.newsbringer.network.RowItem.NewsThreadUiData
 import se.ntlv.newsbringer.thisShouldNeverHappen
+import java.nio.BufferOverflowException
 
 interface NewsThreadsViewBinder {
     fun indicateDataLoading(isLoading: Boolean): Unit
 
     fun presentData(data: Data<NewsThreadUiData>)
 
-    fun showStatusMessage(@StringRes messageResource: Int)
+    fun showStatusMessage(message: String)
 
-    fun observerPresentationProgress(): Observable<Pair<Int, Float>>
+    fun observerPresentationProgress(): Observable<ProgressReport>
 
     fun observeRefreshEvents(): Observable<Any>
 }
@@ -39,7 +38,6 @@ class UiBinder(activity: NewsThreadsActivity,
     private val mAppBar = activity.find<AppBarLayout>(R.id.appbar)
     private val mSwipeView = activity.find<SwipeRefreshLayout>(R.id.swipe_view)
     private val mRecyclerView = activity.find<RecyclerView>(R.id.recycler_view)
-    private val mToaster: Context = activity
 
     lateinit var refreshButtonManager: RefreshButtonAnimator
 
@@ -53,16 +51,16 @@ class UiBinder(activity: NewsThreadsActivity,
 
     override fun presentData(data: Data<NewsThreadUiData>) = adapter.updateContent(data)
 
-    override fun showStatusMessage(messageResource: Int) = mToaster.toast(messageResource)
+    override fun showStatusMessage(message: String) = Snackbar.make(mAppBar, message, Snackbar.LENGTH_SHORT).show()
 
     override fun onOffsetChanged(appBarLayout: AppBarLayout?, verticalOffset: Int) {
         mSwipeView.isEnabled = 0.equals(verticalOffset)
     }
 
-    override fun observerPresentationProgress() = adapter.observe()
+    override fun observerPresentationProgress() = adapter.observeRenderProgress()
 
     override fun observeRefreshEvents(): Observable<Any> =
-            Observable.create<Any> { mRefreshListeners.add(it) }.onBackpressureLatest()
+            Observable.create<Any> { mRefreshListeners.add(it) }.onBackpressureBuffer(10, { throw BufferOverflowException() })
 
     fun start() {
         mAppBar.addOnOffsetChangedListener(this)
