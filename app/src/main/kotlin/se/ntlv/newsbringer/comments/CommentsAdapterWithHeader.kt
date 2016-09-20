@@ -102,7 +102,7 @@ class CommentsAdapterWithHeader(seed: Data<RowItem>?,
 
             colorView.setBackgroundResource(color[ancestorCount.mod(color.size)])
 
-            by.text = "${data.position} - ${data.by}"
+            by.text = "${data.ordinal} - ${data.by}"
             time.text = data.time.toString()
             text.html = if (!data.text.isNullOrEmpty()) data.text else "[Removed]"
             id = data.id

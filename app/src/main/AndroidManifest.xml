@@ -50,7 +50,8 @@
         </activity>
 
         <service
-            android:name=".network.AsyncDataService"
+            android:name=".network.IoService"
+            android:label="@string/io_service_label"
             android:exported="false"/>
     </application>
 

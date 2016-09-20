@@ -7,7 +7,7 @@ import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.database.Data
 import se.ntlv.newsbringer.database.DataCommentsThread
 import se.ntlv.newsbringer.database.Database
-import se.ntlv.newsbringer.network.AsyncDataService
+import se.ntlv.newsbringer.network.IoService
 import se.ntlv.newsbringer.network.RowItem
 import se.ntlv.newsbringer.newsthreads.DataDiffCallback
 
@@ -31,7 +31,7 @@ class CommentsInteractor(val context: Context,
                     shareCommentsInternal = { navigator.goToShareLink(model.title, "https://news.ycombinator.com/item?id=$newsThreadId") }
                     shareStoryInternal = { navigator.goToShareLink(model.title, model.url) }
                     goToLinkInternal = { navigator.goToLink(model.url) }
-                    addToStarredInternal = { AsyncDataService.requestToggleStarred(context, model.id, model.isStarred)}
+                    addToStarredInternal = { IoService.requestToggleStarred(context, model.id, model.isStarred)}
                     model
                 }
         val comments = database.getCommentsForPost(newsThreadId)
@@ -50,7 +50,7 @@ class CommentsInteractor(val context: Context,
         })
     }
 
-    fun refreshComments() = AsyncDataService.fetchPostAndCommentsAsync(context, newsThreadId)
+    fun refreshComments() = IoService.requestFetchPostAndComments(context, newsThreadId)
 
 
     fun goToLink() = goToLinkInternal()

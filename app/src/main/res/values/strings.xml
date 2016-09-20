@@ -30,5 +30,6 @@
     <string name="toggle_show_starred_only">Starred</string>
     <string name="search_title">Search</string>
     <string name="toggle_starred">Toggle starred</string>
+    <string name="io_service_label">IO Service</string>
 
 </resources>

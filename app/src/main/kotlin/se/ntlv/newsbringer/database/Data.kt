@@ -8,6 +8,10 @@ interface IndexAccessible<out T> {
     operator fun get(position: Int): T
 }
 
+interface Orderable {
+    val ordinal : Int
+}
+
 interface Identifiable {
     val id: Long
 }

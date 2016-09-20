@@ -12,7 +12,7 @@ import se.ntlv.newsbringer.database.Database.PostTable
 import java.util.*
 
 
-sealed class RowItem : ParcelableIdentifiable {
+sealed class RowItem : ParcelableIdentifiable, Orderable {
 
     class NewsThreadUiData(val isStarred: Int,
                            val title: String,
@@ -23,7 +23,7 @@ sealed class RowItem : ParcelableIdentifiable {
                            override val id: Long,
                            val children: String,
                            val descendants: Long,
-                           val ordinal: Int,
+                           override val ordinal: Int,
                            val text: String
     ) : RowItem() {
 
@@ -125,8 +125,7 @@ sealed class RowItem : ParcelableIdentifiable {
         }
     }
 
-
-    class CommentUiData(val position: Int,
+    class CommentUiData(override val ordinal: Int,
                         val time: Long,
                         override val id: Long,
                         val by: String,
@@ -150,7 +149,7 @@ sealed class RowItem : ParcelableIdentifiable {
         }
 
         override fun writeToParcel(dest: Parcel, flags: Int) {
-            dest.writeInt(position)
+            dest.writeInt(ordinal)
             dest.writeLong(time)
             dest.writeLong(id)
             dest.writeString(by)
@@ -187,7 +186,7 @@ sealed class RowItem : ParcelableIdentifiable {
 
             other as CommentUiData
 
-            if (position != other.position) return false
+            if (ordinal != other.ordinal) return false
             if (time != other.time) return false
             if (id != other.id) return false
             if (by != other.by) return false
@@ -199,7 +198,7 @@ sealed class RowItem : ParcelableIdentifiable {
         }
 
         override fun hashCode(): Int {
-            var result = position
+            var result = ordinal
             result = 31 * result + time.hashCode()
             result = 31 * result + id.hashCode()
             result = 31 * result + by.hashCode()
@@ -214,23 +213,9 @@ sealed class RowItem : ParcelableIdentifiable {
 
 class NewsThread {
 
-    constructor(itemId: Long) {
-        id = itemId
-    }
-
-    constructor(newTitle: String, newStatus: Int, row: RowItem.NewsThreadUiData) {
-        id = row.id
-        ordinal = row.ordinal
-        score = row.score
-        time = row.time
-        by = row.by
-        title = newTitle
-        kids = if (row.children.isNullOrBlank()) emptyArray() else row.children.split(',').map(String::toLong).toTypedArray()
-        text = row.text
-        type = ""
-        url = row.url
-        descendants = row.descendants
-        starred = newStatus
+    constructor(id : Long, ordinal : Int) {
+        this.id = id
+        this.ordinal = ordinal
     }
 
     var score: Int = 0

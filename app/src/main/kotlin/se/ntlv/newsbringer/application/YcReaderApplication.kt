@@ -6,11 +6,15 @@ import android.os.Build
 import android.os.StrictMode
 import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
+import org.jetbrains.anko.AnkoLogger
+import rx.plugins.RxJavaPlugins
+import rx.plugins.RxJavaSchedulersHook
+import rx.schedulers.Schedulers
 import se.ntlv.newsbringer.BuildConfig
 import se.ntlv.newsbringer.comments.CommentsActivity
 
 
-class YcReaderApplication : Application() {
+class YcReaderApplication : Application(), AnkoLogger {
 
     companion object {
         private lateinit var graph: ApplicationComponent
@@ -53,6 +57,9 @@ class YcReaderApplication : Application() {
             StrictMode.setVmPolicy(builder.build())
         }
         graph = ApplicationComponent.init(ApplicationModule(this))
+        RxJavaPlugins.getInstance().registerSchedulersHook(object : RxJavaSchedulersHook() {
+            override fun getIOScheduler() = Schedulers.from(graph.ioPool())
+        })
     }
 }
 
