@@ -23,7 +23,7 @@
                 android:background="@android:color/background_light"
                 android:scrollbars="vertical"
                 app:layout_behavior="@string/appbar_scrolling_view_behavior"
-                tools:listitem="@layout/list_item_comment"
+                tools:listitem="@layout/comment_item"
                 />
 
     </android.support.v4.widget.SwipeRefreshLayout>

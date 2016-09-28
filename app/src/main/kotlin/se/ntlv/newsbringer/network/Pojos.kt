@@ -4,15 +4,27 @@ import android.content.ContentValues
 import android.database.Cursor
 import android.os.Parcel
 import android.os.Parcelable
+import android.view.View
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.info
+import se.ntlv.newsbringer.adapter.BindingViewHolder
 import se.ntlv.newsbringer.database.*
 import se.ntlv.newsbringer.database.Database.CommentsTable
 import se.ntlv.newsbringer.database.Database.PostTable
 import java.util.*
 
+abstract class ViewModel {
+    abstract fun type(factory: TypesFactory): Int
+}
 
-sealed class RowItem : ParcelableIdentifiable, Orderable {
+interface TypesFactory {
+    fun type(row: RowItem.CommentUiData): Int
+    fun type(header: RowItem.NewsThreadUiData): Int
+
+    fun holder(type: Int, view: View): BindingViewHolder<*>
+}
+
+sealed class RowItem : ViewModel(), ParcelableIdentifiable {
 
     class NewsThreadUiData(val isStarred: Int,
                            val title: String,
@@ -23,9 +35,10 @@ sealed class RowItem : ParcelableIdentifiable, Orderable {
                            override val id: Long,
                            val children: String,
                            val descendants: Long,
-                           override val ordinal: Int,
+                           val ordinal: Int,
                            val text: String
     ) : RowItem() {
+        override fun type(factory: TypesFactory): Int = factory.type(this)
 
         companion object : AnkoLogger {
             @Suppress("unused")
@@ -125,7 +138,7 @@ sealed class RowItem : ParcelableIdentifiable, Orderable {
         }
     }
 
-    class CommentUiData(override val ordinal: Int,
+    class CommentUiData(val ordinal: Int,
                         val time: Long,
                         override val id: Long,
                         val by: String,
@@ -133,6 +146,7 @@ sealed class RowItem : ParcelableIdentifiable, Orderable {
                         val text: String,
                         val ancestorCount: Int
     ) : RowItem() {
+        override fun type(factory: TypesFactory) = factory.type(this)
 
         companion object : AnkoLogger {
             @Suppress("unused")
@@ -213,7 +227,7 @@ sealed class RowItem : ParcelableIdentifiable, Orderable {
 
 class NewsThread {
 
-    constructor(id : Long, ordinal : Int) {
+    constructor(id: Long, ordinal: Int) {
         this.id = id
         this.ordinal = ordinal
     }
@@ -255,8 +269,6 @@ class NewsThread {
         return cv
     }
 }
-
-fun Boolean.toInt() = if (this) 1 else 0
 
 class Comment {
     var parent: Long = 0

@@ -20,7 +20,7 @@ class CommentsPresenter(val viewBinder: CommentsViewBinder, val interactor: Comm
         subscription = interactor.loadData().observeOn(mainThread()).subscribe {
             viewBinder.indicateDataLoading(false)
             viewBinder.updateContent(it)
-            if (it.count <= 1 && dataNeedsLoading) {
+            if (it.size <= 1 && dataNeedsLoading) {
                 refreshData()
             }
             dataNeedsLoading = false

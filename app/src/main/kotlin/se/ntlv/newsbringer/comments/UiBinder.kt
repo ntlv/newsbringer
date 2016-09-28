@@ -13,9 +13,10 @@ import rx.Observable
 import rx.Subscriber
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.starify
+import se.ntlv.newsbringer.customviews.OnePixelSeparator
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
 import se.ntlv.newsbringer.customviews.applyAppBarLayoutDependency
-import se.ntlv.newsbringer.database.Data
+import se.ntlv.newsbringer.database.AdapterModelCollection
 import se.ntlv.newsbringer.network.RowItem
 import se.ntlv.newsbringer.newsthreads.completeAllAndVerify
 import java.nio.BufferOverflowException
@@ -23,7 +24,7 @@ import java.nio.BufferOverflowException
 interface CommentsViewBinder {
     fun indicateDataLoading(isLoading: Boolean): Unit
 
-    fun updateContent(data: Data<RowItem>)
+    fun updateContent(data: AdapterModelCollection<RowItem>)
 
     fun observeRefreshEvents(): Observable<Any>
 }
@@ -45,6 +46,7 @@ class UiBinder(private val mActivity: CommentsActivity,
         val recyclerView = mActivity.find<RecyclerView>(R.id.recycler_view)
         recyclerView.layoutManager = mManager
         recyclerView.adapter = mAdapter
+        recyclerView.addItemDecoration(OnePixelSeparator(mActivity.getColor(android.R.color.tertiary_text_dark)))
 
         val fab = mActivity.find<FloatingActionButton>(R.id.fab)
         fab.applyAppBarLayoutDependency()
@@ -56,11 +58,11 @@ class UiBinder(private val mActivity: CommentsActivity,
     private enum class Direction {
         UP {
             override fun start(manager: LinearLayoutManager) = manager.findFirstVisibleItemPosition()
-            override val mover: (Int) -> Int = { it.dec() }
+            override val mover: (Int) -> Int = Int::dec
         },
         DOWN {
             override fun start(manager: LinearLayoutManager) = manager.findLastVisibleItemPosition()
-            override val mover: (Int) -> Int = { it.inc() }
+            override val mover: (Int) -> Int = Int::inc
         };
 
         abstract fun start(manager: LinearLayoutManager): Int
@@ -76,7 +78,7 @@ class UiBinder(private val mActivity: CommentsActivity,
     }
 
     override fun onOffsetChanged(appBarLayout: AppBarLayout?, verticalOffset: Int) {
-        mSwipeView.isEnabled = 0.equals(verticalOffset)
+        mSwipeView.isEnabled = 0 == verticalOffset
     }
 
     override fun indicateDataLoading(isLoading: Boolean) {
@@ -89,12 +91,12 @@ class UiBinder(private val mActivity: CommentsActivity,
     override fun observeRefreshEvents(): Observable<Any> =
             Observable.create<Any> { mRefreshListeners.add(it) }.onBackpressureBuffer(10, { throw BufferOverflowException() })
 
-    override fun updateContent(data: Data<RowItem>) {
+    override fun updateContent(data: AdapterModelCollection<RowItem>) {
         val maybeHeader = data[0]
         if (maybeHeader is RowItem.NewsThreadUiData) {
             mActivity.title = maybeHeader.title.starify(maybeHeader.isStarred)
         }
-        mAdapter.updateContent(data)
+        mAdapter.data = data
     }
 
     fun start() = mAppBar.addOnOffsetChangedListener(this)

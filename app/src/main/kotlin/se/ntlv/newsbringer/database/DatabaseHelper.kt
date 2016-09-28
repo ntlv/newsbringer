@@ -2,6 +2,7 @@ package se.ntlv.newsbringer.database
 
 import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.squareup.sqlbrite.BriteDatabase
@@ -164,11 +165,16 @@ class Database : AnkoLogger {
     fun getPostByIdSync(id: Long): RowItem.NewsThreadUiData {
         val select = "SELECT * FROM ${PostTable.TABLE_NAME}"
         val where = "WHERE ${PostTable.COLUMN_ID} = $id"
-        val cursor = mDb.query("$select $where")
-        val parsedRow = cursor.map { RowItem.NewsThreadUiData(cursor) }
-        check(parsedRow.size == 1)
-        cursor.close()
-        return parsedRow.first()
+        var cursor: Cursor? = null
+        try {
+            cursor = mDb.query("$select $where")
+            if (!cursor.moveToPosition(0)) {
+                throw IllegalStateException()
+            }
+            return RowItem.NewsThreadUiData(cursor)
+        } finally {
+            cursor?.close()
+        }
     }
 
     fun deleteFrontPage() {
@@ -191,12 +197,16 @@ class Database : AnkoLogger {
     fun getIdForOrdinalSync(ordinal: Int): Long {
         val select = "SELECT ${PostTable.COLUMN_ID},${PostTable.COLUMN_ORDINAL} FROM ${PostTable.TABLE_NAME}"
         val where = "WHERE ${PostTable.COLUMN_ORDINAL} = $ordinal"
-        val cursor = mDb.query("$select $where")
-        val parsedRow = cursor.map { it.getLong(0) }
-        check(parsedRow.size == 1)
-        cursor.close()
-        return parsedRow.first()
+        var cursor: Cursor? = null
+        try {
+            cursor = mDb.query("$select $where")
+            if (!cursor.moveToPosition(0)) {
+                throw IllegalStateException()
+            }
+            val id = cursor.getLong(0)
+            return id
+        } finally {
+            cursor?.close()
+        }
     }
-
-
 }

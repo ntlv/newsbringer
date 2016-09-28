@@ -4,9 +4,10 @@ import android.content.Context
 import android.support.v7.util.DiffUtil
 import org.jetbrains.anko.AnkoLogger
 import rx.Observable
-import se.ntlv.newsbringer.database.Data
+import se.ntlv.newsbringer.customviews.DataDiffCallback
 import se.ntlv.newsbringer.database.DataFrontPage
 import se.ntlv.newsbringer.database.Database
+import se.ntlv.newsbringer.database.AdapterModelCollection
 import se.ntlv.newsbringer.network.IoService
 import se.ntlv.newsbringer.network.RowItem
 import java.util.concurrent.atomic.AtomicInteger
@@ -30,7 +31,7 @@ class NewsThreadsInteractor(val context: Context,
 
     private var mPreviousData: List<RowItem.NewsThreadUiData>? = seed
 
-    fun loadData(starredOnly: Boolean, filter: String): Observable<Data<RowItem.NewsThreadUiData>> {
+    fun loadData(starredOnly: Boolean, filter: String): Observable<AdapterModelCollection<RowItem.NewsThreadUiData>> {
         return mDb.getFrontPage(starredOnly, filter)
                 .mapToList { RowItem.NewsThreadUiData(it) }
                 .map {

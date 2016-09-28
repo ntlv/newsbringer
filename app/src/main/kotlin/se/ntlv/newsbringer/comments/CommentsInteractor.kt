@@ -4,12 +4,12 @@ import android.content.Context
 import android.support.v7.util.DiffUtil
 import rx.Observable
 import se.ntlv.newsbringer.Navigator
-import se.ntlv.newsbringer.database.Data
+import se.ntlv.newsbringer.customviews.DataDiffCallback
+import se.ntlv.newsbringer.database.AdapterModelCollection
 import se.ntlv.newsbringer.database.DataCommentsThread
 import se.ntlv.newsbringer.database.Database
 import se.ntlv.newsbringer.network.IoService
 import se.ntlv.newsbringer.network.RowItem
-import se.ntlv.newsbringer.newsthreads.DataDiffCallback
 
 class CommentsInteractor(val context: Context,
                          val database: Database,
@@ -24,7 +24,7 @@ class CommentsInteractor(val context: Context,
     private var addToStarredInternal: (() -> Unit) = { throw IllegalStateException("Attempting to toggle starred before initialization") }
 
 
-    fun loadData(): Observable<Data<RowItem>> {
+    fun loadData(): Observable<AdapterModelCollection<RowItem>> {
         val header = database.getPostById(newsThreadId)
                 .mapToOne {
                     val model = RowItem.NewsThreadUiData(it)

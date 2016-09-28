@@ -1,17 +1,10 @@
 package se.ntlv.newsbringer
 
 import android.app.Activity
-import android.content.Context
 import org.jetbrains.anko.browse
 import org.jetbrains.anko.share
 
-class Navigator {
-
-    val mContext: Context
-
-    constructor(context: Activity) {
-        mContext = context
-    }
+class Navigator(private val mContext : Activity) {
 
     fun navigateToItemComments(id: Long) {
         val res = goToLink("https://news.ycombinator.com/item?id=$id")

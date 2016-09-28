@@ -6,9 +6,14 @@ import android.support.v7.util.DiffUtil
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.info
 import se.ntlv.newsbringer.network.RowItem
-import se.ntlv.newsbringer.newsthreads.DataDiffCallback
+import se.ntlv.newsbringer.customviews.DataDiffCallback
 
-class DataFrontPage(base: List<RowItem.NewsThreadUiData>, diff: DiffUtil.DiffResult) : Data<RowItem.NewsThreadUiData>(base, diff), Parcelable {
+class DataFrontPage(internal val base: List<RowItem.NewsThreadUiData>,
+                    override val diff: DiffUtil.DiffResult) : AdapterModelCollection<RowItem.NewsThreadUiData> {
+
+    override fun get(position: Int) = base[position]
+
+    override val size = base.size
 
     companion object : AnkoLogger {
 
@@ -24,7 +29,6 @@ class DataFrontPage(base: List<RowItem.NewsThreadUiData>, diff: DiffUtil.DiffRes
                 val diff = DiffUtil.calculateDiff(DataDiffCallback(null, base))
                 return DataFrontPage(base, diff)
             }
-
         }
     }
 

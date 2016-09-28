@@ -21,7 +21,7 @@ import javax.inject.Inject
 
 class NewsThreadsActivity : AppCompatActivity(), AnkoLogger, SearchView.OnQueryTextListener {
 
-    val dataTag = "NewsThreadActivity.data"
+    private val dataTag = "NewsThreadActivity.data"
 
     @Inject lateinit var database: Database
 
@@ -35,8 +35,8 @@ class NewsThreadsActivity : AppCompatActivity(), AnkoLogger, SearchView.OnQueryT
 
         setContentView(R.layout.activity_linear_vertical_content)
 
-        val onClick = { it: NewsThreadAdapter.ViewHolder -> mPresenter.onItemClick(it.id!!) }
-        val onLongClick = { it: NewsThreadAdapter.ViewHolder -> mPresenter.onItemLongClick(it.id!!, it.isStarred!!); true }
+        val onClick = { it: FrontpageHolder -> mPresenter.onItemClick(it.id!!) }
+        val onLongClick = { it: FrontpageHolder -> mPresenter.onItemLongClick(it.id!!, it.isStarred!!); true }
 
         val data: DataFrontPage? = savedInstanceState?.getParcelable<DataFrontPage>(dataTag)
 
@@ -55,8 +55,7 @@ class NewsThreadsActivity : AppCompatActivity(), AnkoLogger, SearchView.OnQueryT
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        val data = mAdapter.getConcreteData()
-        outState.putParcelable(dataTag, data)
+        outState.putParcelable(dataTag, mAdapter.data)
     }
 
     override fun onStop() {

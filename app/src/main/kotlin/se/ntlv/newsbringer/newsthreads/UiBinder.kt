@@ -11,8 +11,9 @@ import org.jetbrains.anko.find
 import rx.Observable
 import rx.Subscriber
 import se.ntlv.newsbringer.R
+import se.ntlv.newsbringer.customviews.OnePixelSeparator
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
-import se.ntlv.newsbringer.database.Data
+import se.ntlv.newsbringer.database.AdapterModelCollection
 import se.ntlv.newsbringer.network.RowItem.NewsThreadUiData
 import se.ntlv.newsbringer.thisShouldNeverHappen
 import java.nio.BufferOverflowException
@@ -20,7 +21,7 @@ import java.nio.BufferOverflowException
 interface NewsThreadsViewBinder {
     fun indicateDataLoading(isLoading: Boolean): Unit
 
-    fun presentData(data: Data<NewsThreadUiData>)
+    fun presentData(data: AdapterModelCollection<NewsThreadUiData>)
 
     fun showStatusMessage(message: String)
 
@@ -45,16 +46,21 @@ class UiBinder(activity: NewsThreadsActivity,
         activity.find<FloatingActionButton>(R.id.fab).visibility = View.GONE
         mSwipeView.setOnRefreshListener { mRefreshListeners.forEach { it.onNext(0) } }
         mSwipeView.setColorSchemeResources(R.color.accent_color)
+        mRecyclerView.setHasFixedSize(false)
         mRecyclerView.layoutManager = manager
+        manager.isAutoMeasureEnabled = true
         mRecyclerView.adapter = adapter
+        mRecyclerView.addItemDecoration(OnePixelSeparator(activity.getColor(android.R.color.tertiary_text_dark)))
     }
 
-    override fun presentData(data: Data<NewsThreadUiData>) = adapter.updateContent(data)
+    override fun presentData(data: AdapterModelCollection<NewsThreadUiData>) {
+        adapter.data = data
+    }
 
     override fun showStatusMessage(message: String) = Snackbar.make(mAppBar, message, Snackbar.LENGTH_SHORT).show()
 
     override fun onOffsetChanged(appBarLayout: AppBarLayout?, verticalOffset: Int) {
-        mSwipeView.isEnabled = 0.equals(verticalOffset)
+        mSwipeView.isEnabled = 0 == verticalOffset
     }
 
     override fun observerPresentationProgress() = adapter.observeRenderProgress()

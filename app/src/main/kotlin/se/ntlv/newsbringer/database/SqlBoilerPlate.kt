@@ -21,18 +21,6 @@ fun Cursor.getStringByName(columnName: String): String = getString(getColumnInde
 fun Cursor.getLongByName(columnName: String): Long = getLong(getColumnIndexOrThrow(columnName))
 fun Cursor.getIntByName(columnName: String): Int = getInt(getColumnIndexOrThrow(columnName))
 
-fun <T> Cursor.map(transform: (Cursor) -> T): List<T> {
-    if (isClosed) {
-        throw IllegalAccessException("Cannot map on closed cursor.")
-    }
-    return (0..count - 1).map {
-        if (!moveToPosition(it)) {
-            throw IndexOutOfBoundsException("Cannot move to $it with $count items.")
-        }
-        transform(this)
-    }
-}
-
 fun contentValuesOf(vararg pairs: Pair<String, Any>): ContentValues {
     val cv = ContentValues(pairs.size)
     pairs.forEach {

@@ -16,6 +16,7 @@ import se.ntlv.newsbringer.application.YcReaderApplication
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
 import se.ntlv.newsbringer.database.DataCommentsThread
 import se.ntlv.newsbringer.database.Database
+import se.ntlv.newsbringer.thisShouldNeverHappen
 import javax.inject.Inject
 import kotlin.LazyThreadSafetyMode.NONE
 
@@ -27,8 +28,7 @@ class CommentsActivity : AppCompatActivity() {
     private lateinit var mPresenter: CommentsPresenter
     private lateinit var mUiBinder: UiBinder
 
-    val dataTag = "CommentsActivity.data"
-
+    private val dataTag = "CommentsActivity.data"
 
     private val mItemId by lazy(NONE) { intent.data.getQueryParameter("id")!!.toLong() }
 
@@ -36,8 +36,8 @@ class CommentsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        if ((-1L).equals(mItemId)) {
-            throw IllegalArgumentException()
+        if (-1L == mItemId) {
+            thisShouldNeverHappen()
         }
         YcReaderApplication.applicationComponent().inject(this)
 
@@ -48,11 +48,12 @@ class CommentsActivity : AppCompatActivity() {
 
         val data = savedInstanceState?.getParcelable<DataCommentsThread>(dataTag)
 
+        val navigator = Navigator(this)
         val padding = applyDimension(COMPLEX_UNIT_DIP, 4f, displayMetrics).toInt()
-        mAdapter = CommentsAdapterWithHeader(data, padding, { mPresenter.onHeaderClick() })
+        mAdapter = CommentsAdapterWithHeader(data, padding, { mPresenter.onHeaderClick() }, navigator)
 
         mUiBinder = UiBinder(this, LinearLayoutManager(this), mAdapter)
-        val interactor = CommentsInteractor(this, database, mItemId, Navigator(this), data?.base)
+        val interactor = CommentsInteractor(this, database, mItemId, navigator, data?.base)
         mPresenter = CommentsPresenter(mUiBinder, interactor)
 
     }
@@ -69,8 +70,7 @@ class CommentsActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
-        val data = mAdapter.getConcreteData()
-        outState.putParcelable(dataTag, data)
+        outState.putParcelable(dataTag, mAdapter.data)
     }
 
     override fun onDestroy() {

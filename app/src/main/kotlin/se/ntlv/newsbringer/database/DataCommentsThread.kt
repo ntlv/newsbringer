@@ -3,12 +3,16 @@ package se.ntlv.newsbringer.database
 import android.os.Parcel
 import android.os.Parcelable
 import android.support.v7.util.DiffUtil
+import android.support.v7.util.DiffUtil.DiffResult
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.info
 import se.ntlv.newsbringer.network.RowItem
-import se.ntlv.newsbringer.newsthreads.DataDiffCallback
+import se.ntlv.newsbringer.customviews.DataDiffCallback
 
-class DataCommentsThread(base: List<RowItem>, diff: DiffUtil.DiffResult) : Data<RowItem>(base, diff), Parcelable {
+class DataCommentsThread(internal val base: List<RowItem>, override val diff: DiffResult) : AdapterModelCollection<RowItem> {
+    override fun get(position: Int) = base[position]
+
+    override val size = base.size
 
     companion object : AnkoLogger {
 
@@ -24,7 +28,7 @@ class DataCommentsThread(base: List<RowItem>, diff: DiffUtil.DiffResult) : Data<
                 val comments: MutableList<RowItem.CommentUiData> = mutableListOf()
                 source.readTypedList(comments, RowItem.CommentUiData.CREATOR)
 
-                val base : MutableList<RowItem> = mutableListOf(header)
+                val base: MutableList<RowItem> = mutableListOf(header)
                 base.addAll(comments)
 
                 val diff = DiffUtil.calculateDiff(DataDiffCallback(null, base))

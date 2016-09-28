@@ -7,7 +7,7 @@ apply plugin: 'io.fabric'
 
 
 buildscript {
-    ext.kotlin_version = '1.0.4-eap-118'
+    ext.kotlin_version = '1.0.4'
     ext.JUNIT_VERSION = '4.12'
     ext.DAGGER_VERSION = '2.6'
     repositories {
@@ -33,6 +33,7 @@ dependencies {
     compile 'com.android.support:appcompat-v7:24.2.1'
     compile 'com.android.support:design:24.2.1'
     compile 'com.android.support:recyclerview-v7:24.2.1'
+    compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
     //kotlin
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     //http and serialization
