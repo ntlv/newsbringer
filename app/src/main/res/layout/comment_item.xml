@@ -12,62 +12,52 @@
         android:background="@color/orange"
         android:contentDescription="@string/color_band_content_description"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        tools:layout_editor_absoluteX="0dp" />
-
-    <se.ntlv.newsbringer.customviews.DateView
-        android:id="@+id/comment_submission_time"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:paddingTop="4dp"
-        android:textColor="@android:color/secondary_text_light"
-        android:textStyle="italic"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/by"
-        tools:text="some time" />
+        app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
         android:id="@+id/by"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:paddingTop="4dp"
+        android:layout_marginStart="8dp"
+        android:paddingTop="8dp"
         android:textStyle="bold"
-        app:layout_constraintEnd_toStartOf="@id/comment_submission_time"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintLeft_toRightOf="@+id/color_band"
         app:layout_constraintStart_toEndOf="@id/color_band"
-        app:layout_constraintTop_toTopOf="parent"
-        tools:text="Author Name" />
+        tools:text="Author Authorsson" />
+
+    <se.ntlv.newsbringer.customviews.DateView
+        android:id="@+id/comment_submission_time"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
+        android:paddingTop="8dp"
+        android:textColor="@android:color/secondary_text_light"
+        android:textStyle="italic"
+        app:layout_constraintBaseline_toBaselineOf="@id/by"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="1 day" />
 
     <TextView
         android:id="@+id/comment_text"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginEnd="8dp"
         android:autoLink="all"
-        app:layout_constraintEnd_toEndOf="@id/comment_submission_time"
-
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="@id/by"
-        app:layout_constraintTop_toBottomOf="@+id/by"
-        tools:text="comment"
-        tools:layout_editor_absoluteX="20dp" />
+        app:layout_constraintTop_toBottomOf="@id/by"
+        tools:text="Terraforming isn't a necessary. Growing food is probably a necessity, as even this cheap transport isn't that transport, but you can do that in greenhouses. Water is available. Energy is available in the form of either solar or nuclear. Getting the colony to be self-sustaining is hard, but it boils down to getting enough people and infrastructure there that they are able to build everything they need on site." />
 
 
     <TextView
         android:id="@+id/comment_child_count"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="end"
-        android:paddingBottom="4dp"
+        android:layout_marginEnd="8dp"
+        android:paddingBottom="8dp"
         android:textStyle="italic"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintRight_toRightOf="@+id/comment_submission_time"
-        app:layout_constraintTop_toBottomOf="@+id/comment_text"
-        tools:text="kids" />
+        app:layout_constraintTop_toBottomOf="@id/comment_text"
+        tools:text="54" />
 
 </android.support.constraint.ConstraintLayout>
 

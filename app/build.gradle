@@ -33,7 +33,6 @@ dependencies {
     compile 'com.android.support:appcompat-v7:24.2.1'
     compile 'com.android.support:design:24.2.1'
     compile 'com.android.support:recyclerview-v7:24.2.1'
-    compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha8'
     //kotlin
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     //http and serialization
@@ -55,6 +54,7 @@ dependencies {
     //tests
     testCompile "junit:junit:$JUNIT_VERSION"
     testCompile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha9'
 }
 
 android {
