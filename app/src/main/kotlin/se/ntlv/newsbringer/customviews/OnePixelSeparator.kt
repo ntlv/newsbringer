@@ -27,8 +27,9 @@ class OnePixelSeparator(@ColorInt color: Int) : RecyclerView.ItemDecoration() {
         val dividerRight = parent.width - parent.paddingRight
 
         parent.forEachChild {
+
             val params = it.layoutParams as RecyclerView.LayoutParams
-            val dividerTop = it.bottom + params.bottomMargin
+            val dividerTop = it.bottom + params.bottomMargin - it.translationY.toInt()
             val dividerBottom = dividerTop + 1
 
             target.set(dividerLeft, dividerTop, dividerRight, dividerBottom)
