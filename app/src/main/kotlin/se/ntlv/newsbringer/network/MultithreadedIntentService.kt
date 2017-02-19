@@ -4,15 +4,15 @@ import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import android.support.annotation.WorkerThread
-import se.ntlv.newsbringer.application.YcReaderApplication
+import se.ntlv.newsbringer.application.GlobalDependency
 import se.ntlv.newsbringer.thisShouldNeverHappen
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.atomic.AtomicInteger
 
 
-abstract class MultithreadedIntentService() : Service() {
+abstract class MultithreadedIntentService : Service() {
 
-    private val pool: ThreadPoolExecutor = YcReaderApplication.applicationComponent().ioPool()
+    private val pool: ThreadPoolExecutor = GlobalDependency.ioPool
     private val STATE_IDLE = 0
     private val STATE_DESTROYED = -1
     private val jobCounter = AtomicInteger(STATE_IDLE)
@@ -30,7 +30,7 @@ abstract class MultithreadedIntentService() : Service() {
                 }
             }
         }
-        return Service.START_NOT_STICKY
+        return START_NOT_STICKY
     }
 
     override fun onDestroy() {
@@ -40,7 +40,7 @@ abstract class MultithreadedIntentService() : Service() {
         }
     }
 
-    override fun onBind(intent: Intent): IBinder? = null
+    override fun onBind(intent: Intent): IBinder? = null //NO BINDING!
 
     @WorkerThread
     protected abstract fun onBeginJob(intent: Intent)

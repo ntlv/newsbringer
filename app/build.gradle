@@ -1,13 +1,12 @@
 import groovy.swing.SwingBuilder
 
 apply plugin: 'com.android.application'
-apply plugin: 'kotlin-kapt'
 apply plugin: 'kotlin-android'
 apply plugin: 'io.fabric'
 
 
 buildscript {
-    ext.kotlin_version = '1.0.4'
+    ext.kotlin_version = '1.0.6'
     ext.JUNIT_VERSION = '4.12'
     ext.DAGGER_VERSION = '2.6'
     repositories {
@@ -30,9 +29,9 @@ repositories {
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
     //android support stuff
-    compile 'com.android.support:appcompat-v7:24.2.1'
-    compile 'com.android.support:design:24.2.1'
-    compile 'com.android.support:recyclerview-v7:24.2.1'
+    compile 'com.android.support:appcompat-v7:25.1.1'
+    compile 'com.android.support:design:25.1.1'
+    compile 'com.android.support:recyclerview-v7:25.1.1'
     //kotlin
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     //http and serialization
@@ -47,10 +46,6 @@ dependencies {
     compile 'io.reactivex:rxjava:1.1.0'
     compile 'io.reactivex:rxandroid:1.2.1'
     compile 'com.squareup.sqlbrite:sqlbrite:0.7.0'
-    //dagger
-    compile "com.google.dagger:dagger:$DAGGER_VERSION"
-    kapt "com.google.dagger:dagger-compiler:$DAGGER_VERSION"
-    provided 'org.glassfish:javax.annotation:10.0-b28'
     //tests
     testCompile "junit:junit:$JUNIT_VERSION"
     testCompile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"

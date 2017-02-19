@@ -19,6 +19,7 @@ class RowHolder(root: View, private val nestingIncrement: Int, private val navig
     var id: Long? = null
     val kids = root.find<TextView>(R.id.comment_child_count)
     val colorView = root.find<View>(R.id.color_band)
+    val bottomBand = root.find<View>(R.id.bottom_band)
 
     val color = arrayOf(R.color.cyan, R.color.green, R.color.orange, R.color.pink, R.color.purple, R.color.red, R.color.teal, R.color.yellow)
 
@@ -28,6 +29,7 @@ class RowHolder(root: View, private val nestingIncrement: Int, private val navig
         self.setPadding(padding, self.paddingTop, self.paddingRight, self.paddingBottom)
 
         colorView.backgroundResource = color[ancestorCount % color.size]
+        bottomBand.backgroundResource = color[ancestorCount % color.size]
 
         by.text = "${item.ordinal} - ${item.by}"
         time.text = item.time.toString()

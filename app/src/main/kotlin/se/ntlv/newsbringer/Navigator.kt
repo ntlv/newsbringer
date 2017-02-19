@@ -8,7 +8,7 @@ class Navigator(private val mContext : Activity) {
 
     fun navigateToItemComments(id: Long) {
         val res = goToLink("https://news.ycombinator.com/item?id=$id")
-        if (res == false) throw IllegalArgumentException()
+        if (!res) throw IllegalArgumentException()
     }
 
     fun goToLink(link: String) = mContext.browse(link)

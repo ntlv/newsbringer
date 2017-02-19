@@ -12,17 +12,16 @@ import android.widget.ImageView
 import org.jetbrains.anko.*
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
-import se.ntlv.newsbringer.application.YcReaderApplication
+import se.ntlv.newsbringer.application.GlobalDependency
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
 import se.ntlv.newsbringer.database.DataCommentsThread
 import se.ntlv.newsbringer.database.Database
 import se.ntlv.newsbringer.thisShouldNeverHappen
-import javax.inject.Inject
 import kotlin.LazyThreadSafetyMode.NONE
 
 class CommentsActivity : AppCompatActivity() {
 
-    @Inject lateinit var database: Database
+    val database: Database by lazy(NONE) { GlobalDependency.database }
 
     private lateinit var mAdapter: CommentsAdapterWithHeader
     private lateinit var mPresenter: CommentsPresenter
@@ -39,7 +38,6 @@ class CommentsActivity : AppCompatActivity() {
         if (-1L == mItemId) {
             thisShouldNeverHappen()
         }
-        YcReaderApplication.applicationComponent().inject(this)
 
         setContentView(R.layout.activity_linear_vertical_content)
 
@@ -52,7 +50,7 @@ class CommentsActivity : AppCompatActivity() {
         val padding = applyDimension(COMPLEX_UNIT_DIP, 4f, displayMetrics).toInt()
         mAdapter = CommentsAdapterWithHeader(data, padding, { mPresenter.onHeaderClick() }, navigator)
 
-        mUiBinder = UiBinder(this, LinearLayoutManager(this), mAdapter)
+        mUiBinder = UiBinder(this, LinearLayoutManager(this), mAdapter, padding)
         val interactor = CommentsInteractor(this, database, mItemId, navigator, data?.base)
         mPresenter = CommentsPresenter(mUiBinder, interactor)
 

@@ -34,6 +34,7 @@ class CommentsInteractor(val context: Context,
                     addToStarredInternal = { IoService.requestToggleStarred(context, model.id, model.isStarred)}
                     model
                 }
+
         val comments = database.getCommentsForPost(newsThreadId)
                 .mapToList {
                     RowItem.CommentUiData(it)

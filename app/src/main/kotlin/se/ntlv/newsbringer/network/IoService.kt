@@ -11,13 +11,12 @@ import okhttp3.ResponseBody
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.bundleOf
 import org.jetbrains.anko.info
-import se.ntlv.newsbringer.application.YcReaderApplication
-import se.ntlv.newsbringer.database.Database
+import se.ntlv.newsbringer.application.GlobalDependency
 import se.ntlv.newsbringer.thisShouldNeverHappen
 import java.io.IOException
 import java.io.Reader
 import java.util.*
-import javax.inject.Inject
+import kotlin.LazyThreadSafetyMode.NONE
 
 
 class IoService : MultithreadedIntentService(), AnkoLogger {
@@ -27,9 +26,9 @@ class IoService : MultithreadedIntentService(), AnkoLogger {
 
         fun requestFetchThreads(context: Context, range: IntRange): Boolean {
             val normalizedRange = when {
-                range.last < 500 -> range
-                range.first < 500 && range.last >= 500 -> range.first..499
-                range.first > 500 -> IntRange.EMPTY
+                range.last < ORDINAL_MAX_BOUND -> range
+                range.first < ORDINAL_MAX_BOUND && range.last >= ORDINAL_MAX_BOUND -> range.first..499
+                range.first > ORDINAL_MAX_BOUND -> IntRange.EMPTY
                 else -> thisShouldNeverHappen()
             }
             normalizedRange.forEach { startService(context, Action.FETCH_THREAD, ARG_ORDINAL to it) }
@@ -51,23 +50,19 @@ class IoService : MultithreadedIntentService(), AnkoLogger {
         private val ARG_ID = "id"
         private val ARG_ORDINAL = "ordinal"
         private val ARG_IS_STARRED = "is_starred"
+        private val ORDINAL_MAX_BOUND = 500
     }
 
     private enum class Action { FETCH_COMMENTS, TOGGLE_STARRED, FETCH_THREAD, FULL_WIPE }
-
-    override fun onCreate() {
-        super.onCreate()
-        YcReaderApplication.applicationComponent().inject(this)
-    }
 
     private val URI_SUFFIX: String = ".json"
     private val BASE_URI: String = "https://hacker-news.firebaseio.com/v0"
     private val ITEM_URI: String = "$BASE_URI/item/"
     private val TOP_FIVE_HUNDRED: String = "$BASE_URI/topstories$URI_SUFFIX"
 
-    @Inject lateinit var okHttp: OkHttpClient
-    @Inject lateinit var database: Database
-    @Inject lateinit var gson: Gson
+    val http by lazy(NONE) { GlobalDependency.httpClient }
+    val database by lazy(NONE) { GlobalDependency.database }
+    val gson by lazy(NONE) { GlobalDependency.gson }
 
     override fun onBeginJob(intent: Intent) =
             when (Action.valueOf(intent.action)) {
@@ -88,12 +83,14 @@ class IoService : MultithreadedIntentService(), AnkoLogger {
 
     private fun handleFetchComments(extras: Bundle) {
         val newsThreadId: Long = extras[ARG_ID] as? Long ?: thisShouldNeverHappen("Missing id")
+        var post : RowItem.NewsThreadUiData? = null
+        try {
+            post = database.getPostByIdSync(newsThreadId)
+        } catch (ignored: IllegalStateException) {
+        }
 
-        val post = database.getPostByIdSync(newsThreadId)
-
-        val thread = getNewsThread(newsThreadId, post.ordinal, post.isStarred)
+        val thread = getNewsThread(newsThreadId, post?.ordinal ?: ORDINAL_MAX_BOUND, post?.isStarred ?: 0)
         database.insertNewsThreads(thread)
-
 
         val kids = thread.kids?.map { Work(it, 0) } ?: mutableListOf()
         val work: Stack<Work> = Stack(kids)
@@ -104,7 +101,7 @@ class IoService : MultithreadedIntentService(), AnkoLogger {
             val task = work.pop()
             val url = "$ITEM_URI${task.id}$URI_SUFFIX"
 
-            val comment = okHttp.get(url, Comment::class.java, gson)
+            val comment = http.get(url, Comment::class.java, gson)
 
             val reified = comment.toContentValues(commentOrdinal, task.ancestorCount, newsThreadId)
             database.insertComment(reified)
@@ -141,7 +138,7 @@ class IoService : MultithreadedIntentService(), AnkoLogger {
 
         database.deleteFrontPage()
 
-        val ids = okHttp.get(TOP_FIVE_HUNDRED, Array<Long>::class.java, gson)
+        val ids = http.get(TOP_FIVE_HUNDRED, Array<Long>::class.java, gson)
         val emptyNewsThreads = ids.filter { it !in starredIds }.mapIndexed { ordinal, id -> NewsThread(id, ordinal) }
 
         val starredItems = starredBeforeDelete.map { getNewsThread(it.id, it.ordinal, 1) }
@@ -162,7 +159,7 @@ class IoService : MultithreadedIntentService(), AnkoLogger {
     }
 
     private fun getNewsThread(id: Long, ordinal: Int, isStarred: Int = 0): NewsThread {
-        val item = okHttp.get("$ITEM_URI$id$URI_SUFFIX", NewsThread::class.java, gson)
+        val item = http.get("$ITEM_URI$id$URI_SUFFIX", NewsThread::class.java, gson)
         item.ordinal = ordinal
         item.starred = isStarred
         return item

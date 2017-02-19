@@ -1,6 +1,7 @@
 package se.ntlv.newsbringer.application
 
 import android.app.Application
+import android.content.Intent
 import android.content.pm.PackageManager.GET_META_DATA
 import android.os.Build
 import android.os.StrictMode
@@ -16,14 +17,10 @@ import se.ntlv.newsbringer.comments.CommentsActivity
 
 class YcReaderApplication : Application(), AnkoLogger {
 
-    companion object {
-        private lateinit var graph: ApplicationComponent
-
-        fun applicationComponent() = graph
-    }
-
     override fun onCreate() {
         super.onCreate()
+        GlobalDependency.app = this //THIS MUST HAPPEN ASAP AFTER APP START
+
         var hasFabricKey = false
 
         try {
@@ -49,17 +46,20 @@ class YcReaderApplication : Application(), AnkoLogger {
                     .detectLeakedSqlLiteObjects()
                     .detectLeakedClosableObjects()
                     .penaltyLog()
-                    .penaltyDeath()
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
                 builder.detectCleartextNetwork()
             }
             StrictMode.setVmPolicy(builder.build())
         }
-        graph = ApplicationComponent.init(ApplicationModule(this))
-        RxJavaPlugins.getInstance().registerSchedulersHook(object : RxJavaSchedulersHook() {
-            override fun getIOScheduler() = Schedulers.from(graph.ioPool())
-        })
+
+        RxJavaPlugins.getInstance()
+                .registerSchedulersHook(
+                        object : RxJavaSchedulersHook() {
+                            override fun getIOScheduler() = Schedulers.from(GlobalDependency.ioPool)
+                        }
+                )
+        checkNotNull(startService(Intent(this, StrictModeMonitor::class.java)))
     }
 }
 

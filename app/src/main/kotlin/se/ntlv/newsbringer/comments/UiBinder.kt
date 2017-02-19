@@ -13,7 +13,6 @@ import rx.Observable
 import rx.Subscriber
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.starify
-import se.ntlv.newsbringer.customviews.OnePixelSeparator
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
 import se.ntlv.newsbringer.customviews.applyAppBarLayoutDependency
 import se.ntlv.newsbringer.database.AdapterModelCollection
@@ -46,7 +45,6 @@ class UiBinder(private val mActivity: CommentsActivity,
         val recyclerView = mActivity.find<RecyclerView>(R.id.recycler_view)
         recyclerView.layoutManager = mManager
         recyclerView.adapter = mAdapter
-        recyclerView.addItemDecoration(OnePixelSeparator(mActivity.getColor(android.R.color.tertiary_text_dark)))
 
         val fab = mActivity.find<FloatingActionButton>(R.id.fab)
         fab.applyAppBarLayoutDependency()

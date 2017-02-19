@@ -3,8 +3,8 @@ package se.ntlv.newsbringer.adapter
 import android.support.v7.widget.RecyclerView
 import android.view.ViewGroup
 import org.jetbrains.anko.AnkoLogger
-import se.ntlv.newsbringer.database.ParcelableIdentifiable
 import se.ntlv.newsbringer.database.AdapterModelCollection
+import se.ntlv.newsbringer.database.ParcelableIdentifiable
 
 abstract class GenericRecyclerViewAdapter<T : ParcelableIdentifiable, VH : BindingViewHolder<T>>(seed: AdapterModelCollection<T>?) :
         RecyclerView.Adapter<VH>(), AnkoLogger {

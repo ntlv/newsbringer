@@ -11,7 +11,6 @@ import org.jetbrains.anko.find
 import rx.Observable
 import rx.Subscriber
 import se.ntlv.newsbringer.R
-import se.ntlv.newsbringer.customviews.OnePixelSeparator
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
 import se.ntlv.newsbringer.database.AdapterModelCollection
 import se.ntlv.newsbringer.network.RowItem.NewsThreadUiData
@@ -50,7 +49,6 @@ class UiBinder(activity: NewsThreadsActivity,
         mRecyclerView.layoutManager = manager
         manager.isAutoMeasureEnabled = true
         mRecyclerView.adapter = adapter
-        mRecyclerView.addItemDecoration(OnePixelSeparator(activity.getColor(android.R.color.tertiary_text_dark)))
     }
 
     override fun presentData(data: AdapterModelCollection<NewsThreadUiData>) {

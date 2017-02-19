@@ -12,18 +12,17 @@ import android.widget.ImageView
 import org.jetbrains.anko.*
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
-import se.ntlv.newsbringer.application.YcReaderApplication
+import se.ntlv.newsbringer.application.GlobalDependency
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
 import se.ntlv.newsbringer.database.DataFrontPage
 import se.ntlv.newsbringer.database.Database
-import javax.inject.Inject
 
 
 class NewsThreadsActivity : AppCompatActivity(), AnkoLogger, SearchView.OnQueryTextListener {
 
     private val dataTag = "NewsThreadActivity.data"
 
-    @Inject lateinit var database: Database
+    val database: Database by lazy(LazyThreadSafetyMode.NONE) { GlobalDependency.database }
 
     private lateinit var mAdapter: NewsThreadAdapter
     private lateinit var mPresenter: NewsThreadsPresenter
@@ -31,7 +30,6 @@ class NewsThreadsActivity : AppCompatActivity(), AnkoLogger, SearchView.OnQueryT
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        YcReaderApplication.applicationComponent().inject(this)
 
         setContentView(R.layout.activity_linear_vertical_content)
 

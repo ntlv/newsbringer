@@ -1,30 +1,34 @@
 package se.ntlv.newsbringer.comments
 
+import rx.Observable
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers.mainThread
+import rx.subscriptions.CompositeSubscription
+import java.util.concurrent.TimeUnit.SECONDS
 
 class CommentsPresenter(val viewBinder: CommentsViewBinder, val interactor: CommentsInteractor) {
 
     private val refreshObserver: Subscription
 
     private var dataNeedsLoading = true
-    private var subscription: Subscription? = null
+    private var dataSubscriptions = CompositeSubscription()
 
     init {
         refreshObserver = viewBinder.observeRefreshEvents().subscribe { refreshData() }
     }
 
+
     fun onViewReady() {
         viewBinder.indicateDataLoading(true)
-        subscription?.unsubscribe()
-        subscription = interactor.loadData().observeOn(mainThread()).subscribe {
+        dataSubscriptions.clear()
+        dataSubscriptions.add(interactor.loadData().observeOn(mainThread()).subscribe {
+            dataNeedsLoading = false
             viewBinder.indicateDataLoading(false)
             viewBinder.updateContent(it)
-            if (it.size <= 1 && dataNeedsLoading) {
-                refreshData()
-            }
-            dataNeedsLoading = false
-        }
+        })
+        dataSubscriptions.add(Observable.timer(3, SECONDS)
+                .filter { dataNeedsLoading }
+                .subscribe { refreshData() })
     }
 
     fun refreshData() {
@@ -41,7 +45,7 @@ class CommentsPresenter(val viewBinder: CommentsViewBinder, val interactor: Comm
     fun addToStarred() = interactor.addToStarred()
 
     fun destroy() {
-        subscription?.unsubscribe()
+        dataSubscriptions.unsubscribe()
         refreshObserver.unsubscribe()
     }
 }
