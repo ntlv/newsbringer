@@ -31,7 +31,7 @@ class RowHolder(root: View, private val nestingIncrement: Int, private val navig
         colorView.backgroundResource = color[ancestorCount % color.size]
         bottomBand.backgroundResource = color[ancestorCount % color.size]
 
-        by.text = "${item.ordinal} - ${item.by}"
+        by.text = "${item.stringOrdinal} - ${item.by}"
         time.text = item.time.toString()
         val content = if (!item.text.isNullOrEmpty()) item.text else "[Removed]"
         text.setHtml(content, navigator)

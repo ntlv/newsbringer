@@ -90,16 +90,22 @@ class UiBinder(private val mActivity: CommentsActivity,
             Observable.create<Any> { mRefreshListeners.add(it) }.onBackpressureBuffer(10, { throw BufferOverflowException() })
 
     override fun updateContent(data: AdapterModelCollection<RowItem>) {
-        val maybeHeader = data[0]
-        if (maybeHeader is RowItem.NewsThreadUiData) {
-            mActivity.title = maybeHeader.title.starify(maybeHeader.isStarred)
-        }
         mAdapter.data = data
+        if (data.size > 0) {
+            val maybeHeader = data[0]
+            if (maybeHeader is RowItem.NewsThreadUiData) {
+                mActivity.title = maybeHeader.title.starify(maybeHeader.isStarred)
+            }
+        }
+
     }
 
     fun start() = mAppBar.addOnOffsetChangedListener(this)
 
     fun stop() = mAppBar.removeOnOffsetChangedListener(this)
 
-    fun destroy() = completeAllAndVerify(mRefreshListeners)
+    fun destroy() {
+        completeAllAndVerify(mRefreshListeners)
+        mRefreshListeners.clear()
+    }
 }

@@ -63,7 +63,7 @@ class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
 
     fun destroy() {
         dataToBePresented?.unsubscribe()
-        nonChangingSubscriptions.unsubscribe()
+        nonChangingSubscriptions.clear()
     }
 }
 

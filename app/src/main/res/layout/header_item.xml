@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:background="?android:selectableItemBackground"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/ordinal"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_margin="8dp"
+            android:layout_weight="0"
+            android:gravity="center_horizontal"
+            android:text="Large Text"
+            android:textSize="20sp"
+            tools:text="478" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/item_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/primary_text_light"
+                android:textSize="16sp"
+                tools:text="Overly loooooong title that will totatally need a linebreak, now let's type some more to provoke ellipsizing. Are we there yet?" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/by_prefix"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/by_prefix" />
+
+                <TextView
+                    android:id="@+id/by"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    tools:text="Author Authorsson" />
+
+                <se.ntlv.newsbringer.customviews.DateView
+                    android:id="@+id/submission_time"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textStyle="italic"
+                    tools:text="8 hours" />
+
+                <TextView
+                    android:id="@+id/submission_time_suffix"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/literal_ago"
+                    android:textStyle="italic"/>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0"
+            android:layout_margin="8dp"
+            android:orientation="vertical">
+
+            <!--Ignoring compound drawables warning, they don't align properly and look ugly-->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                tools:ignore="UseCompoundDrawables">
+
+
+                <TextView
+                    android:id="@+id/score"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minEms="2"
+                    tools:text="433" />
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:contentDescription="@string/icon_score_description"
+                    android:src="@drawable/ic_score_24dp" />
+
+            </LinearLayout>
+
+            <!--Ignoring compound drawables warning, they don't align properly and look ugly-->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:ignore="UseCompoundDrawables">
+
+                <TextView
+                    android:id="@+id/comment_count"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minEms="2"
+                    tools:text="17" />
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:contentDescription="@string/comment_bubble_description"
+                    android:src="@drawable/ic_comment_24dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/submission_text"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="24dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="8dp"
+        android:autoLink="all"
+        android:paddingBottom="16dp"
+        android:visibility="gone"
+        tools:text="Lorem ipsum dolor sit amet, arcu urna, error mus. Vel vitae, dignissim pede justo faucibus amet, pede at ipsum ut debitis ligula. Cursus amet, feugiat nulla nam eros est. Nibh fusce tincidunt tempor suspendisse nunc, mauris mi ut lorem nec pretium senectus, aliquam donec cum wisi molestie, a volutpat eget sollicitudin arcu, consequat elit. Ante facilisis consectetuer sed nunc dui. Imperdiet non cras, elit vestibulum nam mattis. Vitae ut at praesent, nonummy nisl donec a donec adipiscing, justo eleifend dapibus explicabo ipsum, interdum nisl, etiam blandit ipsum. Convallis platea sem ornare eu, quis porttitor sem magna adipiscing, feugiat nam a ut mi in nec, labore wisi, aliquet sollicitudin non adipiscing ridiculus sit. Est nunc sollicitudin, in mollis velit urna mauris turpis sem."
+        tools:visibility="visible" />
+
+    <View
+        android:id="@+id/bottom_band"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginTop="8dp"
+        android:alpha="0.25"
+        android:background="@android:color/darker_gray" />
+
+</LinearLayout>
+
+
+
+
+
+
+
+
+
+
+
+

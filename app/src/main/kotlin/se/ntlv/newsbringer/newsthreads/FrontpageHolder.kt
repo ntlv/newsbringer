@@ -21,9 +21,9 @@ class FrontpageHolder(root: View,
 
     //view bindings
     val view = root
-    val title = root.find<TextView>(R.id.news_item_title)
+    val title = root.find<TextView>(R.id.item_title)
     val by = root.find<TextView>(R.id.by)
-    val time = root.find<DateView>(R.id.news_item_submission_time)
+    val time = root.find<DateView>(R.id.submission_time)
     val score = root.find<TextView>(R.id.score)
     var link: String? = null
     val commentCount = root.find<TextView>(R.id.comment_count)

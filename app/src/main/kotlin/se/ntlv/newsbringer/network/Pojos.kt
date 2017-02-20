@@ -53,6 +53,8 @@ sealed class RowItem : ViewModel(), ParcelableIdentifiable {
                     return NewsThreadUiData(source)
                 }
             }
+
+            fun empty(id : Long): NewsThreadUiData = NewsThreadUiData(0, "Empty...", "", 0, 0, "", id, "", 0, 0, "")
         }
 
         constructor(source: Parcel) : this(
@@ -139,6 +141,7 @@ sealed class RowItem : ViewModel(), ParcelableIdentifiable {
     }
 
     class CommentUiData(val ordinal: Int,
+                        val stringOrdinal : String,
                         val time: Long,
                         override val id: Long,
                         val by: String,
@@ -164,6 +167,7 @@ sealed class RowItem : ViewModel(), ParcelableIdentifiable {
 
         override fun writeToParcel(dest: Parcel, flags: Int) {
             dest.writeInt(ordinal)
+            dest.writeString(stringOrdinal)
             dest.writeLong(time)
             dest.writeLong(id)
             dest.writeString(by)
@@ -177,6 +181,7 @@ sealed class RowItem : ViewModel(), ParcelableIdentifiable {
 
         constructor(source: Parcel) : this(
                 source.readInt(),
+                source.readString(),
                 source.readLong(),
                 source.readLong(),
                 source.readString(),
@@ -187,6 +192,7 @@ sealed class RowItem : ViewModel(), ParcelableIdentifiable {
 
         constructor(cursor: Cursor) : this(
                 cursor.position,
+                cursor.getStringByName(CommentsTable.COLUMN_ORDINAL),
                 cursor.getLongByName(CommentsTable.COLUMN_TIME),
                 cursor.getLongByName(CommentsTable.COLUMN_ID),
                 cursor.getStringByName(CommentsTable.COLUMN_BY),
@@ -201,6 +207,7 @@ sealed class RowItem : ViewModel(), ParcelableIdentifiable {
             other as CommentUiData
 
             if (ordinal != other.ordinal) return false
+            if (stringOrdinal != other.stringOrdinal) return false
             if (time != other.time) return false
             if (id != other.id) return false
             if (by != other.by) return false
@@ -213,6 +220,7 @@ sealed class RowItem : ViewModel(), ParcelableIdentifiable {
 
         override fun hashCode(): Int {
             var result = ordinal
+            result = 31 * result + stringOrdinal.hashCode()
             result = 31 * result + time.hashCode()
             result = 31 * result + id.hashCode()
             result = 31 * result + by.hashCode()
@@ -225,16 +233,10 @@ sealed class RowItem : ViewModel(), ParcelableIdentifiable {
 }
 
 
-class NewsThread {
-
-    constructor(id: Long, ordinal: Int) {
-        this.id = id
-        this.ordinal = ordinal
-    }
+class NewsThread(var id: Long, var ordinal: Int) {
 
     var score: Int = 0
     var time: Long = 0
-    var id: Long = 0
     var by: String? = null
     var title: String? = null
     var kids: Array<Long>? = null
@@ -244,8 +246,6 @@ class NewsThread {
     var descendants: Long = 0
 
     var starred: Int = 0
-
-    var ordinal: Int = -1
 
     fun toContentValues(): ContentValues {
         val cv = contentValuesOf(
@@ -279,7 +279,7 @@ class Comment {
     var text: String? = null
     var type: String? = null
 
-    fun toContentValues(ordinal: Int, ancestorCount: Int, threadParent: Long): ContentValues {
+    fun toContentValues(ordinal: String, ancestorCount: Int, threadParent: Long): ContentValues {
         val varyingPart = if (ancestorCount > 0) {
             arrayOf(CommentsTable.COLUMN_PARENT_COMMENT to parent,
                     CommentsTable.COLUMN_PARENT to threadParent)

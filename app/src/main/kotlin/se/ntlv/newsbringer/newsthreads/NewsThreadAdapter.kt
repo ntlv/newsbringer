@@ -24,10 +24,10 @@ class NewsThreadAdapter(clickListener: (FrontpageHolder) -> Unit,
                                    private val longClickListener: (FrontpageHolder) -> Boolean) : TypesFactory {
         override fun type(row: RowItem.CommentUiData): Int = thisShouldNeverHappen()
 
-        override fun type(header: NewsThreadUiData): Int = R.layout.frontpage_item
+        override fun type(header: NewsThreadUiData): Int = R.layout.header_item
 
         override fun holder(type: Int, view: View): BindingViewHolder<RowItem.NewsThreadUiData> = when (type) {
-            R.layout.frontpage_item -> FrontpageHolder(view, clickListener, longClickListener)
+            R.layout.header_item -> FrontpageHolder(view, clickListener, longClickListener)
             else -> thisShouldNeverHappen("$type cannot be resolved")
         }
     }
@@ -61,5 +61,8 @@ class NewsThreadAdapter(clickListener: (FrontpageHolder) -> Unit,
                 it.add(Subscriptions.create { mObservers.remove(it) })
             }.onBackpressureBuffer(10, { throw BufferOverflowException() })
 
-    fun destroy() = completeAllAndVerify(mObservers)
+    fun destroy() {
+        completeAllAndVerify(mObservers)
+        mObservers.clear()
+    }
 }

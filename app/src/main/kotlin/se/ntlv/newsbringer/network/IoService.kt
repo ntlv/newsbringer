@@ -3,26 +3,31 @@ package se.ntlv.newsbringer.network
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import com.google.gson.Gson
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.Response
-import okhttp3.ResponseBody
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.bundleOf
 import org.jetbrains.anko.info
 import se.ntlv.newsbringer.application.GlobalDependency
+import se.ntlv.newsbringer.network.IoService.Action.*
 import se.ntlv.newsbringer.thisShouldNeverHappen
 import java.io.IOException
-import java.io.Reader
-import java.util.*
 import kotlin.LazyThreadSafetyMode.NONE
 
 
 class IoService : MultithreadedIntentService(), AnkoLogger {
     companion object : AnkoLogger {
+        fun requestFetchComment(context: Context, id: Long, ancestorCount: Int, baseOrdinal: String, newsThreadId: Long) =
+                startService(context, FETCH_COMMENT,
+                        ARG_ID to id,
+                        ARG_ANCESTOR_COUNT to ancestorCount,
+                        ARG_BASE_ORDINAL to baseOrdinal,
+                        ARG_THREAD_ID to newsThreadId)
+
         fun requestFetchPostAndComments(context: Context, id: Long) =
-                startService(context, Action.FETCH_COMMENTS, ARG_ID to id)
+                startService(context, FETCH_COMMENTS, ARG_ID to id)
 
         fun requestFetchThreads(context: Context, range: IntRange): Boolean {
             val normalizedRange = when {
@@ -31,29 +36,34 @@ class IoService : MultithreadedIntentService(), AnkoLogger {
                 range.first > ORDINAL_MAX_BOUND -> IntRange.EMPTY
                 else -> thisShouldNeverHappen()
             }
-            normalizedRange.forEach { startService(context, Action.FETCH_THREAD, ARG_ORDINAL to it) }
+            normalizedRange.forEach { startService(context, FETCH_THREAD, ARG_ORDINAL to it) }
             return true
         }
 
-        fun requestFullWipe(context: Context) = startService(context, Action.FULL_WIPE)
+        fun requestFullWipe(context: Context) = startService(context, FULL_WIPE)
 
         fun requestToggleStarred(context: Context, id: Long, currentStarredStatus: Int) =
-                startService(context, Action.TOGGLE_STARRED, ARG_ID to id, ARG_IS_STARRED to currentStarredStatus)
+                startService(context, TOGGLE_STARRED, ARG_ID to id, ARG_IS_STARRED to currentStarredStatus)
+
+        fun requestPrepareHeaderAndCommentsFor(context: Context, newsThreadId: Long) =
+                startService(context, PREPARE_CONTENT, ARG_ID to newsThreadId)
 
         private fun startService(context: Context, action: Action, vararg args: Pair<String, Any>) {
             info("Starting service for $action(${args.joinToString()})")
-            Intent()
             val i = Intent(context, IoService::class.java).setAction(action.name).putExtras(bundleOf(*args))
             checkNotNull(context.startService(i))
         }
 
         private val ARG_ID = "id"
+        private val ARG_THREAD_ID = "thread_id"
+        private val ARG_ANCESTOR_COUNT = "ancestor_count"
+        private val ARG_BASE_ORDINAL = "base_ordinal"
         private val ARG_ORDINAL = "ordinal"
         private val ARG_IS_STARRED = "is_starred"
         private val ORDINAL_MAX_BOUND = 500
     }
 
-    private enum class Action { FETCH_COMMENTS, TOGGLE_STARRED, FETCH_THREAD, FULL_WIPE }
+    enum class Action { FETCH_COMMENTS, FETCH_COMMENT, TOGGLE_STARRED, FETCH_THREAD, FULL_WIPE, PREPARE_CONTENT }
 
     private val URI_SUFFIX: String = ".json"
     private val BASE_URI: String = "https://hacker-news.firebaseio.com/v0"
@@ -64,14 +74,84 @@ class IoService : MultithreadedIntentService(), AnkoLogger {
     val database by lazy(NONE) { GlobalDependency.database }
     val gson by lazy(NONE) { GlobalDependency.gson }
 
-    override fun onBeginJob(intent: Intent) =
-            when (Action.valueOf(intent.action)) {
-                Action.FETCH_COMMENTS -> handleFetchComments(intent.extras)
-                Action.FETCH_THREAD -> handleFetchThread(intent.extras)
-                Action.TOGGLE_STARRED -> handleToggleStarred(intent.extras)
-                Action.FULL_WIPE -> handleFullWipe()
-                else -> thisShouldNeverHappen()
+    override val onBeginJob: (Intent) -> Unit = {
+        val args = it.extras
+        when (valueOf(it.action)) {
+            FETCH_COMMENT -> handleFetchComment(args)
+            FETCH_COMMENTS -> handleFetchComments(args)
+            FETCH_THREAD -> handleFetchThread(args)
+            TOGGLE_STARRED -> handleToggleStarred(args)
+            FULL_WIPE -> handleFullWipe()
+            PREPARE_CONTENT -> handlePrepareContent(args)
+        }
+    }
+
+    private fun handlePrepareContent(args: Bundle) {
+        val newsThreadId = args[ARG_ID] as Long
+
+        val childIds : List<Long>?
+        val newsItem = database.getPostByIdSync(newsThreadId)
+        if (newsItem == null) {
+            val fetchedItem =  getNewsThread(newsThreadId, 0, 0)
+            childIds = fetchedItem.kids?.asList()
+            database.insertNewsThreads(fetchedItem)
+        } else {
+            childIds = newsItem.children.split(',').filter(String::isNotEmpty).map(String::toLong)
+        }
+
+        if (!database.hasCommentsForPostIdSync(newsThreadId)) {
+            if (childIds == null || childIds.isEmpty()) {
+                val fakeComment = Comment()
+                fakeComment.text = "No comments"
+                fakeComment.parent = newsThreadId
+                fakeComment.time = System.currentTimeMillis()
+                val cv = fakeComment.toContentValues("a", 0, newsThreadId)
+                database.insertComment(cv)
+            } else {
+                var commentOrdinal = "a"
+                childIds.forEach {
+                    requestFetchComment(this, it, 0, commentOrdinal, newsThreadId)
+                    commentOrdinal = commentOrdinal.nextOrdinal()
+                }
             }
+        }
+    }
+
+    private fun handleFetchComment(args: Bundle) {
+        val id = args[ARG_ID] as Long
+        val ancestorCount = args[ARG_ANCESTOR_COUNT] as Int
+        val baseOrdinal = args[ARG_BASE_ORDINAL] as String
+        val newsThreadId = args[ARG_THREAD_ID] as Long
+
+        val url = "$ITEM_URI$id$URI_SUFFIX"
+
+        val comment = http.get(url, Comment::class.java, gson)
+
+        val reified = comment.toContentValues(baseOrdinal, ancestorCount, newsThreadId)
+        database.insertComment(reified)
+
+        var childOrdinal = baseOrdinal + 'a'
+        val childAncestorCount = ancestorCount.inc()
+        comment.kids.forEach {
+            requestFetchComment(this, it, childAncestorCount, childOrdinal, newsThreadId)
+            childOrdinal = childOrdinal.nextOrdinal()
+        }
+    }
+
+    private fun handleFetchComments(extras: Bundle) {
+        val newsThreadId: Long = extras[ARG_ID] as? Long ?: thisShouldNeverHappen("Missing id")
+        val post = database.getPostByIdSync(newsThreadId)
+
+        val thread = getNewsThread(newsThreadId, post?.ordinal ?: ORDINAL_MAX_BOUND, post?.isStarred ?: 0)
+        database.insertNewsThreads(thread)
+
+
+        var commentOrdinal = "a"
+        thread.kids?.forEach {
+            requestFetchComment(this, it, 0, commentOrdinal, newsThreadId)
+            commentOrdinal = commentOrdinal.nextOrdinal()
+        }
+    }
 
     private fun handleToggleStarred(args: Bundle) {
         val id = args[ARG_ID] as Long
@@ -81,59 +161,19 @@ class IoService : MultithreadedIntentService(), AnkoLogger {
         database.setStarred(id, newStatus)
     }
 
-    private fun handleFetchComments(extras: Bundle) {
-        val newsThreadId: Long = extras[ARG_ID] as? Long ?: thisShouldNeverHappen("Missing id")
-        var post : RowItem.NewsThreadUiData? = null
-        try {
-            post = database.getPostByIdSync(newsThreadId)
-        } catch (ignored: IllegalStateException) {
-        }
-
-        val thread = getNewsThread(newsThreadId, post?.ordinal ?: ORDINAL_MAX_BOUND, post?.isStarred ?: 0)
-        database.insertNewsThreads(thread)
-
-        val kids = thread.kids?.map { Work(it, 0) } ?: mutableListOf()
-        val work: Stack<Work> = Stack(kids)
-
-        var commentOrdinal = 0
-
-        while (work.isNotEmpty()) {
-            val task = work.pop()
-            val url = "$ITEM_URI${task.id}$URI_SUFFIX"
-
-            val comment = http.get(url, Comment::class.java, gson)
-
-            val reified = comment.toContentValues(commentOrdinal, task.ancestorCount, newsThreadId)
-            database.insertComment(reified)
-
-            //inc one for the inserted comment and then one each for every child comment
-            commentOrdinal += 1 + comment.kids.size
-
-            //push all direct children to work stack
-            val newAncestorCount = task.ancestorCount + 1
-            comment.kids.forEach {
-                work.push(Work(it, newAncestorCount))
-            }
+    private fun String.nextOrdinal(): String {
+        val char = last()
+        return when (char) {
+            in ('a'..'y') -> "${this.subSequence(0, length - 1)}${char.inc()}"
+            'z' -> this + 'a'
+            else -> thisShouldNeverHappen("Can't increment character $char from base $this")
         }
     }
 
-    private data class Work(val id: Long, val ancestorCount: Int)
-
-    private class Stack<T>(init: List<T>) {
-        private val delegate: LinkedList<T> = LinkedList(init)
-
-        fun push(t: T) = delegate.addFirst(t)
-        fun pop(): T = delegate.removeFirst()
-
-        fun isNotEmpty() = delegate.isNotEmpty()
-    }
 
     private fun handleFullWipe() {
-        val starredBeforeDelete = database.getFrontPage(starredOnly = true)
-                .mapToList { RowItem.NewsThreadUiData(it) }
-                .toBlocking()
-                .first()
 
+        val starredBeforeDelete = database.allStarredPosts()
         val starredIds = starredBeforeDelete.map { it.id }
 
         database.deleteFrontPage()
@@ -152,8 +192,7 @@ class IoService : MultithreadedIntentService(), AnkoLogger {
     private fun handleFetchThread(args: Bundle) {
         val ordinal = args[ARG_ORDINAL] as Int
 
-        val id = database.getIdForOrdinalSync(ordinal)
-
+        val id = database.getIdForOrdinalSync(ordinal) ?: http.get(TOP_FIVE_HUNDRED, Array<Long>::class.java, gson)[ordinal]
         val item = getNewsThread(id, ordinal)
         database.insertNewsThreads(item)
     }
@@ -167,21 +206,24 @@ class IoService : MultithreadedIntentService(), AnkoLogger {
 
 
     private fun <T> OkHttpClient.get(url: String, cls: Class<T>, deserializer: Gson): T {
-        var reader: Reader? = null
-        var body: ResponseBody? = null
-        var response: Response? = null
+
         try {
             val request = Request.Builder().url(url).get().build()
-            response = newCall(request).execute()
-            if (response.isSuccessful.not()) throw IOException("Unexpected response { $response }")
-            body = response.body()
-            reader = body.charStream()
-            return deserializer.fromJson<T>(reader, cls)
-        } finally {
-            response?.close()
-            reader?.close()
-            body?.close()
+            newCall(request).execute().use {
+                if (!it.isSuccessful) throw IOException("Unexpected response { $it }")
+
+                it.body().use {
+                    it.charStream().use {
+                        return deserializer.fromJson(it, cls)
+                    }
+                }
+
+            }
+        } catch (ex: Exception) {
+            Log.e("IoService", "Http GET failure", ex)
+            throw ex
         }
     }
+
 }
 

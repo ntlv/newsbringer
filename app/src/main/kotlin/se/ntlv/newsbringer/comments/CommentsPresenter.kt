@@ -1,34 +1,27 @@
 package se.ntlv.newsbringer.comments
 
-import rx.Observable
-import rx.Subscription
+import android.util.Log
 import rx.android.schedulers.AndroidSchedulers.mainThread
 import rx.subscriptions.CompositeSubscription
-import java.util.concurrent.TimeUnit.SECONDS
 
 class CommentsPresenter(val viewBinder: CommentsViewBinder, val interactor: CommentsInteractor) {
 
-    private val refreshObserver: Subscription
-
-    private var dataNeedsLoading = true
-    private var dataSubscriptions = CompositeSubscription()
+    private var viewReadyCalled = false
+    private var subscriptions = CompositeSubscription()
 
     init {
-        refreshObserver = viewBinder.observeRefreshEvents().subscribe { refreshData() }
+        subscriptions.add(viewBinder.observeRefreshEvents().subscribe { refreshData() })
     }
 
-
     fun onViewReady() {
+        if (viewReadyCalled) throw IllegalStateException("View called ready twice")
+        viewReadyCalled = true
         viewBinder.indicateDataLoading(true)
-        dataSubscriptions.clear()
-        dataSubscriptions.add(interactor.loadData().observeOn(mainThread()).subscribe {
-            dataNeedsLoading = false
+        subscriptions.add(interactor.loadData().observeOn(mainThread()).subscribe {
+            Log.d("CommentsPresenter", "Updating content, size ${it.size}")
             viewBinder.indicateDataLoading(false)
             viewBinder.updateContent(it)
         })
-        dataSubscriptions.add(Observable.timer(3, SECONDS)
-                .filter { dataNeedsLoading }
-                .subscribe { refreshData() })
     }
 
     fun refreshData() {
@@ -45,7 +38,6 @@ class CommentsPresenter(val viewBinder: CommentsViewBinder, val interactor: Comm
     fun addToStarred() = interactor.addToStarred()
 
     fun destroy() {
-        dataSubscriptions.unsubscribe()
-        refreshObserver.unsubscribe()
+        subscriptions.clear()
     }
 }

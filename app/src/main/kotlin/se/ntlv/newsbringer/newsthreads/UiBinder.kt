@@ -75,7 +75,10 @@ class UiBinder(activity: NewsThreadsActivity,
         mAppBar.removeOnOffsetChangedListener(this)
     }
 
-    fun destroy() = completeAllAndVerify(mRefreshListeners)
+    fun destroy() {
+        completeAllAndVerify(mRefreshListeners)
+        mRefreshListeners.clear()
+    }
 
     override fun indicateDataLoading(isLoading: Boolean) {
         if (mSwipeView.isRefreshing != isLoading) {
@@ -90,4 +93,5 @@ fun <T> completeAllAndVerify(subscribers: List<Subscriber<in T>>) {
     if (subscribers.any { !it.isUnsubscribed }) {
         thisShouldNeverHappen()
     }
+
 }

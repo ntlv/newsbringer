@@ -10,6 +10,8 @@ import se.ntlv.newsbringer.database.DataCommentsThread
 import se.ntlv.newsbringer.database.Database
 import se.ntlv.newsbringer.network.IoService
 import se.ntlv.newsbringer.network.RowItem
+import se.ntlv.newsbringer.network.RowItem.CommentUiData
+import se.ntlv.newsbringer.network.RowItem.NewsThreadUiData
 
 class CommentsInteractor(val context: Context,
                          val database: Database,
@@ -25,22 +27,22 @@ class CommentsInteractor(val context: Context,
 
 
     fun loadData(): Observable<AdapterModelCollection<RowItem>> {
+        IoService.requestPrepareHeaderAndCommentsFor(context, newsThreadId)
         val header = database.getPostById(newsThreadId)
                 .mapToOne {
-                    val model = RowItem.NewsThreadUiData(it)
+                    val model = NewsThreadUiData(it)
                     shareCommentsInternal = { navigator.goToShareLink(model.title, "https://news.ycombinator.com/item?id=$newsThreadId") }
                     shareStoryInternal = { navigator.goToShareLink(model.title, model.url) }
                     goToLinkInternal = { navigator.goToLink(model.url) }
-                    addToStarredInternal = { IoService.requestToggleStarred(context, model.id, model.isStarred)}
+                    addToStarredInternal = { IoService.requestToggleStarred(context, model.id, model.isStarred) }
                     model
                 }
 
         val comments = database.getCommentsForPost(newsThreadId)
-                .mapToList {
-                    RowItem.CommentUiData(it)
-                }
+                .mapToList(::CommentUiData)
+                .filter {  it.isNotEmpty()}
 
-        return Observable.combineLatest(header, comments, { h, c ->
+        return  Observable.combineLatest(header, comments) { h, c ->
             val new = listOf(h) + c
             val old = previousComments
             previousComments = new
@@ -48,7 +50,8 @@ class CommentsInteractor(val context: Context,
             val diff = DiffUtil.calculateDiff(DataDiffCallback(old, new))
 
             DataCommentsThread(new, diff)
-        })
+        }
+
     }
 
     fun refreshComments() = IoService.requestFetchPostAndComments(context, newsThreadId)

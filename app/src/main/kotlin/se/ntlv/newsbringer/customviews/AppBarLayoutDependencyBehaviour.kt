@@ -6,7 +6,7 @@ import android.support.v4.view.ViewCompat
 import android.view.View
 
 
-class AppBarLayoutDependencyBehaviour() : CoordinatorLayout.Behavior<FloatingActionButton>() {
+class AppBarLayoutDependencyBehaviour : CoordinatorLayout.Behavior<FloatingActionButton>() {
 
     override fun onStartNestedScroll(coordinatorLayout: CoordinatorLayout?, child: FloatingActionButton?, directTargetChild: View?, target: View?, nestedScrollAxes: Int): Boolean {
         return nestedScrollAxes == ViewCompat.SCROLL_AXIS_VERTICAL ||

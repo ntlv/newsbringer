@@ -35,12 +35,12 @@ class CommentsAdapterWithHeader(seed: AdapterModelCollection<RowItem>?,
                                    private val navigator: Navigator) : TypesFactory {
         override fun type(row: CommentUiData): Int = R.layout.comment_item
 
-        override fun type(header: NewsThreadUiData): Int = R.layout.comments_header
+        override fun type(header: NewsThreadUiData): Int = R.layout.header_item
 
         @Suppress("UNCHECKED_CAST")
         override fun holder(type: Int, view: View): BindingViewHolder<RowItem> = when (type) {
             R.layout.comment_item -> RowHolder(view, nestingIncrement, navigator)
-            R.layout.comments_header -> HeaderHolder(view, headerClick, navigator)
+            R.layout.header_item -> HeaderHolder(view, headerClick, navigator)
             else -> thisShouldNeverHappen("$type cannot be resolved")
         } as BindingViewHolder<RowItem>
     }

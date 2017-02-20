@@ -49,7 +49,6 @@ dependencies {
     //tests
     testCompile "junit:junit:$JUNIT_VERSION"
     testCompile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha9'
 }
 
 android {
@@ -69,7 +68,7 @@ android {
     }
 
     defaultConfig {
-        versionCode 15
+        versionCode 17
         versionName "$versionCode"
         minSdkVersion 19
         targetSdkVersion 24
@@ -109,11 +108,12 @@ gradle.taskGraph.whenReady { taskGraph ->
             ) {
                 vbox {
 
+                    label(text: "Store password:")
+                    def iStorePwInput = passwordField()
+
                     label(text: "Key password:")
                     def iKeyPwInput = passwordField()
 
-                    label(text: "Store password:")
-                    def iStorePwInput = passwordField()
 
                     button(defaultButton: true, text: 'OK', actionPerformed: {
                         passKeyPwInput = new String(iKeyPwInput.getPassword());

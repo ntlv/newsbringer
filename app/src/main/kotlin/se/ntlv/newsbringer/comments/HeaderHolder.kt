@@ -12,14 +12,16 @@ import se.ntlv.newsbringer.network.RowItem
 
 class HeaderHolder(root: View, private val clickListener: (View) -> Unit, private val navigator : Navigator) : BindingViewHolder<RowItem.NewsThreadUiData>(root) {
     val self = root
-    val title = root.find<TextView>(R.id.comments_header_title)
+    val title = root.find<TextView>(R.id.item_title)
     val by = root.find<TextView>(R.id.by)
     val time = root.find<DateView>(R.id.submission_time)
     val score = root.find<TextView>(R.id.score)
     val commentCount = root.find<TextView>(R.id.comment_count)
     val text = root.find<TextView>(R.id.submission_text)
+    val ordinal = root.find<TextView>(R.id.ordinal)
 
     override fun bind(item: RowItem.NewsThreadUiData) {
+        ordinal.text = item.ordinal.toString()
         title.text = item.title.starify(item.isStarred)
         by.text = item.by
         time.text = item.time.toString()

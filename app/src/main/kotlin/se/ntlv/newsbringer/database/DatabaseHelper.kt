@@ -2,9 +2,9 @@ package se.ntlv.newsbringer.database
 
 import android.content.ContentValues
 import android.content.Context
-import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import android.util.Log
 import com.squareup.sqlbrite.BriteDatabase
 import com.squareup.sqlbrite.QueryObservable
 import com.squareup.sqlbrite.SqlBrite
@@ -12,19 +12,31 @@ import org.jetbrains.anko.AnkoLogger
 import rx.schedulers.Schedulers
 import se.ntlv.newsbringer.network.NewsThread
 import se.ntlv.newsbringer.network.RowItem
+import se.ntlv.newsbringer.network.RowItem.NewsThreadUiData
 import se.ntlv.newsbringer.thisShouldNeverHappen
+import java.util.*
 
 
-class Database : AnkoLogger {
+class Database(ctx: Context) : AnkoLogger {
+
+    private val mDb: BriteDatabase
+
+    init {
+        val helper = DatabaseHelper(ctx)
+        val scheduler = Schedulers.io()
+        mDb = SqlBrite.create().wrapDatabaseHelper(helper, scheduler)
+//        mDb.setLoggingEnabled(DEBUG)
+    }
 
     private companion object {
         val DATABASE_NAME = "ycreader.db"
         val DATABASE_VERSION = 3
+
     }
 
     object PostTable {
-        val TABLE_NAME: String = "posts"
 
+        val TABLE_NAME: String = "posts"
         val COLUMN_ID: String = "_id"
         val COLUMN_SCORE: String = "score"
         val COLUMN_TIMESTAMP: String = "timestamp"
@@ -36,8 +48,8 @@ class Database : AnkoLogger {
         val COLUMN_URL: String = "url"
         val COLUMN_ORDINAL: String = "ordinal"
         val COLUMN_STARRED: String = "starred"
-        val COLUMN_DESCENDANTS: String = "descendants"
 
+        val COLUMN_DESCENDANTS: String = "descendants"
         //Database creation SQL statement
         val DATABASE_CREATE = createTable(TABLE_NAME,
                 COLUMN_ID int primaryKey,
@@ -53,12 +65,13 @@ class Database : AnkoLogger {
                 COLUMN_STARRED int defaultZero,
                 COLUMN_DESCENDANTS int defaultZero
         )
+
     }
 
     object CommentsTable {
+
         // Database table
         val TABLE_NAME: String = "comment"
-
         //part of JSON blob
         val COLUMN_PARENT: String = "parent"
         val COLUMN_TIME: String = "time"
@@ -66,13 +79,13 @@ class Database : AnkoLogger {
         val COLUMN_BY: String = "by"
         val COLUMN_KIDS: String = "kids"
         val COLUMN_TEXT: String = "text"
-        val COLUMN_TYPE: String = "type"
 
+        val COLUMN_TYPE: String = "type"
         //own schema
         val COLUMN_ORDINAL: String = "ordinal"
         val COLUMN_PARENT_COMMENT: String = "parent_comment"
-        val COLUMN_ANCESTOR_COUNT: String = "ancestor_count"
 
+        val COLUMN_ANCESTOR_COUNT: String = "ancestor_count"
         val DATABASE_CREATE = createTable(TABLE_NAME,
                 COLUMN_ID int primaryKey,
                 COLUMN_TIME int notNull,
@@ -83,12 +96,14 @@ class Database : AnkoLogger {
                 COLUMN_KIDS text notNull,
                 COLUMN_TEXT text notNull,
                 COLUMN_TYPE text notNull,
-                COLUMN_ORDINAL real notNull
+                COLUMN_ORDINAL text notNull
         )
+
+
     }
 
-
     class DatabaseHelper(ctx: Context) : SQLiteOpenHelper(ctx, DATABASE_NAME, null, DATABASE_VERSION) {
+
         // Method is called during creation of the database
         override fun onCreate(database: SQLiteDatabase) {
             database.execSQL(PostTable.DATABASE_CREATE)
@@ -107,14 +122,29 @@ class Database : AnkoLogger {
             database.setForeignKeyConstraintsEnabled(true) //needed for cascading deletes
 
         }
+
     }
 
-    private val mDb: BriteDatabase
+    fun allStarredPosts(): List<NewsThreadUiData> {
+        val select = "SELECT * FROM ${PostTable.TABLE_NAME}"
+        val where = "WHERE ${PostTable.COLUMN_STARRED} = 1"
 
-    constructor(ctx: Context) {
-        val helper = DatabaseHelper(ctx)
-        val scheduler = Schedulers.io()
-        mDb = SqlBrite.create().wrapDatabaseHelper(helper, scheduler)
+        try {
+            mDb.query("$select $where").use {
+                if (it.moveToFirst()) {
+                    val list = ArrayList<NewsThreadUiData>(it.count)
+                    do {
+                        list.add(NewsThreadUiData(it))
+                    } while (it.moveToNext())
+                    return list
+                } else {
+                    return emptyList()
+                }
+            }
+        } catch (ex : Exception) {
+            Log.e("DatabaseHelper", "get starred posts failed", ex)
+            throw ex
+        }
     }
 
     fun getFrontPage(starredOnly: Boolean = false, filter: String = ""): QueryObservable {
@@ -139,19 +169,20 @@ class Database : AnkoLogger {
     }
 
     fun insertNewsThreads(vararg items: NewsThread) {
-        val transaction = mDb.newTransaction()
-        val success = items.map { it.toContentValues() }
-                .map { mDb.insert(PostTable.TABLE_NAME, it, SQLiteDatabase.CONFLICT_REPLACE) }
-                .none { it < 0 }
-        if (success) {
-            transaction.markSuccessful()
+        mDb.newTransaction().use {
+            val success = items.map { it.toContentValues() }
+                    .map { mDb.insert(PostTable.TABLE_NAME, it, SQLiteDatabase.CONFLICT_REPLACE) }
+                    .none { it < 0 }
+            if (success) {
+                it.markSuccessful()
+            }
         }
-        transaction.end()
     }
 
     fun getPostById(id: Long): QueryObservable {
         val select = "SELECT * FROM ${PostTable.TABLE_NAME}"
         val where = "WHERE ${PostTable.COLUMN_ID} = $id"
+
         return mDb.createQuery(PostTable.TABLE_NAME, "$select $where")
     }
 
@@ -162,18 +193,25 @@ class Database : AnkoLogger {
         return mDb.createQuery(CommentsTable.TABLE_NAME, "$select $where $orderBy")
     }
 
-    fun getPostByIdSync(id: Long): RowItem.NewsThreadUiData {
+    fun hasCommentsForPostIdSync(postId: Long): Boolean {
+        val select = "SELECT * FROM ${CommentsTable.TABLE_NAME}"
+        val where = "WHERE ${CommentsTable.COLUMN_PARENT} = $postId"
+        val orderBy = "ORDER BY ${CommentsTable.COLUMN_ORDINAL} ASC"
+        mDb.query("$select $where $orderBy").use {
+            return it.moveToFirst()
+        }
+    }
+
+    fun getPostByIdSync(id: Long): NewsThreadUiData? {
         val select = "SELECT * FROM ${PostTable.TABLE_NAME}"
         val where = "WHERE ${PostTable.COLUMN_ID} = $id"
-        var cursor: Cursor? = null
-        try {
-            cursor = mDb.query("$select $where")
-            if (!cursor.moveToPosition(0)) {
-                throw IllegalStateException()
+
+        mDb.query("$select $where").use {
+            val hasData = it.moveToFirst()
+            return when (hasData) {
+                true -> RowItem.NewsThreadUiData(it)
+                false -> null
             }
-            return RowItem.NewsThreadUiData(cursor)
-        } finally {
-            cursor?.close()
         }
     }
 
@@ -194,19 +232,17 @@ class Database : AnkoLogger {
         }
     }
 
-    fun getIdForOrdinalSync(ordinal: Int): Long {
+    fun getIdForOrdinalSync(ordinal: Int): Long? {
         val select = "SELECT ${PostTable.COLUMN_ID},${PostTable.COLUMN_ORDINAL} FROM ${PostTable.TABLE_NAME}"
         val where = "WHERE ${PostTable.COLUMN_ORDINAL} = $ordinal"
-        var cursor: Cursor? = null
-        try {
-            cursor = mDb.query("$select $where")
-            if (!cursor.moveToPosition(0)) {
-                throw IllegalStateException()
+        mDb.query("$select $where").use {
+            val hasData = it.moveToFirst()
+            return when (hasData) {
+                true -> it.getLong(0)
+                false -> null
             }
-            val id = cursor.getLong(0)
-            return id
-        } finally {
-            cursor?.close()
         }
     }
+
+
 }
