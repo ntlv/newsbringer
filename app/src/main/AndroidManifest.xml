@@ -49,12 +49,7 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name=".network.IoService"
-            android:exported="false"
-            android:label="@string/io_service_label" />
-
-        <service
+©        <service
             android:name=".application.StrictModeMonitor"
             android:exported="false"
             android:label="@string/strict_mode_service_label"/>

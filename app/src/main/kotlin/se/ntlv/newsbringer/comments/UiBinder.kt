@@ -14,7 +14,6 @@ import rx.Subscriber
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.starify
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
-import se.ntlv.newsbringer.customviews.applyAppBarLayoutDependency
 import se.ntlv.newsbringer.database.AdapterModelCollection
 import se.ntlv.newsbringer.network.RowItem
 import se.ntlv.newsbringer.newsthreads.completeAllAndVerify
@@ -47,7 +46,24 @@ class UiBinder(private val mActivity: CommentsActivity,
         recyclerView.adapter = mAdapter
 
         val fab = mActivity.find<FloatingActionButton>(R.id.fab)
-        fab.applyAppBarLayoutDependency()
+        recyclerView.addOnScrollListener( object : RecyclerView.OnScrollListener() {
+
+            var shouldShow = false
+
+            override fun onScrollStateChanged(recyclerView: RecyclerView?, newState: Int) {
+                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+                    if (shouldShow) {
+                        fab.show()
+                    } else {
+                        fab.hide()
+                    }
+                }
+            }
+
+            override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
+                shouldShow = dy < 0
+            }
+        })
 
         fab.onClick { navigateByScrolling(Direction.DOWN) }
         fab.onLongClick { navigateByScrolling(Direction.UP) }

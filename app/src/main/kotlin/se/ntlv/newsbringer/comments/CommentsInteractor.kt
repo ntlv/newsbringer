@@ -8,7 +8,7 @@ import se.ntlv.newsbringer.customviews.DataDiffCallback
 import se.ntlv.newsbringer.database.AdapterModelCollection
 import se.ntlv.newsbringer.database.DataCommentsThread
 import se.ntlv.newsbringer.database.Database
-import se.ntlv.newsbringer.network.IoService
+import se.ntlv.newsbringer.network.Io
 import se.ntlv.newsbringer.network.RowItem
 import se.ntlv.newsbringer.network.RowItem.CommentUiData
 import se.ntlv.newsbringer.network.RowItem.NewsThreadUiData
@@ -27,14 +27,14 @@ class CommentsInteractor(val context: Context,
 
 
     fun loadData(): Observable<AdapterModelCollection<RowItem>> {
-        IoService.requestPrepareHeaderAndCommentsFor(context, newsThreadId)
+        Io.requestPrepareHeaderAndCommentsFor(newsThreadId)
         val header = database.getPostById(newsThreadId)
                 .mapToOne {
                     val model = NewsThreadUiData(it)
                     shareCommentsInternal = { navigator.goToShareLink(model.title, "https://news.ycombinator.com/item?id=$newsThreadId") }
                     shareStoryInternal = { navigator.goToShareLink(model.title, model.url) }
                     goToLinkInternal = { navigator.goToLink(model.url) }
-                    addToStarredInternal = { IoService.requestToggleStarred(context, model.id, model.isStarred) }
+                    addToStarredInternal = { Io.requestToggleStarred(model.id, model.isStarred) }
                     model
                 }
 
@@ -54,7 +54,7 @@ class CommentsInteractor(val context: Context,
 
     }
 
-    fun refreshComments() = IoService.requestFetchPostAndComments(context, newsThreadId)
+    fun refreshComments() = Io.requestFetchPostAndComments(newsThreadId)
 
 
     fun goToLink() = goToLinkInternal()

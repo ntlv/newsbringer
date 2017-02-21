@@ -5,10 +5,10 @@ import android.support.v7.util.DiffUtil
 import org.jetbrains.anko.AnkoLogger
 import rx.Observable
 import se.ntlv.newsbringer.customviews.DataDiffCallback
+import se.ntlv.newsbringer.database.AdapterModelCollection
 import se.ntlv.newsbringer.database.DataFrontPage
 import se.ntlv.newsbringer.database.Database
-import se.ntlv.newsbringer.database.AdapterModelCollection
-import se.ntlv.newsbringer.network.IoService
+import se.ntlv.newsbringer.network.Io
 import se.ntlv.newsbringer.network.RowItem
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -22,9 +22,9 @@ class NewsThreadsInteractor(val context: Context,
     fun loadItemsAt(position: Int): Pair<Boolean, IntRange> {
         val range = position + 1..position + 10
 
-        val willLoad = when {
-            mCurrentPos.compareAndSet(position, range.last) -> IoService.requestFetchThreads(context, range)
-            else -> false
+        val willLoad = mCurrentPos.compareAndSet(position, range.last)
+        if (willLoad) {
+            Io.requestFetchThreads(range)
         }
         return willLoad to range
     }
@@ -44,10 +44,10 @@ class NewsThreadsInteractor(val context: Context,
                 }
     }
 
-    fun toggleItemStarredState(itemId: Long, starredStatus: Int) = IoService.requestToggleStarred(context, itemId, starredStatus)
+    fun toggleItemStarredState(itemId: Long, starredStatus: Int) = Io.requestToggleStarred(itemId, starredStatus)
 
     fun refreshFrontPage() {
-        IoService.requestFullWipe(context)
+        Io.requestFullWipe()
         mCurrentPos.set(0)
     }
 }
