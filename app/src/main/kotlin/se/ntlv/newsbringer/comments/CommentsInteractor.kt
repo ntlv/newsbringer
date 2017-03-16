@@ -1,6 +1,5 @@
 package se.ntlv.newsbringer.comments
 
-import android.content.Context
 import android.support.v7.util.DiffUtil
 import rx.Observable
 import se.ntlv.newsbringer.Navigator
@@ -8,18 +7,19 @@ import se.ntlv.newsbringer.customviews.DataDiffCallback
 import se.ntlv.newsbringer.database.AdapterModelCollection
 import se.ntlv.newsbringer.database.DataCommentsThread
 import se.ntlv.newsbringer.database.Database
+import se.ntlv.newsbringer.database.ParcelableIdentifiable
+import se.ntlv.newsbringer.network.CommentUiData
 import se.ntlv.newsbringer.network.Io
+import se.ntlv.newsbringer.network.NewsThreadUiData
 import se.ntlv.newsbringer.network.RowItem
-import se.ntlv.newsbringer.network.RowItem.CommentUiData
-import se.ntlv.newsbringer.network.RowItem.NewsThreadUiData
 
-class CommentsInteractor(val context: Context,
-                         val database: Database,
-                         val newsThreadId: Long,
-                         val navigator: Navigator,
-                         seed: List<RowItem>?) {
+class CommentsInteractor(
+        val database: Database,
+        val newsThreadId: Long,
+        val navigator: Navigator,
+        seed: List<ParcelableIdentifiable>?) {
 
-    private var previousComments: List<RowItem>? = seed
+    private var previousComments: List<ParcelableIdentifiable>? = seed
     private var shareCommentsInternal: (() -> Unit) = { throw IllegalStateException("Attempting to share comments before initialization") }
     private var shareStoryInternal: (() -> Unit) = { throw IllegalStateException("Attempting to share story before initialization") }
     private var goToLinkInternal: (() -> Unit) = { throw IllegalStateException("Attempting to open link before initialization") }
@@ -40,9 +40,9 @@ class CommentsInteractor(val context: Context,
 
         val comments = database.getCommentsForPost(newsThreadId)
                 .mapToList(::CommentUiData)
-                .filter {  it.isNotEmpty()}
+                .filter { it.isNotEmpty() }
 
-        return  Observable.combineLatest(header, comments) { h, c ->
+        return Observable.combineLatest(header, comments) { h, c ->
             val new = listOf(h) + c
             val old = previousComments
             previousComments = new

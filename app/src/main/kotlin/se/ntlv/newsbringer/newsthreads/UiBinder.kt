@@ -8,14 +8,13 @@ import android.support.v7.widget.RecyclerView
 import android.view.View
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.find
+import rx.Emitter
 import rx.Observable
-import rx.Subscriber
 import se.ntlv.newsbringer.R
+import se.ntlv.newsbringer.application.createTrackedEmitterWithAutoRemove
 import se.ntlv.newsbringer.customviews.RefreshButtonAnimator
 import se.ntlv.newsbringer.database.AdapterModelCollection
-import se.ntlv.newsbringer.network.RowItem.NewsThreadUiData
-import se.ntlv.newsbringer.thisShouldNeverHappen
-import java.nio.BufferOverflowException
+import se.ntlv.newsbringer.network.NewsThreadUiData
 
 interface NewsThreadsViewBinder {
     fun indicateDataLoading(isLoading: Boolean): Unit
@@ -33,7 +32,7 @@ class UiBinder(activity: NewsThreadsActivity,
                manager: RecyclerView.LayoutManager,
                private val adapter: NewsThreadAdapter) : AppBarLayout.OnOffsetChangedListener, AnkoLogger, NewsThreadsViewBinder {
 
-    private val mRefreshListeners: MutableList<Subscriber<in Any>> = mutableListOf()
+    private val mRefreshListeners: MutableList<Emitter<in Any>> = mutableListOf()
 
     private val mAppBar = activity.find<AppBarLayout>(R.id.appbar)
     private val mSwipeView = activity.find<SwipeRefreshLayout>(R.id.swipe_view)
@@ -63,8 +62,8 @@ class UiBinder(activity: NewsThreadsActivity,
 
     override fun observerPresentationProgress() = adapter.observeRenderProgress()
 
-    override fun observeRefreshEvents(): Observable<Any> =
-            Observable.create<Any> { mRefreshListeners.add(it) }.onBackpressureBuffer(10, { throw BufferOverflowException() })
+    override fun observeRefreshEvents(): Observable<Any> = createTrackedEmitterWithAutoRemove(mRefreshListeners)
+
 
     fun start() {
         mAppBar.addOnOffsetChangedListener(this)
@@ -76,7 +75,7 @@ class UiBinder(activity: NewsThreadsActivity,
     }
 
     fun destroy() {
-        completeAllAndVerify(mRefreshListeners)
+        mRefreshListeners.forEach { it.onCompleted() }
         mRefreshListeners.clear()
     }
 
@@ -86,12 +85,4 @@ class UiBinder(activity: NewsThreadsActivity,
         }
         refreshButtonManager.indicateLoading(isLoading)
     }
-}
-
-fun <T> completeAllAndVerify(subscribers: List<Subscriber<in T>>) {
-    subscribers.forEach { it.onCompleted() }
-    if (subscribers.any { !it.isUnsubscribed }) {
-        thisShouldNeverHappen()
-    }
-
 }

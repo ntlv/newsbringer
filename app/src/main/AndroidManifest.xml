@@ -49,11 +49,6 @@
             </intent-filter>
         </activity>
 
-©        <service
-            android:name=".application.StrictModeMonitor"
-            android:exported="false"
-            android:label="@string/strict_mode_service_label"/>
-
     </application>
 
 </manifest>

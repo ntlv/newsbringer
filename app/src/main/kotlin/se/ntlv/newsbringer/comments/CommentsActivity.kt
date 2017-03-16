@@ -51,7 +51,7 @@ class CommentsActivity : AppCompatActivity() {
         mAdapter = CommentsAdapterWithHeader(data, padding, { mPresenter.onHeaderClick() }, navigator)
 
         mUiBinder = UiBinder(this, LinearLayoutManager(this), mAdapter)
-        val interactor = CommentsInteractor(this, database, mItemId, navigator, data?.base)
+        val interactor = CommentsInteractor(database, mItemId, navigator, data?.base)
         mPresenter = CommentsPresenter(mUiBinder, interactor)
     }
 

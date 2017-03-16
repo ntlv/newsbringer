@@ -8,10 +8,11 @@ import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.BindingViewHolder
 import se.ntlv.newsbringer.customviews.DateView
+import se.ntlv.newsbringer.network.CommentUiData
 import se.ntlv.newsbringer.network.RowItem
 
 
-class RowHolder(root: View, private val nestingIncrement: Int, private val navigator : Navigator) : BindingViewHolder<RowItem.CommentUiData>(root) {
+class RowHolder(root: View, private val nestingIncrement: Int, private val navigator: Navigator) : BindingViewHolder<RowItem>(root) {
     val self = root
     val text = root.find<TextView>(R.id.comment_text)
     val by = root.find<TextView>(R.id.by)
@@ -23,22 +24,22 @@ class RowHolder(root: View, private val nestingIncrement: Int, private val navig
 
     val color = arrayOf(R.color.cyan, R.color.green, R.color.orange, R.color.pink, R.color.purple, R.color.red, R.color.teal, R.color.yellow)
 
-    override fun bind(item: RowItem.CommentUiData) {
-        val ancestorCount = item.ancestorCount
+    override fun bind(item: RowItem) {
+        val castItem = item as CommentUiData
+        val ancestorCount = castItem.ancestorCount
         val padding = nestingIncrement * ancestorCount
         self.setPadding(padding, self.paddingTop, self.paddingRight, self.paddingBottom)
 
         colorView.backgroundResource = color[ancestorCount % color.size]
         bottomBand.backgroundResource = color[ancestorCount % color.size]
 
-        by.text = "${item.stringOrdinal} - ${item.by}"
-        time.text = item.time.toString()
-        val content = if (!item.text.isNullOrEmpty()) item.text else "[Removed]"
+        val byLine = "${castItem.stringOrdinal} - ${castItem.by}"
+        by.text = byLine
+        time.text = castItem.time.toString()
+        val content = if (!castItem.text.isNullOrEmpty()) castItem.text else "[Removed]"
         text.setHtml(content, navigator)
-        id = item.id
+        id = castItem.id
 
-        val kidsString = item.kids
-        val count = if (kidsString.isNullOrBlank()) 0 else kidsString.split(',').size
-        kids.text = count.toString()
+        kids.text = castItem.kids[0].toString()
     }
 }

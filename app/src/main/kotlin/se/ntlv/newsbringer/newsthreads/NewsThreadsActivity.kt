@@ -40,7 +40,7 @@ class NewsThreadsActivity : AppCompatActivity(), AnkoLogger, SearchView.OnQueryT
 
         mAdapter = NewsThreadAdapter(onClick, onLongClick, data)
         mUiBinder = UiBinder(this, LinearLayoutManager(this), mAdapter)
-        mPresenter = NewsThreadsPresenter(mUiBinder, Navigator(this), NewsThreadsInteractor(this, database, data?.base))
+        mPresenter = NewsThreadsPresenter(mUiBinder, Navigator(this), NewsThreadsInteractor(database, data?.base))
 
         setSupportActionBar(find<Toolbar>(R.id.toolbar))
         title = getString(R.string.frontpage)

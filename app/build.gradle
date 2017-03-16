@@ -6,7 +6,7 @@ apply plugin: 'io.fabric'
 
 
 buildscript {
-    ext.kotlin_version = '1.0.6'
+    ext.kotlin_version = '1.1.1'
     ext.JUNIT_VERSION = '4.12'
     ext.DAGGER_VERSION = '2.6'
     repositories {
@@ -35,15 +35,15 @@ dependencies {
     //kotlin
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     //http and serialization
-    compile 'com.squareup.okhttp3:okhttp:3.4.1'
-    compile 'com.google.code.gson:gson:2.7'
+    compile 'com.squareup.okhttp3:okhttp:3.6.0'
+    compile 'com.google.code.gson:gson:2.8.0'
     //Crash reporting
     compile('com.crashlytics.sdk.android:crashlytics:2.6.2@aar') {
         transitive = true;
     }
-    compile 'org.jetbrains.anko:anko-sdk23:0.9'
+    compile 'org.jetbrains.anko:anko-sdk23:0.9.1'
     //reactive stuff
-    compile 'io.reactivex:rxjava:1.1.0'
+    compile 'io.reactivex:rxjava:1.2.7'
     compile 'io.reactivex:rxandroid:1.2.1'
     compile 'com.squareup.sqlbrite:sqlbrite:0.7.0'
     //tests
@@ -55,8 +55,8 @@ android {
     sourceSets {
         main.java.srcDirs += 'src/main/kotlin'
     }
-    compileSdkVersion 24
-    buildToolsVersion '24.0.2'
+    compileSdkVersion 25
+    buildToolsVersion '25.0.2'
 
     signingConfigs {
         release {
@@ -68,10 +68,10 @@ android {
     }
 
     defaultConfig {
-        versionCode 17
+        versionCode 18
         versionName "$versionCode"
         minSdkVersion 19
-        targetSdkVersion 24
+        targetSdkVersion 25
         multiDexEnabled true
     }
     productFlavors {

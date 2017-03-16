@@ -1,7 +1,7 @@
 package se.ntlv.newsbringer.newsthreads
 
-import android.content.Context
 import android.support.v7.util.DiffUtil
+import android.util.Log
 import org.jetbrains.anko.AnkoLogger
 import rx.Observable
 import se.ntlv.newsbringer.customviews.DataDiffCallback
@@ -9,35 +9,38 @@ import se.ntlv.newsbringer.database.AdapterModelCollection
 import se.ntlv.newsbringer.database.DataFrontPage
 import se.ntlv.newsbringer.database.Database
 import se.ntlv.newsbringer.network.Io
-import se.ntlv.newsbringer.network.RowItem
-import java.util.concurrent.atomic.AtomicInteger
+import se.ntlv.newsbringer.network.NewsThreadUiData
 
 
-class NewsThreadsInteractor(val context: Context,
-                            val mDb: Database,
-                            seed: List<RowItem.NewsThreadUiData>?) : AnkoLogger {
+class NewsThreadsInteractor(val mDb: Database,
+                            seed: List<NewsThreadUiData>?) : AnkoLogger {
 
-    private val mCurrentPos = AtomicInteger(-1)
+    private var mPreviousData = seed
+    private var shouldLoad = BooleanArray(500)
 
     fun loadItemsAt(position: Int): Pair<Boolean, IntRange> {
-        val range = position + 1..position + 10
+        Log.v(loggerTag, "load items at $position with shouldLoad[$position]=${shouldLoad[position]}")
+        val willLoad = shouldLoad[position]
 
-        val willLoad = mCurrentPos.compareAndSet(position, range.last)
+        val range = position + 1..position + Io.fetchInc
         if (willLoad) {
+            Log.v(loggerTag, "Loading more items since $position matched")
+            shouldLoad[position] = false
+            range.forEach {
+                shouldLoad[it] = false
+            }
+            shouldLoad[range.endInclusive] = true
             Io.requestFetchThreads(range)
         }
         return willLoad to range
     }
 
-    private var mPreviousData: List<RowItem.NewsThreadUiData>? = seed
-
-    fun loadData(starredOnly: Boolean, filter: String): Observable<AdapterModelCollection<RowItem.NewsThreadUiData>> {
+    fun loadData(starredOnly: Boolean, filter: String): Observable<AdapterModelCollection<NewsThreadUiData>> {
         return mDb.getFrontPage(starredOnly, filter)
-                .mapToList { RowItem.NewsThreadUiData(it) }
+                .mapToList(::NewsThreadUiData)
                 .map {
                     val old = mPreviousData
                     val new = it
-                    mCurrentPos.compareAndSet(-1, new.size - 1)
                     val diff = DiffUtil.calculateDiff(DataDiffCallback(old, new))
                     mPreviousData = new
                     DataFrontPage(it, diff)
@@ -48,7 +51,7 @@ class NewsThreadsInteractor(val context: Context,
 
     fun refreshFrontPage() {
         Io.requestFullWipe()
-        mCurrentPos.set(0)
+        shouldLoad = BooleanArray(500, { it >= Io.fetchInc })
     }
 }
 

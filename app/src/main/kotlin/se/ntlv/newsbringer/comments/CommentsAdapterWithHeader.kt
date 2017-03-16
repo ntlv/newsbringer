@@ -18,41 +18,27 @@ import se.ntlv.newsbringer.adapter.BindingViewHolder
 import se.ntlv.newsbringer.adapter.GenericRecyclerViewAdapter
 import se.ntlv.newsbringer.database.AdapterModelCollection
 import se.ntlv.newsbringer.network.RowItem
-import se.ntlv.newsbringer.network.RowItem.CommentUiData
-import se.ntlv.newsbringer.network.RowItem.NewsThreadUiData
-import se.ntlv.newsbringer.network.TypesFactory
 import se.ntlv.newsbringer.thisShouldNeverHappen
 
 
 class CommentsAdapterWithHeader(seed: AdapterModelCollection<RowItem>?,
-                                nestingPaddingIncrement: Int,
-                                headerClickListener: (View) -> Unit,
-                                navigator: Navigator) : GenericRecyclerViewAdapter<RowItem, BindingViewHolder<RowItem>>(seed), AnkoLogger {
+                                private val nestingPaddingIncrement: Int,
+                                private val headerClickListener: (View) -> Unit,
+                                private val navigator: Navigator) : GenericRecyclerViewAdapter<RowItem, BindingViewHolder<RowItem>>(seed), AnkoLogger {
 
-
-    private class TypesFactoryImpl(private val nestingIncrement: Int,
-                                   private val headerClick: (View) -> Unit,
-                                   private val navigator: Navigator) : TypesFactory {
-        override fun type(row: CommentUiData): Int = R.layout.comment_item
-
-        override fun type(header: NewsThreadUiData): Int = R.layout.header_item
-
-        @Suppress("UNCHECKED_CAST")
-        override fun holder(type: Int, view: View): BindingViewHolder<RowItem> = when (type) {
-            R.layout.comment_item -> RowHolder(view, nestingIncrement, navigator)
-            R.layout.header_item -> HeaderHolder(view, headerClick, navigator)
-            else -> thisShouldNeverHappen("$type cannot be resolved")
-        } as BindingViewHolder<RowItem>
+    override fun getItemViewType(position: Int): Int = when (position) {
+        0 -> R.layout.header_item
+        else -> R.layout.comment_item
     }
-
-    private val typesFactory = TypesFactoryImpl(nestingPaddingIncrement, headerClickListener, navigator)
-
-
-    override fun getItemViewType(position: Int): Int = data!![position].type(typesFactory)
 
     override fun onCreateViewHolder(parent: ViewGroup?, viewType: Int): BindingViewHolder<RowItem> {
         val root = LayoutInflater.from(parent!!.context).inflate(viewType, parent, false)
-        return typesFactory.holder(viewType, root)
+
+        return when (viewType) {
+            R.layout.comment_item -> RowHolder(root, nestingPaddingIncrement, navigator)
+            R.layout.header_item -> HeaderHolder(root, headerClickListener, navigator)
+            else -> thisShouldNeverHappen("$viewType cannot be resolved")
+        }
     }
 
     fun findInDataSet(start: Int,
@@ -64,13 +50,9 @@ class CommentsAdapterWithHeader(seed: AdapterModelCollection<RowItem>?,
         var currentPosition = movementMethod(start)
         val dataRange = 0..localDataRef.size - 1
 
-        while (currentPosition in dataRange) {
-
-            if (predicate(localDataRef[currentPosition])) {
-                return currentPosition
-            } else {
-                currentPosition = movementMethod(currentPosition)
-            }
+        while (currentPosition in dataRange) when {
+            predicate(localDataRef[currentPosition]) -> return currentPosition
+            else -> currentPosition = movementMethod(currentPosition)
         }
         return start
     }

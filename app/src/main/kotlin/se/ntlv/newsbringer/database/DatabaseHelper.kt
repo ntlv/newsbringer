@@ -10,9 +10,7 @@ import com.squareup.sqlbrite.QueryObservable
 import com.squareup.sqlbrite.SqlBrite
 import org.jetbrains.anko.AnkoLogger
 import rx.schedulers.Schedulers
-import se.ntlv.newsbringer.network.NewsThread
-import se.ntlv.newsbringer.network.RowItem
-import se.ntlv.newsbringer.network.RowItem.NewsThreadUiData
+import se.ntlv.newsbringer.network.NewsThreadUiData
 import se.ntlv.newsbringer.thisShouldNeverHappen
 import java.util.*
 
@@ -25,13 +23,11 @@ class Database(ctx: Context) : AnkoLogger {
         val helper = DatabaseHelper(ctx)
         val scheduler = Schedulers.io()
         mDb = SqlBrite.create().wrapDatabaseHelper(helper, scheduler)
-//        mDb.setLoggingEnabled(DEBUG)
     }
 
     private companion object {
         val DATABASE_NAME = "ycreader.db"
         val DATABASE_VERSION = 3
-
     }
 
     object PostTable {
@@ -61,11 +57,10 @@ class Database(ctx: Context) : AnkoLogger {
                 COLUMN_TITLE text nullAllowed,
                 COLUMN_TYPE text nullAllowed,
                 COLUMN_URL text nullAllowed,
-                COLUMN_ORDINAL real nullAllowed,
+                COLUMN_ORDINAL int nullAllowed,
                 COLUMN_STARRED int defaultZero,
                 COLUMN_DESCENDANTS int defaultZero
         )
-
     }
 
     object CommentsTable {
@@ -77,7 +72,7 @@ class Database(ctx: Context) : AnkoLogger {
         val COLUMN_TIME: String = "time"
         val COLUMN_ID: String = "_id"
         val COLUMN_BY: String = "by"
-        val COLUMN_KIDS: String = "kids"
+        val COLUMN_KIDS_SIZE: String = "kids"
         val COLUMN_TEXT: String = "text"
 
         val COLUMN_TYPE: String = "type"
@@ -93,7 +88,7 @@ class Database(ctx: Context) : AnkoLogger {
                 COLUMN_PARENT int cascadeDelete(PostTable.TABLE_NAME, PostTable.COLUMN_ID),
                 COLUMN_PARENT_COMMENT int cascadeDelete(CommentsTable.TABLE_NAME, CommentsTable.COLUMN_ID),
                 COLUMN_ANCESTOR_COUNT int defaultZero,
-                COLUMN_KIDS text notNull,
+                COLUMN_KIDS_SIZE int notNull,
                 COLUMN_TEXT text notNull,
                 COLUMN_TYPE text notNull,
                 COLUMN_ORDINAL text notNull
@@ -141,7 +136,7 @@ class Database(ctx: Context) : AnkoLogger {
                     return emptyList()
                 }
             }
-        } catch (ex : Exception) {
+        } catch (ex: Exception) {
             Log.e("DatabaseHelper", "get starred posts failed", ex)
             throw ex
         }
@@ -168,11 +163,32 @@ class Database(ctx: Context) : AnkoLogger {
         return mDb.createQuery(PostTable.TABLE_NAME, "$select $where $orderBy")
     }
 
-    fun insertNewsThreads(vararg items: NewsThread) {
+    fun insertNewsThreads(vararg items: NewsThreadUiData) {
+        if (items.size == 1) {
+            mDb.insert(PostTable.TABLE_NAME, items[0].toContentValues(), SQLiteDatabase.CONFLICT_REPLACE)
+        } else {
+            val things = items.map(NewsThreadUiData::toContentValues)
+            insertManyThings(things)
+        }
+    }
+
+    fun insertPlaceholders(placeholders: List<Pair<Long, Int>>) {
+        val cvs = placeholders.map {
+            val cv = ContentValues(2)
+            cv.put(PostTable.COLUMN_ID, it.first)
+            cv.put(PostTable.COLUMN_ORDINAL, it.second)
+            cv
+        }
+        insertManyThings(cvs)
+    }
+
+    private fun insertManyThings(things : List<ContentValues>) {
         mDb.newTransaction().use {
-            val success = items.map { it.toContentValues() }
-                    .map { mDb.insert(PostTable.TABLE_NAME, it, SQLiteDatabase.CONFLICT_REPLACE) }
-                    .none { it < 0 }
+            val success = things.map {
+                mDb.insert(PostTable.TABLE_NAME, it, SQLiteDatabase.CONFLICT_REPLACE)
+            }.none {
+                it < 0
+            }
             if (success) {
                 it.markSuccessful()
             }
@@ -209,7 +225,7 @@ class Database(ctx: Context) : AnkoLogger {
         mDb.query("$select $where").use {
             val hasData = it.moveToFirst()
             return when (hasData) {
-                true -> RowItem.NewsThreadUiData(it)
+                true -> NewsThreadUiData(it)
                 false -> null
             }
         }

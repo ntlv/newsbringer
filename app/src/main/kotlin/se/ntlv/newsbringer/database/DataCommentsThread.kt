@@ -6,15 +6,17 @@ import android.support.v7.util.DiffUtil
 import android.support.v7.util.DiffUtil.DiffResult
 import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.info
-import se.ntlv.newsbringer.network.RowItem
 import se.ntlv.newsbringer.customviews.DataDiffCallback
+import se.ntlv.newsbringer.network.CommentUiData
+import se.ntlv.newsbringer.network.NewsThreadUiData
+import se.ntlv.newsbringer.network.RowItem
 
 class DataCommentsThread(internal val base: List<RowItem>, override val diff: DiffResult) : AdapterModelCollection<RowItem> {
     override fun get(position: Int) = base[position]
 
     override val size = base.size
 
-    companion object : AnkoLogger {
+    companion object  {
 
         @Suppress("unused")
         @JvmField
@@ -22,11 +24,10 @@ class DataCommentsThread(internal val base: List<RowItem>, override val diff: Di
             override fun newArray(size: Int): Array<DataCommentsThread?> = arrayOfNulls(size)
 
             override fun createFromParcel(source: Parcel): DataCommentsThread {
-                info("Creating from parcel")
-                val header = source.readTypedObject(RowItem.NewsThreadUiData.CREATOR)
+                val header = source.readTypedObject(NewsThreadUiData.CREATOR)
 
-                val comments: MutableList<RowItem.CommentUiData> = mutableListOf()
-                source.readTypedList(comments, RowItem.CommentUiData.CREATOR)
+                val comments: MutableList<CommentUiData> = mutableListOf()
+                source.readTypedList(comments, CommentUiData.CREATOR)
 
                 val base: MutableList<RowItem> = mutableListOf(header)
                 base.addAll(comments)
@@ -48,6 +49,4 @@ class DataCommentsThread(internal val base: List<RowItem>, override val diff: Di
         dest.writeTypedObject(base[0], 0)
         dest.writeTypedList(base.subList(1, base.size))
     }
-
-    override fun describeContents(): Int = 0
 }

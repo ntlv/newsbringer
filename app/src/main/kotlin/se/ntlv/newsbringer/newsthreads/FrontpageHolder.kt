@@ -9,11 +9,11 @@ import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.BindingViewHolder
 import se.ntlv.newsbringer.adapter.starify
 import se.ntlv.newsbringer.customviews.DateView
-import se.ntlv.newsbringer.network.RowItem
+import se.ntlv.newsbringer.network.NewsThreadUiData
 
 class FrontpageHolder(root: View,
                  private val onClick: (FrontpageHolder) -> Unit,
-                 private val onLongClick: (FrontpageHolder) -> Boolean) : BindingViewHolder<RowItem.NewsThreadUiData>(root) {
+                 private val onLongClick: (FrontpageHolder) -> Boolean) : BindingViewHolder<NewsThreadUiData>(root) {
 
     //model data
     var id: Long? = null
@@ -29,7 +29,7 @@ class FrontpageHolder(root: View,
     val commentCount = root.find<TextView>(R.id.comment_count)
     val ordinal = root.find<TextView>(R.id.ordinal)
 
-    override fun bind(item: RowItem.NewsThreadUiData) {
+    override fun bind(item: NewsThreadUiData) {
         //model data
         id = item.id
         isStarred = item.isStarred

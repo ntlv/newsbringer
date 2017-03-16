@@ -1,6 +1,5 @@
 package se.ntlv.newsbringer.network
 
-import android.util.Log
 import com.google.gson.Gson
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -11,6 +10,8 @@ import kotlin.LazyThreadSafetyMode.PUBLICATION
 
 
 object Io {
+
+    const val fetchInc = 15
 
     //---------------------------------------------------------------------------------------------
     // PUBLIC INTERFACE
@@ -61,22 +62,19 @@ object Io {
 
     private fun handlePrepareHeaderAndCommentsFor(newsThreadId: Long) {
 
-        val childIds: List<Long>?
+        val childIds: List<Long>
         val newsItem = database.getPostByIdSync(newsThreadId)
         if (newsItem == null) {
             val fetchedItem = getNewsThread(newsThreadId, 0, 0)
-            childIds = fetchedItem.kids?.asList()
+            childIds = fetchedItem.children
             database.insertNewsThreads(fetchedItem)
         } else {
-            childIds = newsItem.children.split(',').filter(String::isNotEmpty).map(String::toLong)
+            childIds = newsItem.children
         }
 
         if (!database.hasCommentsForPostIdSync(newsThreadId)) {
-            if (childIds == null || childIds.isEmpty()) {
-                val fakeComment = Comment()
-                fakeComment.text = "No comments"
-                fakeComment.parent = newsThreadId
-                fakeComment.time = System.currentTimeMillis()
+            if (childIds.isEmpty()) {
+                val fakeComment = CommentUiData(newsThreadId, 0, "a", System.currentTimeMillis(), 0, "null author", listOf(), "No comments", 0)
                 val cv = fakeComment.toContentValues("a", 0, newsThreadId)
                 database.insertComment(cv)
             } else {
@@ -93,7 +91,7 @@ object Io {
     private fun handleFetchComment(id: Long, ancestorCount: Int, baseOrdinal: String, newsThreadId: Long) {
         val url = "$ITEM_URI$id$URI_SUFFIX"
 
-        val comment = http.get(url, Comment::class.java, gson)
+        val comment = http.get(url, CommentUiData::class.java, gson)
 
         val reified = comment.toContentValues(baseOrdinal, ancestorCount, newsThreadId)
         database.insertComment(reified)
@@ -114,7 +112,7 @@ object Io {
 
 
         var commentOrdinal = "a"
-        thread.kids?.forEach {
+        thread.children.forEach {
             requestFetchComment(it, 0, commentOrdinal, newsThreadId)
             commentOrdinal = commentOrdinal.nextOrdinal()
         }
@@ -143,14 +141,17 @@ object Io {
         database.deleteFrontPage()
 
         val ids = http.get(TOP_FIVE_HUNDRED, Array<Long>::class.java, gson)
-        val emptyNewsThreads = ids.filter { it !in starredIds }.mapIndexed { ordinal, id -> NewsThread(id, ordinal) }
 
-        val starredItems = starredBeforeDelete.map { getNewsThread(it.id, it.ordinal, 1) }
-        val insertThis = (starredItems + emptyNewsThreads).toTypedArray()
+        val emptyNewsThreads: List<Pair<Long, Int>> = ids.filter { it !in starredIds }.mapIndexed { ordinal, id -> Pair(id, ordinal) }
 
-        database.insertNewsThreads(*insertThis)
+        val starredItems = starredBeforeDelete.map { getNewsThread(it.id, it.ordinal, 1) }.toTypedArray()
+        database.insertNewsThreads(*starredItems)
 
-        requestFetchThreads(0..0)
+        val placeHolders: List<Pair<Long, Int>> = emptyNewsThreads
+
+        database.insertPlaceholders(placeHolders)
+
+        requestFetchThreads(0..fetchInc)
     }
 
     private fun handleFetchThread(ordinal: Int) {
@@ -159,31 +160,25 @@ object Io {
         database.insertNewsThreads(item)
     }
 
-    private fun getNewsThread(id: Long, ordinal: Int, isStarred: Int = 0): NewsThread {
-        val item = http.get("$ITEM_URI$id$URI_SUFFIX", NewsThread::class.java, gson)
+    private fun getNewsThread(id: Long, ordinal: Int, isStarred: Int = 0): NewsThreadUiData {
+        val item = http.get("$ITEM_URI$id$URI_SUFFIX", NewsThreadUiData::class.java, gson)
         item.ordinal = ordinal
-        item.starred = isStarred
+        item.isStarred = isStarred
         return item
     }
 
 
     private fun <T> OkHttpClient.get(url: String, cls: Class<T>, deserializer: Gson): T {
+        val request = Request.Builder().url(url).get().build()
+        newCall(request).execute().use {
+            if (!it.isSuccessful) throw IOException("Unexpected response { $it }")
 
-        try {
-            val request = Request.Builder().url(url).get().build()
-            newCall(request).execute().use {
-                if (!it.isSuccessful) throw IOException("Unexpected response { $it }")
-
-                it.body().use {
-                    it.charStream().use {
-                        return deserializer.fromJson(it, cls)
-                    }
+            it.body().use {
+                it.charStream().use {
+                    return deserializer.fromJson(it, cls)
                 }
-
             }
-        } catch (ex: Exception) {
-            Log.e("Io", "Http GET failure", ex)
-            throw ex
+
         }
     }
 

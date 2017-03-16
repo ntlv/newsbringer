@@ -1,15 +1,15 @@
 package se.ntlv.newsbringer.application
 
 import android.app.Application
-import android.content.Intent
 import android.content.pm.PackageManager.GET_META_DATA
 import android.os.Build
 import android.os.StrictMode
 import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
 import org.jetbrains.anko.AnkoLogger
-import rx.plugins.RxJavaPlugins
-import rx.plugins.RxJavaSchedulersHook
+import rx.Emitter
+import rx.Observable
+import rx.plugins.RxJavaHooks
 import rx.schedulers.Schedulers
 import se.ntlv.newsbringer.BuildConfig
 import se.ntlv.newsbringer.comments.CommentsActivity
@@ -53,13 +53,25 @@ class YcReaderApplication : Application(), AnkoLogger {
             StrictMode.setVmPolicy(builder.build())
         }
 
-        RxJavaPlugins.getInstance()
-                .registerSchedulersHook(
-                        object : RxJavaSchedulersHook() {
-                            override fun getIOScheduler() = Schedulers.from(GlobalDependency.ioPool)
-                        }
-                )
-        checkNotNull(startService(Intent(this, StrictModeMonitor::class.java)))
+        val scheduler = Schedulers.from(GlobalDependency.ioPool)
+        RxJavaHooks.setOnIOScheduler { scheduler }
+    }
+}
+
+fun <T> createTrackedEmitterWithAutoRemove(tracker: MutableCollection<Emitter<in T>>,
+                                           pressureModel: Emitter.BackpressureMode = Emitter.BackpressureMode.ERROR): Observable<T> {
+    var t: Emitter<T>? = null
+    return Observable.create<T>(
+            {
+                it.setCancellation { tracker.remove(it) }
+                tracker.add(it)
+                t = it
+            },
+            pressureModel
+    ).doAfterTerminate {
+        val safeT = t
+        safeT?.let { tracker.remove(safeT) }
+
     }
 }
 
