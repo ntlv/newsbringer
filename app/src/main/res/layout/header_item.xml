@@ -136,6 +136,7 @@
         android:layout_marginStart="24dp"
         android:layout_marginTop="8dp"
         android:autoLink="all"
+        android:textColor="@android:color/primary_text_light"
         android:paddingBottom="16dp"
         android:visibility="gone"
         tools:text="Lorem ipsum dolor sit amet, arcu urna, error mus. Vel vitae, dignissim pede justo faucibus amet, pede at ipsum ut debitis ligula. Cursus amet, feugiat nulla nam eros est. Nibh fusce tincidunt tempor suspendisse nunc, mauris mi ut lorem nec pretium senectus, aliquam donec cum wisi molestie, a volutpat eget sollicitudin arcu, consequat elit. Ante facilisis consectetuer sed nunc dui. Imperdiet non cras, elit vestibulum nam mattis. Vitae ut at praesent, nonummy nisl donec a donec adipiscing, justo eleifend dapibus explicabo ipsum, interdum nisl, etiam blandit ipsum. Convallis platea sem ornare eu, quis porttitor sem magna adipiscing, feugiat nam a ut mi in nec, labore wisi, aliquet sollicitudin non adipiscing ridiculus sit. Est nunc sollicitudin, in mollis velit urna mauris turpis sem."

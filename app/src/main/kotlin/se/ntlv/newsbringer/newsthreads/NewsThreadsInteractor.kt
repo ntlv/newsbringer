@@ -16,7 +16,12 @@ class NewsThreadsInteractor(val mDb: Database,
                             seed: List<NewsThreadUiData>?) : AnkoLogger {
 
     private var mPreviousData = seed
-    private var shouldLoad = BooleanArray(500)
+    private var shouldLoad : BooleanArray
+
+    init {
+        val loadAtPos = if (seed != null && seed.size > Io.fetchInc ) seed.size - 1 else Io.fetchInc
+        shouldLoad =  BooleanArray(500, { it == loadAtPos })
+    }
 
     fun loadItemsAt(position: Int): Pair<Boolean, IntRange> {
         Log.v(loggerTag, "load items at $position with shouldLoad[$position]=${shouldLoad[position]}")
