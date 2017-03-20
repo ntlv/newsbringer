@@ -23,7 +23,7 @@ interface NewsThreadsViewBinder {
 
     fun showStatusMessage(message: String)
 
-    fun observerPresentationProgress(): Observable<ProgressReport>
+    fun observePresentationPosition(): Observable<Int>
 
     fun observeRefreshEvents(): Observable<Any>
 }
@@ -32,7 +32,7 @@ class UiBinder(activity: NewsThreadsActivity,
                manager: RecyclerView.LayoutManager,
                private val adapter: NewsThreadAdapter) : AppBarLayout.OnOffsetChangedListener, AnkoLogger, NewsThreadsViewBinder {
 
-    private val mRefreshListeners: MutableList<Emitter<in Any>> = mutableListOf()
+    private val mRefreshListeners: MutableList<Emitter<Any>> = mutableListOf()
 
     private val mAppBar = activity.find<AppBarLayout>(R.id.appbar)
     private val mSwipeView = activity.find<SwipeRefreshLayout>(R.id.swipe_view)
@@ -60,7 +60,7 @@ class UiBinder(activity: NewsThreadsActivity,
         mSwipeView.isEnabled = 0 == verticalOffset
     }
 
-    override fun observerPresentationProgress() = adapter.observeRenderProgress()
+    override fun observePresentationPosition() = adapter.observePresentationPosition()
 
     override fun observeRefreshEvents(): Observable<Any> = createTrackedEmitterWithAutoRemove(mRefreshListeners)
 

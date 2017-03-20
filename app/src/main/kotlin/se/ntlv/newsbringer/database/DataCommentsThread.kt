@@ -4,19 +4,15 @@ import android.os.Parcel
 import android.os.Parcelable
 import android.support.v7.util.DiffUtil
 import android.support.v7.util.DiffUtil.DiffResult
-import org.jetbrains.anko.AnkoLogger
-import org.jetbrains.anko.info
 import se.ntlv.newsbringer.customviews.DataDiffCallback
 import se.ntlv.newsbringer.network.CommentUiData
 import se.ntlv.newsbringer.network.NewsThreadUiData
 import se.ntlv.newsbringer.network.RowItem
 
-class DataCommentsThread(internal val base: List<RowItem>, override val diff: DiffResult) : AdapterModelCollection<RowItem> {
-    override fun get(position: Int) = base[position]
+class DataCommentsThread(internal val base: List<RowItem>,
+                         override val diff: DiffResult) : AdapterModelCollection<RowItem>, List<RowItem> by base {
 
-    override val size = base.size
-
-    companion object  {
+    companion object {
 
         @Suppress("unused")
         @JvmField
@@ -24,7 +20,8 @@ class DataCommentsThread(internal val base: List<RowItem>, override val diff: Di
             override fun newArray(size: Int): Array<DataCommentsThread?> = arrayOfNulls(size)
 
             override fun createFromParcel(source: Parcel): DataCommentsThread {
-                val header = source.readTypedObject(NewsThreadUiData.CREATOR)
+
+                val header = source.readParcelable<NewsThreadUiData>(NewsThreadUiData::class.java.classLoader)
 
                 val comments: MutableList<CommentUiData> = mutableListOf()
                 source.readTypedList(comments, CommentUiData.CREATOR)
@@ -36,17 +33,17 @@ class DataCommentsThread(internal val base: List<RowItem>, override val diff: Di
 
                 return DataCommentsThread(base, diff)
             }
-
         }
     }
 
-    override fun writeToParcel(dest: Parcel, flags: Int) {
-        if (base.isEmpty()) {
-            dest.writeTypedObject(null, 0)
+    override fun writeToParcel(dest: Parcel, flags: Int) = when {
+        base.isEmpty() -> {
+            dest.writeParcelable(null, 0)
             dest.writeTypedList<RowItem>(null)
-            return
         }
-        dest.writeTypedObject(base[0], 0)
-        dest.writeTypedList(base.subList(1, base.size))
+        else -> {
+            dest.writeParcelable(base[0], 0)
+            dest.writeTypedList(base.subList(1, base.size))
+        }
     }
 }

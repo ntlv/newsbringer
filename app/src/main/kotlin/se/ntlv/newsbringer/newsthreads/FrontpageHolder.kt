@@ -11,23 +11,23 @@ import se.ntlv.newsbringer.adapter.starify
 import se.ntlv.newsbringer.customviews.DateView
 import se.ntlv.newsbringer.network.NewsThreadUiData
 
-class FrontpageHolder(root: View,
-                 private val onClick: (FrontpageHolder) -> Unit,
-                 private val onLongClick: (FrontpageHolder) -> Boolean) : BindingViewHolder<NewsThreadUiData>(root) {
+class FrontpageHolder(
+        private val view: View,
+        private val onClick: (FrontpageHolder) -> Unit,
+        private val onLongClick: (FrontpageHolder) -> Boolean) : BindingViewHolder<NewsThreadUiData>(view) {
 
     //model data
     var id: Long? = null
     var isStarred: Int? = null
 
     //view bindings
-    val view = root
-    val title = root.find<TextView>(R.id.item_title)
-    val by = root.find<TextView>(R.id.by)
-    val time = root.find<DateView>(R.id.submission_time)
-    val score = root.find<TextView>(R.id.score)
+    val title = view.find<TextView>(R.id.item_title)
+    val by = view.find<TextView>(R.id.by)
+    val time = view.find<DateView>(R.id.submission_time)
+    val score = view.find<TextView>(R.id.score)
     var link: String? = null
-    val commentCount = root.find<TextView>(R.id.comment_count)
-    val ordinal = root.find<TextView>(R.id.ordinal)
+    val commentCount = view.find<TextView>(R.id.comment_count)
+    val ordinal = view.find<TextView>(R.id.ordinal)
 
     override fun bind(item: NewsThreadUiData) {
         //model data

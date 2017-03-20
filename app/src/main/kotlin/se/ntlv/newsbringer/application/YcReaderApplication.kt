@@ -58,7 +58,7 @@ class YcReaderApplication : Application(), AnkoLogger {
     }
 }
 
-fun <T> createTrackedEmitterWithAutoRemove(tracker: MutableCollection<Emitter<in T>>,
+fun <T> createTrackedEmitterWithAutoRemove(tracker: MutableCollection<Emitter<T>>,
                                            pressureModel: Emitter.BackpressureMode = Emitter.BackpressureMode.ERROR): Observable<T> {
     var t: Emitter<T>? = null
     return Observable.create<T>(

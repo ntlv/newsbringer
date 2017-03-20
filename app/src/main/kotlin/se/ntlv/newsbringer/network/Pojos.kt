@@ -37,7 +37,7 @@ data class NewsThreadUiData(var isStarred: Int,
                     source.readInt(),
                     source.readString(),
                     source.readLong(),
-                    source.createLongArray().asList(),
+                    source.createLongList(),
                     source.readLong(),
                     source.readInt(),
                     source.readString()
@@ -69,7 +69,7 @@ data class NewsThreadUiData(var isStarred: Int,
         dest.writeInt(score)
         dest.writeString(url)
         dest.writeLong(id)
-        dest.writeLongArray(children.toLongArray())
+        dest.writeList(children)
         dest.writeLong(descendants)
         dest.writeInt(ordinal)
         dest.writeString(text)
@@ -141,7 +141,7 @@ data class CommentUiData(val parent: Long = 0,
                             source.readLong(),
                             source.readLong(),
                             source.readString(),
-                            source.createLongArray().asList(),
+                            source.createLongList(),
                             source.readString(),
                             source.readInt()
                     )
@@ -168,7 +168,7 @@ data class CommentUiData(val parent: Long = 0,
         dest.writeLong(time)
         dest.writeLong(id)
         dest.writeString(by)
-        dest.writeLongArray(kids.toLongArray())
+        dest.writeList(kids)
         dest.writeString(text)
         dest.writeInt(ancestorCount)
     }
@@ -192,4 +192,10 @@ data class CommentUiData(val parent: Long = 0,
                 CommentsTable.COLUMN_ANCESTOR_COUNT to ancestorCount
         )
     }
+}
+
+fun Parcel.createLongList() : List<Long> {
+    val out = mutableListOf<Long>()
+    readList(out, Long::class.java.classLoader)
+    return out
 }

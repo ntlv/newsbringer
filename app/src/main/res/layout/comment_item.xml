@@ -52,7 +52,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:autoLink="all"
-            android:textColor="@android:color/primary_text_light"
+            android:textColor="@color/onyx"
             tools:text="Terraforming isn't a necessary. Growing food is probably a necessity, as even this cheap transport isn't that transport, but you can do that in greenhouses. Water is available. Energy is available in the form of either solar or nuclear. Getting the colony to be self-sustaining is hard, but it boils down to getting enough people and infrastructure there that they are able to build everything they need on site."
             android:layout_margin="8dp" />
 

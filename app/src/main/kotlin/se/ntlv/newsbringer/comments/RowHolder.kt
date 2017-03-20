@@ -12,8 +12,7 @@ import se.ntlv.newsbringer.network.CommentUiData
 import se.ntlv.newsbringer.network.RowItem
 
 
-class RowHolder(root: View, private val nestingIncrement: Int, private val navigator: Navigator) : BindingViewHolder<RowItem>(root) {
-    val self = root
+class RowHolder(private val root: View, private val nestingIncrement: Int, private val navigator: Navigator) : BindingViewHolder<RowItem>(root) {
     val text = root.find<TextView>(R.id.comment_text)
     val by = root.find<TextView>(R.id.by)
     val time = root.find<DateView>(R.id.comment_submission_time)
@@ -28,7 +27,7 @@ class RowHolder(root: View, private val nestingIncrement: Int, private val navig
         val castItem = item as CommentUiData
         val ancestorCount = castItem.ancestorCount
         val padding = nestingIncrement * ancestorCount
-        self.setPadding(padding, self.paddingTop, self.paddingRight, self.paddingBottom)
+        root.setPadding(padding, root.paddingTop, root.paddingRight, root.paddingBottom)
 
         colorView.backgroundResource = color[ancestorCount % color.size]
         bottomBand.backgroundResource = color[ancestorCount % color.size]

@@ -4,7 +4,6 @@ import android.os.Build
 import android.text.Html
 import android.text.SpannableStringBuilder
 import android.text.Spanned
-import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.text.style.URLSpan
 import android.view.LayoutInflater
@@ -41,43 +40,31 @@ class CommentsAdapterWithHeader(seed: AdapterModelCollection<RowItem>?,
         }
     }
 
-    fun findInDataSet(start: Int,
-                      predicate: (RowItem) -> Boolean,
-                      movementMethod: (Int) -> Int): Int {
-
-        val localDataRef = data ?: return start
-
-        var currentPosition = movementMethod(start)
-        val dataRange = 0..localDataRef.size - 1
-
-        while (currentPosition in dataRange) when {
-            predicate(localDataRef[currentPosition]) -> return currentPosition
-            else -> currentPosition = movementMethod(currentPosition)
-        }
-        return start
-    }
+    fun indexOfThreadStarterCommentIn(range: IntProgression, predicate: (RowItem?) -> Boolean) =
+            range.firstOrNull { predicate(data?.get(it)) }
 }
 
 fun TextView.setHtml(html: String, navigator: Navigator) {
     val sequence = fromHtml(html)
     val spanBuilder = SpannableStringBuilder(sequence)
     val urls = spanBuilder.getSpans(0, sequence.length, URLSpan::class.java)
-    for (span in urls) {
-        val start = spanBuilder.getSpanStart(span)
-        val end = spanBuilder.getSpanEnd(span)
-        val flags = spanBuilder.getSpanFlags(span)
-        val url = span.url
+    urls.forEach {
+        val start = spanBuilder.getSpanStart(it)
+        val end = spanBuilder.getSpanEnd(it)
+        val flags = spanBuilder.getSpanFlags(it)
+        val url = it.url
 
+
+        spanBuilder.removeSpan(it)
         val clickable = object : ClickableSpan() {
             override fun onClick(ignored: View?) {
                 navigator.goToLink(url)
             }
         }
         spanBuilder.setSpan(clickable, start, end, flags)
-        spanBuilder.removeSpan(span)
     }
     text = spanBuilder
-    movementMethod = LinkMovementMethod.getInstance()
+//    movementMethod = LinkMovementMethod.getInstance()
 }
 
 @Suppress("DEPRECATION")

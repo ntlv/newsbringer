@@ -10,11 +10,9 @@ interface ParcelableIdentifiable : Parcelable {
     override fun describeContents(): Int = 0
 }
 
-interface AdapterModelCollection<out T : ParcelableIdentifiable> : Parcelable {
-    operator fun get(position: Int): T
+interface AdapterModelCollection<out T : ParcelableIdentifiable> : Parcelable, List<T> {
 
     val diff: DiffResult
-    val size: Int
 
     override fun describeContents(): Int = 0
 }

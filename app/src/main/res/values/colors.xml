@@ -24,4 +24,7 @@
     <!-- main color for drawable/my_ripple -->
     <color name="my_color_highlight_press">@color/primary_dark_color</color>
     <color name="my_color_highlight_focus">@color/primary_darkest_color</color>
+
+    <!-- Used instead of pure black as text color on white backgrounds  -->
+    <color name="onyx">#141311</color>
 </resources>

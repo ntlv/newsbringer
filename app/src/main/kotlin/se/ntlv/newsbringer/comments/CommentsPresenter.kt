@@ -6,7 +6,6 @@ import rx.subscriptions.CompositeSubscription
 
 class CommentsPresenter(val viewBinder: CommentsViewBinder, val interactor: CommentsInteractor) {
 
-    private var viewReadyCalled = false
     private var subscriptions = CompositeSubscription()
 
     init {
@@ -14,8 +13,6 @@ class CommentsPresenter(val viewBinder: CommentsViewBinder, val interactor: Comm
     }
 
     fun onViewReady() {
-        if (viewReadyCalled) throw IllegalStateException("View called ready twice")
-        viewReadyCalled = true
         viewBinder.indicateDataLoading(true)
         interactor.loadData().observeOn(AndroidSchedulers.mainThread())
 

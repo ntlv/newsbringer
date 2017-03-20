@@ -39,7 +39,7 @@ dependencies {
     compile 'com.google.code.gson:gson:2.8.0'
     //Crash reporting
     compile('com.crashlytics.sdk.android:crashlytics:2.6.2@aar') {
-        transitive = true;
+        transitive = true
     }
     compile 'org.jetbrains.anko:anko-sdk23:0.9.1'
     //reactive stuff
@@ -68,7 +68,7 @@ android {
     }
 
     defaultConfig {
-        versionCode 18
+        versionCode 19
         versionName "$versionCode"
         minSdkVersion 19
         targetSdkVersion 25
@@ -116,9 +116,9 @@ gradle.taskGraph.whenReady { taskGraph ->
 
 
                     button(defaultButton: true, text: 'OK', actionPerformed: {
-                        passKeyPwInput = new String(iKeyPwInput.getPassword());
-                        passStorePwInput = new String(iStorePwInput.getPassword());
-                        dispose();
+                        passKeyPwInput = new String(iKeyPwInput.getPassword())
+                        passStorePwInput = new String(iStorePwInput.getPassword())
+                        dispose()
                     })
                 }
             }

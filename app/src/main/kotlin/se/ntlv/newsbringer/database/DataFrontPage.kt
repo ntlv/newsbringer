@@ -7,11 +7,7 @@ import se.ntlv.newsbringer.customviews.DataDiffCallback
 import se.ntlv.newsbringer.network.NewsThreadUiData
 
 class DataFrontPage(internal val base: List<NewsThreadUiData>,
-                    override val diff: DiffUtil.DiffResult) : AdapterModelCollection<NewsThreadUiData> {
-
-    override fun get(position: Int) = base[position]
-
-    override val size = base.size
+                    override val diff: DiffUtil.DiffResult) : AdapterModelCollection<NewsThreadUiData>, List<NewsThreadUiData> by base {
 
     companion object {
 

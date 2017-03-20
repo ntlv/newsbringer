@@ -3,6 +3,7 @@ package se.ntlv.newsbringer.comments
 import android.support.design.widget.AppBarLayout
 import android.support.design.widget.AppBarLayout.OnOffsetChangedListener
 import android.support.design.widget.FloatingActionButton
+import android.support.design.widget.Snackbar
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
@@ -33,7 +34,7 @@ class UiBinder(private val mActivity: CommentsActivity,
                private val mManager: LinearLayoutManager,
                private val mAdapter: CommentsAdapterWithHeader) : OnOffsetChangedListener, AnkoLogger, CommentsViewBinder {
 
-    private val mRefreshListeners: MutableList<Emitter<in Any>> = mutableListOf()
+    private val mRefreshListeners: MutableList<Emitter<Any>> = mutableListOf()
     private val mAppBar: AppBarLayout = mActivity.find<AppBarLayout>(R.id.appbar)
     private val mSwipeView: SwipeRefreshLayout = mActivity.find<SwipeRefreshLayout>(R.id.swipe_view)
 
@@ -48,49 +49,30 @@ class UiBinder(private val mActivity: CommentsActivity,
         recyclerView.adapter = mAdapter
 
         val fab = mActivity.find<FloatingActionButton>(R.id.fab)
-        recyclerView.addOnScrollListener( object : RecyclerView.OnScrollListener() {
+        recyclerView.addOnScrollListener(FabManager(fab))
 
-            var shouldShow = false
-
-            override fun onScrollStateChanged(recyclerView: RecyclerView?, newState: Int) {
-                if (newState == RecyclerView.SCROLL_STATE_IDLE) {
-                    if (shouldShow) {
-                        fab.show()
-                    } else {
-                        fab.hide()
-                    }
-                }
+        val threadStartPredicate: (RowItem?) -> Boolean = { it is CommentUiData && it.ancestorCount == 0 }
+        val findAndScroll: (IntProgression) -> Unit = {
+            val maybeTarget = mAdapter.indexOfThreadStarterCommentIn(it, threadStartPredicate)
+            if (maybeTarget != null) {
+                Snackbar.make(recyclerView, "Scrolling to $maybeTarget", Snackbar.LENGTH_SHORT).show()
+                mManager.scrollToPositionWithOffset(maybeTarget, 0)
+            } else {
+                Snackbar.make(recyclerView, "Can't scroll further", Snackbar.LENGTH_SHORT).show()
             }
 
-            override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
-                shouldShow = dy < 0
-            }
-        })
+        }
 
-        fab.onClick { navigateByScrolling(Direction.DOWN) }
-        fab.onLongClick { navigateByScrolling(Direction.UP) }
-    }
-
-    private enum class Direction {
-        UP {
-            override fun start(manager: LinearLayoutManager) = manager.findFirstVisibleItemPosition()
-            override val mover: (Int) -> Int = Int::dec
-        },
-        DOWN {
-            override fun start(manager: LinearLayoutManager) = manager.findLastVisibleItemPosition()
-            override val mover: (Int) -> Int = Int::inc
-        };
-
-        abstract fun start(manager: LinearLayoutManager): Int
-        abstract val mover: (Int) -> Int
-
-        val predicate: (RowItem) -> Boolean = { it is CommentUiData && it.ancestorCount == 0 }
-    }
-
-    private fun navigateByScrolling(direction: Direction): Boolean {
-        val target = mAdapter.findInDataSet(direction.start(mManager), direction.predicate, direction.mover)
-        mManager.scrollToPositionWithOffset(target, 0)
-        return true
+        fab.onClick {
+            val searchSpace = mManager.findLastVisibleItemPosition() until mManager.itemCount
+            findAndScroll(searchSpace)
+        }
+        fab.onLongClick {
+            val lastVisible = mManager.findFirstVisibleItemPosition()
+            val searchSpace = 0.until(lastVisible).reversed()
+            findAndScroll(searchSpace)
+            true
+        }
     }
 
     override fun onOffsetChanged(appBarLayout: AppBarLayout?, verticalOffset: Int) {
@@ -108,13 +90,12 @@ class UiBinder(private val mActivity: CommentsActivity,
 
     override fun updateContent(data: AdapterModelCollection<RowItem>) {
         mAdapter.data = data
-        if (data.size > 0) {
+        if (data.isNotEmpty()) {
             val maybeHeader = data[0]
             if (maybeHeader is NewsThreadUiData) {
                 mActivity.title = maybeHeader.title.starify(maybeHeader.isStarred)
             }
         }
-
     }
 
     fun start() = mAppBar.addOnOffsetChangedListener(this)

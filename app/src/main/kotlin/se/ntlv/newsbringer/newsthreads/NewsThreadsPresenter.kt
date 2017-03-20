@@ -18,9 +18,9 @@ class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
     private var filter = ""
 
     init {
-        val progress = viewBinder.observerPresentationProgress()
+        val progress = viewBinder.observePresentationPosition()
                 .subscribe {
-                    val (willLoad, message) = interactor.loadItemsAt(it.index)
+                    val (willLoad, message) = interactor.loadItemsAt(it)
                     if (willLoad) {
                         viewBinder.showStatusMessage("Loading rows $message")
                         viewBinder.indicateDataLoading(true)

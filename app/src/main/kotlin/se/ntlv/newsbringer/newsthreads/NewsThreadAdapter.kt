@@ -17,7 +17,7 @@ class NewsThreadAdapter(val clickListener: (FrontpageHolder) -> Unit,
 
     override fun getItemViewType(position: Int): Int = R.layout.header_item
 
-    private val mEmitters : MutableList<Emitter<in ProgressReport>> = mutableListOf()
+    private val mEmitters : MutableList<Emitter<Int>> = mutableListOf()
 
     override fun onCreateViewHolder(parent: ViewGroup?, viewType: Int): BindingViewHolder<NewsThreadUiData> {
         val v = LayoutInflater.from(parent?.context).inflate(viewType, parent, false)
@@ -26,13 +26,11 @@ class NewsThreadAdapter(val clickListener: (FrontpageHolder) -> Unit,
 
     override fun onBindViewHolder(holder: BindingViewHolder<NewsThreadUiData>, position: Int) {
         val item = data!![position]
-        val progress = ProgressReport(position, itemCount)
-        mEmitters.forEach { it.onNext(progress) }
-
+        mEmitters.forEach { it.onNext(position) }
         holder.bind(item)
     }
 
-    fun observeRenderProgress(): Observable<ProgressReport> = createTrackedEmitterWithAutoRemove(mEmitters)
+    fun observePresentationPosition(): Observable<Int> = createTrackedEmitterWithAutoRemove(mEmitters)
 
 
     fun destroy() {
