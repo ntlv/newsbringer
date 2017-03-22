@@ -4,18 +4,16 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import android.util.Log
 import com.squareup.sqlbrite.BriteDatabase
 import com.squareup.sqlbrite.QueryObservable
 import com.squareup.sqlbrite.SqlBrite
-import org.jetbrains.anko.AnkoLogger
 import rx.schedulers.Schedulers
 import se.ntlv.newsbringer.network.NewsThreadUiData
 import se.ntlv.newsbringer.thisShouldNeverHappen
 import java.util.*
 
 
-class Database(ctx: Context) : AnkoLogger {
+class Database(ctx: Context) {
 
     private val mDb: BriteDatabase
 
@@ -124,21 +122,16 @@ class Database(ctx: Context) : AnkoLogger {
         val select = "SELECT * FROM ${PostTable.TABLE_NAME}"
         val where = "WHERE ${PostTable.COLUMN_STARRED} = 1"
 
-        try {
-            mDb.query("$select $where").use {
-                if (it.moveToFirst()) {
-                    val list = ArrayList<NewsThreadUiData>(it.count)
-                    do {
-                        list.add(NewsThreadUiData(it))
-                    } while (it.moveToNext())
-                    return list
-                } else {
-                    return emptyList()
-                }
+        mDb.query("$select $where").use {
+            if (it.moveToFirst()) {
+                val list = ArrayList<NewsThreadUiData>(it.count)
+                do {
+                    list.add(NewsThreadUiData(it))
+                } while (it.moveToNext())
+                return list
+            } else {
+                return emptyList()
             }
-        } catch (ex: Exception) {
-            Log.e("DatabaseHelper", "get starred posts failed", ex)
-            throw ex
         }
     }
 
@@ -182,7 +175,7 @@ class Database(ctx: Context) : AnkoLogger {
         insertManyThings(cvs)
     }
 
-    private fun insertManyThings(things : List<ContentValues>) {
+    private fun insertManyThings(things: List<ContentValues>) {
         mDb.newTransaction().use {
             val success = things.map {
                 mDb.insert(PostTable.TABLE_NAME, it, SQLiteDatabase.CONFLICT_REPLACE)
@@ -248,13 +241,14 @@ class Database(ctx: Context) : AnkoLogger {
         }
     }
 
-    fun getIdForOrdinalSync(ordinal: Int): Long? {
-        val select = "SELECT ${PostTable.COLUMN_ID},${PostTable.COLUMN_ORDINAL} FROM ${PostTable.TABLE_NAME}"
+    fun getPostByOrdinalSync(ordinal: Int): NewsThreadUiData? {
+        val select = "SELECT * FROM ${PostTable.TABLE_NAME}"
         val where = "WHERE ${PostTable.COLUMN_ORDINAL} = $ordinal"
+
         mDb.query("$select $where").use {
             val hasData = it.moveToFirst()
             return when (hasData) {
-                true -> it.getLong(0)
+                true -> NewsThreadUiData(it)
                 false -> null
             }
         }

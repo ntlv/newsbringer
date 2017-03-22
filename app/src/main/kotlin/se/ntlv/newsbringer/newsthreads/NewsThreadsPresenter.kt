@@ -1,6 +1,5 @@
 package se.ntlv.newsbringer.newsthreads
 
-import org.jetbrains.anko.AnkoLogger
 import rx.Subscription
 import rx.android.schedulers.AndroidSchedulers.mainThread
 import rx.subscriptions.CompositeSubscription
@@ -9,7 +8,7 @@ import se.ntlv.newsbringer.Navigator
 
 class NewsThreadsPresenter(val viewBinder: NewsThreadsViewBinder,
                            val navigator: Navigator,
-                           val interactor: NewsThreadsInteractor) : AnkoLogger {
+                           val interactor: NewsThreadsInteractor) {
 
     private val nonChangingSubscriptions: CompositeSubscription
 

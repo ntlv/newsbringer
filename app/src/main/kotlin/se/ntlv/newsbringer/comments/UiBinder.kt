@@ -7,7 +7,6 @@ import android.support.design.widget.Snackbar
 import android.support.v4.widget.SwipeRefreshLayout
 import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
-import org.jetbrains.anko.AnkoLogger
 import org.jetbrains.anko.find
 import org.jetbrains.anko.onClick
 import org.jetbrains.anko.onLongClick
@@ -32,7 +31,7 @@ interface CommentsViewBinder {
 
 class UiBinder(private val mActivity: CommentsActivity,
                private val mManager: LinearLayoutManager,
-               private val mAdapter: CommentsAdapterWithHeader) : OnOffsetChangedListener, AnkoLogger, CommentsViewBinder {
+               private val mAdapter: CommentsAdapterWithHeader) : OnOffsetChangedListener, CommentsViewBinder {
 
     private val mRefreshListeners: MutableList<Emitter<Any>> = mutableListOf()
     private val mAppBar: AppBarLayout = mActivity.find<AppBarLayout>(R.id.appbar)

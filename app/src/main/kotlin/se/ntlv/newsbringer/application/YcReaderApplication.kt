@@ -6,7 +6,6 @@ import android.os.Build
 import android.os.StrictMode
 import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
-import org.jetbrains.anko.AnkoLogger
 import rx.Emitter
 import rx.Observable
 import rx.plugins.RxJavaHooks
@@ -15,7 +14,7 @@ import se.ntlv.newsbringer.BuildConfig
 import se.ntlv.newsbringer.comments.CommentsActivity
 
 
-class YcReaderApplication : Application(), AnkoLogger {
+class YcReaderApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()

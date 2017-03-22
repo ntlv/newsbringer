@@ -18,7 +18,7 @@ import se.ntlv.newsbringer.database.DataFrontPage
 import se.ntlv.newsbringer.database.Database
 
 
-class NewsThreadsActivity : AppCompatActivity(), AnkoLogger, SearchView.OnQueryTextListener {
+class NewsThreadsActivity : AppCompatActivity(), SearchView.OnQueryTextListener {
 
     private val dataTag = "NewsThreadActivity.data"
 

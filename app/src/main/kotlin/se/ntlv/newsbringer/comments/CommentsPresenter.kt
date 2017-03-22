@@ -1,6 +1,5 @@
 package se.ntlv.newsbringer.comments
 
-import android.util.Log
 import rx.android.schedulers.AndroidSchedulers
 import rx.subscriptions.CompositeSubscription
 
@@ -17,7 +16,6 @@ class CommentsPresenter(val viewBinder: CommentsViewBinder, val interactor: Comm
         interactor.loadData().observeOn(AndroidSchedulers.mainThread())
 
         subscriptions.add(interactor.loadData().observeOn(AndroidSchedulers.mainThread()).subscribe {
-            Log.d("CommentsPresenter", "Updating content, size ${it.size}")
             viewBinder.indicateDataLoading(false)
             viewBinder.updateContent(it)
         })

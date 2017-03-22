@@ -15,7 +15,14 @@ val notNull = "not null"
 val defaultZero = "default 0"
 val primaryKey = "primary key"
 
-fun Cursor.getStringByName(columnName: String): String = getString(getColumnIndexOrThrow(columnName)) ?: throw NullPointerException("$columnName on row $position was null")
+fun Cursor.getStringByName(columnName: String): String {
+    val idx = getColumnIndex(columnName)
+    val rowValue = when {
+        idx < 0 -> ""
+        else -> getString(idx) ?: ""
+    }
+    return rowValue
+}
 
 fun Cursor.getLongByName(columnName: String): Long = getLong(getColumnIndexOrThrow(columnName))
 fun Cursor.getIntByName(columnName: String): Int = getInt(getColumnIndexOrThrow(columnName))

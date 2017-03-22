@@ -10,7 +10,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import org.jetbrains.anko.AnkoLogger
 import se.ntlv.newsbringer.Navigator
 import se.ntlv.newsbringer.R
 import se.ntlv.newsbringer.adapter.BindingViewHolder
@@ -23,7 +22,7 @@ import se.ntlv.newsbringer.thisShouldNeverHappen
 class CommentsAdapterWithHeader(seed: AdapterModelCollection<RowItem>?,
                                 private val nestingPaddingIncrement: Int,
                                 private val headerClickListener: (View) -> Unit,
-                                private val navigator: Navigator) : GenericRecyclerViewAdapter<RowItem, BindingViewHolder<RowItem>>(seed), AnkoLogger {
+                                private val navigator: Navigator) : GenericRecyclerViewAdapter<RowItem, BindingViewHolder<RowItem>>(seed) {
 
     override fun getItemViewType(position: Int): Int = when (position) {
         0 -> R.layout.header_item

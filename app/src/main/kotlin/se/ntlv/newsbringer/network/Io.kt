@@ -136,28 +136,27 @@ object Io {
     private fun handleFullWipe() {
 
         val starredBeforeDelete = database.allStarredPosts()
-        val starredIds = starredBeforeDelete.map { it.id }
-
         database.deleteFrontPage()
 
         val ids = http.get(TOP_FIVE_HUNDRED, Array<Long>::class.java, gson)
-
-        val emptyNewsThreads: List<Pair<Long, Int>> = ids.filter { it !in starredIds }.mapIndexed { ordinal, id -> Pair(id, ordinal) }
+        val emptyNewsThreads: List<Pair<Long, Int>> = ids.mapIndexed { ordinal, id -> Pair(id, ordinal) }
+        database.insertPlaceholders(emptyNewsThreads)
 
         val starredItems = starredBeforeDelete.map { getNewsThread(it.id, it.ordinal, 1) }.toTypedArray()
         database.insertNewsThreads(*starredItems)
-
-        val placeHolders: List<Pair<Long, Int>> = emptyNewsThreads
-
-        database.insertPlaceholders(placeHolders)
 
         requestFetchThreads(0..fetchInc)
     }
 
     private fun handleFetchThread(ordinal: Int) {
-        val id = database.getIdForOrdinalSync(ordinal) ?: http.get(TOP_FIVE_HUNDRED, Array<Long>::class.java, gson)[ordinal]
-        val item = getNewsThread(id, ordinal)
-        database.insertNewsThreads(item)
+        val localEntity = database.getPostByOrdinalSync(ordinal)
+
+        val id = localEntity?.id ?: http.get(TOP_FIVE_HUNDRED, Array<Long>::class.java, gson)[ordinal]
+        val isStarred = localEntity?.isStarred ?: 0
+
+        val networkEntity = getNewsThread(id, ordinal, isStarred)
+
+        database.insertNewsThreads(networkEntity)
     }
 
     private fun getNewsThread(id: Long, ordinal: Int, isStarred: Int = 0): NewsThreadUiData {

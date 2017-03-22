@@ -2,9 +2,8 @@ package se.ntlv.newsbringer.customviews
 
 import android.view.MenuItem
 import android.widget.ImageView
-import org.jetbrains.anko.AnkoLogger
 
-class RefreshButtonAnimator(private val button: MenuItem, private val actionView: ImageView) : AnkoLogger {
+class RefreshButtonAnimator(private val button: MenuItem, private val actionView: ImageView) {
     private val mDeferredAnimationDefault: () -> Unit = { }
     private var mDeferredAnimation: () -> Unit = mDeferredAnimationDefault
     private var mIsRunningStartLoadingAnimation = false
