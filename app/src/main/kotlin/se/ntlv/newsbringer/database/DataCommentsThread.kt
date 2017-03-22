@@ -13,7 +13,6 @@ class DataCommentsThread(internal val base: List<RowItem>,
                          override val diff: DiffResult) : AdapterModelCollection<RowItem>, List<RowItem> by base {
 
     companion object {
-
         @Suppress("unused")
         @JvmField
         val CREATOR = object : Parcelable.Creator<DataCommentsThread> {

@@ -7,6 +7,8 @@ import android.os.StrictMode
 import com.crashlytics.android.Crashlytics
 import io.fabric.sdk.android.Fabric
 import rx.Emitter
+import rx.Emitter.BackpressureMode
+import rx.Emitter.BackpressureMode.ERROR
 import rx.Observable
 import rx.plugins.RxJavaHooks
 import rx.schedulers.Schedulers
@@ -58,7 +60,7 @@ class YcReaderApplication : Application() {
 }
 
 fun <T> createTrackedEmitterWithAutoRemove(tracker: MutableCollection<Emitter<T>>,
-                                           pressureModel: Emitter.BackpressureMode = Emitter.BackpressureMode.ERROR): Observable<T> {
+                                           pressureModel: BackpressureMode = ERROR): Observable<T> {
     var t: Emitter<T>? = null
     return Observable.create<T>(
             {

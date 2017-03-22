@@ -2,6 +2,7 @@ package se.ntlv.newsbringer.database
 
 import android.content.ContentValues
 import android.content.Context
+import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import com.squareup.sqlbrite.BriteDatabase
@@ -10,7 +11,6 @@ import com.squareup.sqlbrite.SqlBrite
 import rx.schedulers.Schedulers
 import se.ntlv.newsbringer.network.NewsThreadUiData
 import se.ntlv.newsbringer.thisShouldNeverHappen
-import java.util.*
 
 
 class Database(ctx: Context) {
@@ -91,8 +91,6 @@ class Database(ctx: Context) {
                 COLUMN_TYPE text notNull,
                 COLUMN_ORDINAL text notNull
         )
-
-
     }
 
     class DatabaseHelper(ctx: Context) : SQLiteOpenHelper(ctx, DATABASE_NAME, null, DATABASE_VERSION) {
@@ -113,24 +111,18 @@ class Database(ctx: Context) {
 
         override fun onConfigure(database: SQLiteDatabase) {
             database.setForeignKeyConstraintsEnabled(true) //needed for cascading deletes
-
         }
-
     }
 
     fun allStarredPosts(): List<NewsThreadUiData> {
         val select = "SELECT * FROM ${PostTable.TABLE_NAME}"
         val where = "WHERE ${PostTable.COLUMN_STARRED} = 1"
 
-        mDb.query("$select $where").use {
-            if (it.moveToFirst()) {
-                val list = ArrayList<NewsThreadUiData>(it.count)
-                do {
-                    list.add(NewsThreadUiData(it))
-                } while (it.moveToNext())
-                return list
-            } else {
-                return emptyList()
+        return mDb.query("$select $where").use { cursor: Cursor ->
+            val end = cursor.count -1
+            (0..end).map {
+                cursor.moveToPosition(it)
+                NewsThreadUiData(cursor)
             }
         }
     }
@@ -138,15 +130,11 @@ class Database(ctx: Context) {
     fun getFrontPage(starredOnly: Boolean = false, filter: String = ""): QueryObservable {
 
         val shouldMatchText = filter.isNotBlank()
-
-        val likeMatcher = "(" + arrayOf(PostTable.COLUMN_TITLE, PostTable.COLUMN_BY, PostTable.COLUMN_TEXT, PostTable.COLUMN_URL).joinToString(" like '%$filter%' or ") + " like '%$filter%')"
-
         val conditions = when {
-            starredOnly && shouldMatchText -> "${PostTable.COLUMN_STARRED}=1 and $likeMatcher"
-            !starredOnly && shouldMatchText -> likeMatcher
+            starredOnly && shouldMatchText -> "${PostTable.COLUMN_STARRED}=1 and ${createFilter(filter)}"
+            !starredOnly && shouldMatchText -> createFilter(filter)
             !starredOnly && !shouldMatchText -> "${PostTable.COLUMN_TITLE} is not null AND ${PostTable.COLUMN_TITLE} != ''"
             starredOnly && !shouldMatchText -> "${PostTable.COLUMN_STARRED}=1"
-
             else -> thisShouldNeverHappen()
         }
 
@@ -155,6 +143,11 @@ class Database(ctx: Context) {
         val orderBy = "ORDER BY ${PostTable.COLUMN_ORDINAL} ASC"
         return mDb.createQuery(PostTable.TABLE_NAME, "$select $where $orderBy")
     }
+
+    private fun createFilter(filter: String): String =
+            arrayOf(PostTable.COLUMN_TITLE, PostTable.COLUMN_BY, PostTable.COLUMN_TEXT, PostTable.COLUMN_URL)
+                    .map { "$it like '%$filter%'" }
+                    .joinToString(" or ")
 
     fun insertNewsThreads(vararg items: NewsThreadUiData) {
         if (items.size == 1) {

@@ -16,13 +16,12 @@ object Io {
     //---------------------------------------------------------------------------------------------
     // PUBLIC INTERFACE
     //---------------------------------------------------------------------------------------------
-    fun requestFetchComment(id: Long, ancestorCount: Int, baseOrdinal: String, newsThreadId: Long): Unit {
-        pool.submit { handleFetchComment(id, ancestorCount, baseOrdinal, newsThreadId) }
-    }
+    fun requestFetchComment(id: Long, ancestorCount: Int, baseOrdinal: String, newsThreadId: Long) =
+            pool.submit { handleFetchComment(id, ancestorCount, baseOrdinal, newsThreadId) }!!
 
-    fun requestFetchPostAndComments(id: Long): Unit {
-        pool.submit { handleFetchPostAndComments(id) }
-    }
+
+    fun requestFetchPostAndComments(id: Long) =
+            pool.submit { handleFetchPostAndComments(id) }!!
 
     fun requestFetchThreads(range: IntRange): Unit {
         val first = range.first.clamp(0, ORDINAL_MAX_BOUND)
@@ -32,18 +31,16 @@ object Io {
         }
     }
 
-    fun requestFullWipe(): Unit {
-        pool.submit { handleFullWipe() }
-    }
-
-    fun requestToggleStarred(id: Long, currentStarredStatus: Int): Unit {
-        pool.submit { handleToggleStarred(id, currentStarredStatus) }
-    }
+    fun requestFullWipe() =
+            pool.submit { handleFullWipe() }!!
 
 
-    fun requestPrepareHeaderAndCommentsFor(newsThreadId: Long): Unit {
-        pool.submit { handlePrepareHeaderAndCommentsFor(newsThreadId) }
-    }
+    fun requestToggleStarred(id: Long, currentStarredStatus: Int) =
+            pool.submit { handleToggleStarred(id, currentStarredStatus) }!!
+
+
+    fun requestPrepareHeaderAndCommentsFor(newsThreadId: Long) =
+            pool.submit { handlePrepareHeaderAndCommentsFor(newsThreadId) }!!
 
 
     //---------------------------------------------------------------------------------------------
@@ -167,20 +164,17 @@ object Io {
     }
 
 
-    private fun <T> OkHttpClient.get(url: String, cls: Class<T>, deserializer: Gson): T {
-        val request = Request.Builder().url(url).get().build()
-        newCall(request).execute().use {
-            if (!it.isSuccessful) throw IOException("Unexpected response { $it }")
+    private fun <T> OkHttpClient.get(url: String, cls: Class<T>, deserializer: Gson): T =
+            newCall(Request.Builder().url(url).get().build()).execute().use {
 
-            it.body().use {
-                it.charStream().use {
-                    return deserializer.fromJson(it, cls)
+                if (!it.isSuccessful) throw IOException("Unexpected response { $it }")
+
+                it.body().use {
+                    it.charStream().use {
+                        return deserializer.fromJson(it, cls)
+                    }
                 }
             }
-
-        }
-    }
-
 }
 
 private fun Int.clamp(lower: Int, upper: Int): Int = when {

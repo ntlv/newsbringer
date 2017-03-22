@@ -10,7 +10,6 @@ class DataFrontPage(internal val base: List<NewsThreadUiData>,
                     override val diff: DiffUtil.DiffResult) : AdapterModelCollection<NewsThreadUiData>, List<NewsThreadUiData> by base {
 
     companion object {
-
         @Suppress("unused")
         @JvmField
         val CREATOR = object : Parcelable.Creator<DataFrontPage> {
@@ -26,6 +25,4 @@ class DataFrontPage(internal val base: List<NewsThreadUiData>,
     }
 
     override fun writeToParcel(dest: Parcel, flags: Int) = dest.writeTypedList(base)
-
-    override fun describeContents(): Int = 0
 }

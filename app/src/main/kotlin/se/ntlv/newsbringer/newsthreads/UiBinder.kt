@@ -31,7 +31,7 @@ class UiBinder(activity: NewsThreadsActivity,
                manager: RecyclerView.LayoutManager,
                private val adapter: NewsThreadAdapter) : AppBarLayout.OnOffsetChangedListener, NewsThreadsViewBinder {
 
-    private val mRefreshListeners: MutableList<Emitter<Any>> = mutableListOf()
+    private val mRefreshListeners = mutableListOf<Emitter<Any>>()
 
     private val mAppBar = activity.find<AppBarLayout>(R.id.appbar)
     private val mSwipeView = activity.find<SwipeRefreshLayout>(R.id.swipe_view)
@@ -61,13 +61,11 @@ class UiBinder(activity: NewsThreadsActivity,
 
     override fun observePresentationPosition() = adapter.observePresentationPosition()
 
-    override fun observeRefreshEvents(): Observable<Any> = createTrackedEmitterWithAutoRemove(mRefreshListeners)
-
+    override fun observeRefreshEvents() = createTrackedEmitterWithAutoRemove(mRefreshListeners)
 
     fun start() {
         mAppBar.addOnOffsetChangedListener(this)
     }
-
 
     fun stop() {
         mAppBar.removeOnOffsetChangedListener(this)

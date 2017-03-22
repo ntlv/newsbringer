@@ -8,8 +8,8 @@ import okhttp3.OkHttpClient
 import se.ntlv.newsbringer.database.Database
 import se.ntlv.newsbringer.network.CommentUiData
 import se.ntlv.newsbringer.network.NewsThreadUiData
+import se.ntlv.newsbringer.network.ThrowingExecutor
 import java.util.concurrent.SynchronousQueue
-import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.LazyThreadSafetyMode.SYNCHRONIZED
 
@@ -25,7 +25,7 @@ object GlobalDependency {
                 .build()
     }
 
-    val ioPool by lazy(SYNCHRONIZED) { ThreadPoolExecutor(0, 200, 60L, SECONDS, SynchronousQueue<Runnable>()) }
+    val ioPool by lazy(SYNCHRONIZED) { ThrowingExecutor() }
 
     val gson: Gson by lazy(SYNCHRONIZED) {
         GsonBuilder()

@@ -20,11 +20,10 @@ class CommentsInteractor(
         seed: List<ParcelableIdentifiable>?) {
 
     private var previousComments: List<ParcelableIdentifiable>? = seed
-    private var shareCommentsInternal: (() -> Unit) = { throw IllegalStateException("Attempting to share comments before initialization") }
-    private var shareStoryInternal: (() -> Unit) = { throw IllegalStateException("Attempting to share story before initialization") }
-    private var goToLinkInternal: (() -> Unit) = { throw IllegalStateException("Attempting to open link before initialization") }
-    private var addToStarredInternal: (() -> Unit) = { throw IllegalStateException("Attempting to toggle starred before initialization") }
-
+    private lateinit var shareCommentsInternal : () -> Boolean
+    private lateinit var shareStoryInternal : () -> Boolean
+    private lateinit var goToLinkInternal : () -> Boolean
+    private lateinit var addToStarredInternal : () -> Unit
 
     fun loadData(): Observable<AdapterModelCollection<RowItem>> {
         Io.requestPrepareHeaderAndCommentsFor(newsThreadId)
@@ -51,16 +50,13 @@ class CommentsInteractor(
 
             DataCommentsThread(new, diff)
         }
-
     }
 
     fun refreshComments() = Io.requestFetchPostAndComments(newsThreadId)
 
-
     fun goToLink() = goToLinkInternal()
     fun shareComments() = shareCommentsInternal()
     fun shareStory() = shareStoryInternal()
-
 
     fun addToStarred() = addToStarredInternal()
 

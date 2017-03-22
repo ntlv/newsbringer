@@ -8,7 +8,6 @@ class FabManager(private val fab: FloatingActionButton) : OnScrollListener() {
 
     private var didScrollUp = false
 
-
     override fun onScrollStateChanged(recyclerView: RecyclerView?, newState: Int) =
             when (didScrollUp && (newState == SCROLL_STATE_IDLE || newState == SCROLL_STATE_SETTLING)) {
                 true -> fab.show()

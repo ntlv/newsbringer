@@ -1,5 +1,6 @@
 package se.ntlv.newsbringer.comments
 
+import android.net.Uri
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.LinearLayoutManager
@@ -29,15 +30,11 @@ class CommentsActivity : AppCompatActivity() {
 
     private val dataTag = "CommentsActivity.data"
 
-    private val mItemId by lazy(NONE) { intent.data.getQueryParameter("id")!!.toLong() }
+    private val mItemId by lazy(NONE) { intent.data.getQueryParameterOrThrow("id") }
 
     //ANDROID ACTIVITY CALLBACKS
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        if (-1L == mItemId) {
-            thisShouldNeverHappen()
-        }
 
         setContentView(R.layout.activity_linear_vertical_content)
 
@@ -103,5 +100,10 @@ class CommentsActivity : AppCompatActivity() {
     }
 }
 
-
-
+private fun Uri.getQueryParameterOrThrow(paramName: String): Long {
+    val asLong = getQueryParameter(paramName)?.toLong()
+    return when {
+        asLong == null || asLong < 0 -> thisShouldNeverHappen()
+        else -> asLong
+    }
+}

@@ -8,17 +8,21 @@ class CommentsPresenter(val viewBinder: CommentsViewBinder, val interactor: Comm
     private var subscriptions = CompositeSubscription()
 
     init {
-        subscriptions.add(viewBinder.observeRefreshEvents().subscribe { refreshData() })
+        val refreshObserver = viewBinder.observeRefreshEvents().subscribe { refreshData() }
+        subscriptions.add(refreshObserver)
     }
 
     fun onViewReady() {
         viewBinder.indicateDataLoading(true)
         interactor.loadData().observeOn(AndroidSchedulers.mainThread())
 
-        subscriptions.add(interactor.loadData().observeOn(AndroidSchedulers.mainThread()).subscribe {
-            viewBinder.indicateDataLoading(false)
-            viewBinder.updateContent(it)
-        })
+        val dataLoader = interactor.loadData()
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe {
+                    viewBinder.indicateDataLoading(false)
+                    viewBinder.updateContent(it)
+                }
+        subscriptions.add(dataLoader)
     }
 
     fun refreshData() {

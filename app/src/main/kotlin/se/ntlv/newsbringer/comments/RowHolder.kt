@@ -12,7 +12,10 @@ import se.ntlv.newsbringer.network.CommentUiData
 import se.ntlv.newsbringer.network.RowItem
 
 
-class RowHolder(private val root: View, private val nestingIncrement: Int, private val navigator: Navigator) : BindingViewHolder<RowItem>(root) {
+class RowHolder(private val root: View,
+                private val nestingIncrement: Int,
+                private val navigator: Navigator) : BindingViewHolder<RowItem>(root) {
+
     val text = root.find<TextView>(R.id.comment_text)
     val by = root.find<TextView>(R.id.by)
     val time = root.find<DateView>(R.id.comment_submission_time)
