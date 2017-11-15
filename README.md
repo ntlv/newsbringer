@@ -1,7 +1,7 @@
 # YCreader
 ## A hacker news reader
 
-YCreader is a simplistic and to the point reader app for news.ycombinator.com. The app is currently being developed as a weekend project, it is available from the [Play Store](http://goo.gl/KaFqz9).
+YCreader is a reader app for news.ycombinator.com, it is available from the [Play Store](http://goo.gl/KaFqz9).
 
 ### Currently implemented
 * Display frontpage
@@ -21,7 +21,7 @@ YCreader is a simplistic and to the point reader app for news.ycombinator.com. T
 
 ### License
 
-Copyright 2016 Love Lindström
+Copyright 2017 Love Lindström
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
