@@ -1,5 +1,5 @@
 # YCreader
-## A hacker news reader
+## A Hacker News reader
 
 YCreader is a reader app for news.ycombinator.com, it is available from the [Play Store](http://goo.gl/KaFqz9).
 
